@@ -203,3 +203,12 @@ body.tv .setup .hint { display: none; }
 .orb-ref { position: absolute; top: 372px; width: 330px; text-align: center; font-size: 30px; font-style: italic; color: var(--acc2); }
 .orb-ref::before { content: ''; display: block; width: 1px; height: 26px; margin: 0 auto 12px; background: linear-gradient(var(--line), var(--acc)); }
 .o1r { left: 130px; } .o2r { left: 450px; } .o3r { left: 770px; } .o4r { left: 1090px; } .o5r { left: 1410px; }
+
+/* the one gesture the browser needs: big, obvious, on the opening screen */
+.fsgo { display: inline-flex; align-items: center; gap: 16px; margin-top: 5vh; padding: 22px 40px; border-radius: 999px; border: 0; cursor: pointer !important;
+  font-family: var(--mono); font-size: clamp(14px, 1.2vw, 20px); letter-spacing: .3em; color: #1a0d04;
+  background: linear-gradient(140deg, var(--acc), var(--acc2)); box-shadow: 0 20px 60px rgba(255, 122, 26, .35); animation: fsglow 2.4s ease-in-out infinite; }
+.fsgo svg { width: 1.6em; height: 1.6em; stroke: currentColor; fill: none; stroke-width: 2; }
+@keyframes fsglow { 50% { box-shadow: 0 20px 80px rgba(255, 170, 70, .6); } }
+#begin.armed .fsgo { display: none; }
+#begin .fsgo, #begin .fsgo * { cursor: pointer !important; }

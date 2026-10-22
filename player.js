@@ -313,7 +313,7 @@ function onCmd(m) {
   else if (m.cmd === 'mute') { A.setMuted(!A.isMuted()); sync(); }
   else if (m.cmd === 'vote') { net.force = m.open === null || m.open === undefined ? null : !!m.open; pushVote(); sync(); }
   else if (m.cmd === 'quit') bye();
-  else if (m.cmd === 'exitfs') { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); say('plein écran quitté'); }
+  else if (m.cmd === 'exitfs') { if (fsEl()) leaveFull(); say('plein écran quitté'); }
   else if (m.cmd === 'ping') { pulse(0.6); A.play('ui_tick', 0.3); }
 }
 
@@ -326,7 +326,7 @@ function voteBadge() {
 function bye() {
   black.classList.add('on'); A.play('membrane', 0.2, 0.7);
   for (const c of remotes) c.open && c.send({ t: 'bye' });
-  setTimeout(() => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); try { window.close(); } catch {} }, 900);
+  setTimeout(() => { if (fsEl()) leaveFull(); try { window.close(); } catch {} }, 900);
 }
 
 // ---- state out: phones + local speaker window ----
@@ -347,13 +347,21 @@ bc && (bc.onmessage = (e) => { const m = e.data; if (m.type === 'hello') sync();
 
 function say(t) { toast.textContent = t; toast.classList.add('on'); clearTimeout(say.t); say.t = setTimeout(() => toast.classList.remove('on'), 1600); }
 
+// fullscreen works in every browser, but only from a gesture on THIS machine (click, key, clicker)
+const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+function goFull() {
+  const el = document.documentElement;
+  try { const r = (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el, { navigationUI: 'hide' }); r?.catch?.(() => {}); } catch {}
+}
+function leaveFull() { try { const r = (document.exitFullscreen || document.webkitExitFullscreen)?.call(document); r?.catch?.(() => {}); } catch {} }
+
 // ---------------- opening ----------------
 // first click/key on the screen turns on sound + fullscreen (browsers require a gesture); it does not start the show
 function arm() {
   if (armed) return;
   armed = true;
   A.unlock().catch(() => {});
-  document.documentElement.requestFullscreen?.().catch(() => {});
+  goFull();
   $('begin').classList.add('armed'); A.play('ui_open', 0.3); A.bell(4, 220, 0.1); // audible proof that sound is on
   setTimeout(sync, 400);
 }
@@ -361,7 +369,7 @@ function begin() {
   if (started) return;
   started = true; t0 = Date.now(); document.body.classList.add('started');
   A.unlock().catch(() => {});
-  if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
+  if (!fsEl()) goFull();
   const m = location.hash.match(/^#(\d+)(?:\.(\d+))?/);
   const i = m ? Math.min(SCENES.length - 1, +m[1] - 1) : 0;
   const s = m && m[2] ? Math.min(SCENES[i].steps - 1, +m[2] - 1) : 0;
@@ -386,9 +394,10 @@ function input(fn, remote = false) {
 
 let digits = '';
 // fullscreen needs a gesture on THIS machine: every key / click that isn't already fullscreen asks for it
-const isFull = () => onTV || !!(document.fullscreenElement || matchMedia('(display-mode: fullscreen)').matches || (innerWidth >= screen.width - 1 && innerHeight >= screen.height - 1));
-function ensureFull() { if (!isFull()) document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {}); }
+const isFull = () => onTV || !!(fsEl() || matchMedia('(display-mode: fullscreen)').matches || (innerWidth >= screen.width - 1 && innerHeight >= screen.height - 1));
+function ensureFull() { if (!isFull()) goFull(); }
 document.addEventListener('fullscreenchange', () => sync());
+document.addEventListener('webkitfullscreenchange', () => sync());
 addEventListener('resize', () => { clearTimeout(isFull.t); isFull.t = setTimeout(sync, 250); }); // F11 / kiosk changes the window, not the Fullscreen API
 addEventListener('keydown', (e) => {
   const k = e.key;
@@ -401,7 +410,7 @@ addEventListener('keydown', (e) => {
   else if (k === 'Escape') { e.preventDefault(); toggleMenu(); }
   else if (k === 'q' || k === 'Q') { toggleMenu(); }
   else if (k === 'F5') { e.preventDefault(); input(next); }
-  else if (k === 'f' || k === 'F') { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.(); }
+  else if (k === 'f' || k === 'F') { fsEl() ? leaveFull() : goFull(); }
   else if (k === 'm' || k === 'M') { A.setMuted(!A.isMuted()); say(A.isMuted() ? 'son coupé' : 'son actif'); sync(); }
   else if (k === 's' || k === 'S') { window.open('speaker.html', 'grandir-speaker', 'width=1200,height=760'); }
   else if (k === 'r' || k === 'R') { showPair(); $('pairmini').classList.toggle('on'); }
@@ -447,7 +456,7 @@ function toggleMenu(force) {
 }
 escEl.addEventListener('click', (e) => {
   const a = e.target.closest('button')?.dataset.a; if (!a) return;
-  if (a === 'full') isFull() ? document.exitFullscreen().catch(() => {}) : ensureFull();
+  if (a === 'full') isFull() ? leaveFull() : ensureFull();
   if (a === 'cast') castToTV();
   if (a === 'black') started ? toggleBlack() : null;
   if (a === 'end') bye();
@@ -493,6 +502,7 @@ if (isReceiver) {
   navigator.presentation?.receiver?.connectionList.then((l) => { l.connections.forEach(hook); l.onconnectionavailable = (ev) => hook(ev.connection); });
 }
 
+document.getElementById('fsgo')?.addEventListener('click', (e) => { e.stopPropagation(); arm(); });
 A.unlock().catch(() => {}); // stays suspended until the first gesture on this screen (arm)
 // ---------------- Chromecast receiver (receiver.html, launched from the phone) ----------------
 // The phone sends { room, token } over the cast channel: the TV hosts that room and trusts that phone.
