@@ -34,7 +34,7 @@
 <div class="wrap">
   <header class="top">
     <a class="logo" href="./"><i></i><b>UNFOLD WORLDS</b></a>
-    <nav><span class="mono uemail" id="me"></span><a class="btn small gold" href="admin.html" id="console" style="display:none">Console</a><a class="btn small" href="./">Galerie</a><button class="btn small" id="out">Déconnexion</button></nav>
+    <nav><span class="mono uemail" id="me"></span><a class="btn small gold" href="admin.html" id="console" style="display:none">Console</a><a class="btn small" href="./">Galerie</a><button class="btn small" id="acct">Mon compte</button><button class="btn small" id="out">Déconnexion</button></nav>
   </header>
   <h1 class="hello">Vos mondes</h1>
   <div class="orgs" id="orgs"></div>
@@ -60,6 +60,14 @@
   <div class="msg" id="m-proj"></div>
 </form></dialog>
 
+<dialog id="d-acct"><form method="dialog" id="f-acct">
+  <h3>Mon compte</h3>
+  <div class="mono" id="acct-mail" style="text-transform:none;letter-spacing:.04em;margin-bottom:16px"></div>
+  <div class="field"><label>Choisir un mot de passe (8 caractères minimum)</label><input class="input" name="pw" type="password" minlength="8" maxlength="72" required autocomplete="new-password"></div>
+  <div class="field"><label>Le retaper</label><input class="input" name="pw2" type="password" minlength="8" maxlength="72" required autocomplete="new-password"></div>
+  <div class="row"><button class="btn gold" value="ok">ENREGISTRER</button><button class="btn" value="cancel" formnovalidate>FERMER</button></div>
+  <div class="msg" id="m-acct">Ensuite, vous pourrez vous connecter avec votre e-mail et ce mot de passe.</div>
+</form></dialog>
 <div class="toast" id="toast"></div>
 <script src="lib/supabase.js"></script>
 <script type="module">
@@ -78,6 +86,16 @@ const me = session.user;
 $('me').textContent = me.email;
 // platform admins get the console link (the page itself re-checks, and so does the server)
 sb().from('platform_admins').select('user_id').eq('user_id', me.id).maybeSingle().then(({ data }) => { if (data) $('console').style.display = ''; });
+$('acct').onclick = () => { $('f-acct').reset(); $('acct-mail').textContent = me.email; $('m-acct').className = 'msg'; $('d-acct').showModal(); };
+$('f-acct').addEventListener('submit', async (e) => {
+  const f = e.target;
+  if (e.submitter?.value !== 'ok') return;
+  e.preventDefault();
+  if (f.pw.value !== f.pw2.value) { $('m-acct').textContent = 'Les deux mots de passe ne sont pas identiques.'; $('m-acct').className = 'msg bad'; return; }
+  const { error } = await sb().auth.updateUser({ password: f.pw.value });
+  if (error) { $('m-acct').textContent = /same|different/i.test(error.message) ? 'C’est déjà votre mot de passe.' : /weak|short/i.test(error.message) ? 'Mot de passe trop faible.' : error.message; $('m-acct').className = 'msg bad'; return; }
+  $('d-acct').close(); toast('mot de passe enregistré');
+});
 $('out').onclick = async () => { await sb().auth.signOut(); location.replace('./'); };
 
 let orgs = [], cur = null, tab = 'projects';
