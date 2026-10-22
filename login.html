@@ -42,7 +42,9 @@ import { setBg } from './bg.js';
 import { mountNav } from './nav.js';
 mountNav('login');
 setBg({ hue: [255, 122, 26], fx: 0.5, fy: 0.42, mode: 'orbit', pull: 0.6, speed: 0.5 });
-const back = new URL('app.html', location.href).href;
+// ?next= brings you back to the page that asked you to sign in (same site only)
+const next = new URLSearchParams(location.search).get('next');
+const back = new URL(next && next.startsWith('/') && !next.startsWith('//') ? next : 'app.html', location.href).href;
 const msg = document.getElementById('msg');
 const say = (t, cls = '') => { msg.textContent = t; msg.className = 'msg ' + cls; };
 
@@ -63,7 +65,7 @@ document.getElementById('forgot').onclick = async () => {
   const email = document.getElementById('email').value.trim();
   if (!email) { say('Entrez votre e-mail d’abord.', 'bad'); return; }
   const b = document.getElementById('forgot'); b.disabled = true; say('envoi…');
-  const { error } = await sb().auth.resetPasswordForEmail(email, { redirectTo: back });
+  const { error } = await sb().auth.resetPasswordForEmail(email, { redirectTo: new URL('app.html', location.href).href });
   b.disabled = false;
   if (error) say(/rate|security|seconds/i.test(error.message) ? 'Réessayez dans une minute.' : error.message, 'bad');
   else say('E-mail envoyé.', 'ok');
