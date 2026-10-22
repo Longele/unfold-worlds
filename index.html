@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Unfold Worlds — Every world has a story.</title>
-<meta name="description" content="Des présentations immersives : chaque projet ouvre la porte d’un nouvel univers.">
+<meta name="description" content="Des présentations immersives. Explorez librement les cours gratuits.">
 <meta name="theme-color" content="#07090d">
 <link rel="icon" href="icon-192.png">
 <link rel="manifest" href="site.webmanifest">
@@ -21,12 +21,12 @@
     <div class="rise">
       <h1>UNFOLD<span>WORLDS</span></h1>
       <p class="tag">Every world has a story.</p>
-      <p class="lead">Des présentations immersives, pilotées depuis un téléphone. Chaque projet ouvre la porte d’un nouvel univers.</p>
-      <div class="cta"><a class="btn gold" href="#galerie">Explorer les mondes</a><a class="btn" id="cta2" href="login.html">Créer le vôtre</a></div>
+      <p class="lead">Des présentations immersives, pilotées depuis un téléphone. Chaque cours ouvre la porte d’un nouvel univers.</p>
+      <div class="cta"><a class="btn gold" href="#cours">Explorer les cours gratuits</a></div>
     </div>
   </section>
-  <section class="sec" id="galerie">
-    <div class="sec-h"><h2>Mondes publics</h2><span class="mono" id="count"></span></div>
+  <section class="sec" id="cours">
+    <div class="sec-h"><h2>Cours gratuits</h2><span class="mono" id="count"></span></div>
     <div class="grid" id="grid"><div class="empty">Chargement…</div></div>
   </section>
 </div>
@@ -38,20 +38,18 @@ import { setBg } from './bg.js';
 setBg({ hue: [255, 122, 26], fx: 0.5, fy: 0.3, mode: 'drift', pull: 0.5, speed: 0.5 });
 
 const { data: { session } } = await sb().auth.getSession();
-if (session) {
-  document.getElementById('nav').innerHTML = '<a class="btn gold" href="app.html">Mes mondes</a>';
-  document.getElementById('cta2').textContent = 'Mes mondes'; document.getElementById('cta2').href = 'app.html';
-}
+if (session) document.getElementById('nav').innerHTML = '<a class="btn gold" href="app.html">Mes présentations</a>';
 
-const { data, error } = await sb().from('projects').select('title, subtitle, author, slug, updated_at, organizations!inner(slug, name)').eq('visibility', 'public').order('updated_at', { ascending: false }).limit(60);
+// only public presentations are visible without an account (Row Level Security)
+const { data, error } = await sb().from('projects').select('title, subtitle, author, slug, updated_at').eq('visibility', 'public').order('updated_at', { ascending: false }).limit(60);
 const grid = document.getElementById('grid');
-if (error) grid.innerHTML = '<div class="empty">La galerie n’a pas pu être chargée.</div>';
-else if (!data.length) grid.innerHTML = '<div class="empty">Aucun monde public pour l’instant.</div>';
+if (error) grid.innerHTML = '<div class="empty">Les cours n’ont pas pu être chargés.</div>';
+else if (!data.length) grid.innerHTML = '<div class="empty">Aucun cours public pour l’instant.</div>';
 else {
-  document.getElementById('count').textContent = `${data.length} monde${data.length > 1 ? 's' : ''}`;
-  grid.innerHTML = data.map((p) => `<a class="card" href="play.html?p=${encodeURIComponent(p.organizations.slug)}/${encodeURIComponent(p.slug)}">
-    <div class="mono org">${esc(p.organizations.name)}</div><h3>${esc(p.title)}</h3><p>${esc(p.subtitle || '')}</p>
-    <div class="foot"><span class="pill public">public</span>${p.author ? `<span class="mono" style="font-size:10px">${esc(p.author)}</span>` : ''}</div></a>`).join('');
+  document.getElementById('count').textContent = `${data.length} cours`;
+  grid.innerHTML = data.map((p) => `<a class="card" href="play.html?w=${encodeURIComponent(p.slug)}">
+    <div class="mono org">${esc(p.author || 'Unfold Worlds')}</div><h3>${esc(p.title)}</h3><p>${esc(p.subtitle || '')}</p>
+    <div class="foot"><span class="pill public">gratuit</span></div></a>`).join('');
 }
 </script>
 </body>

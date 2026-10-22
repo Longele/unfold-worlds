@@ -3,30 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mes mondes · Unfold Worlds</title>
+<title>Mes présentations · Unfold Worlds</title>
 <meta name="theme-color" content="#07090d">
 <link rel="icon" href="icon-192.png">
 <link rel="manifest" href="site.webmanifest">
 <link rel="stylesheet" href="portal.css">
 <style>
-  .orgs { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 10px 0 28px; }
-  .orgbtn { padding: 10px 16px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.03); cursor: pointer; font-size: 18px; }
-  .orgbtn.on { border-color: var(--acc2); background: rgba(255, 170, 70, .12); }
-  .orgbtn small { font-family: var(--mono); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); margin-left: 8px; }
-  .tabs { display: flex; gap: 6px; }
-  .tab { padding: 9px 14px; border-radius: 999px; border: 1px solid transparent; font-family: var(--mono); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); background: none; cursor: pointer; }
-  .tab.on { border-color: var(--line); color: var(--fg); background: rgba(255,255,255,.04); }
-  .card .foot select { padding: 7px 10px; border-radius: 999px; border: 1px solid var(--line); background: #0e1118; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; }
-  .members { display: grid; gap: 8px; }
-  .member { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 16px; flex-wrap: wrap; }
-  .member .who { font-size: 19px; word-break: break-all; }
-  .me { color: var(--acc2); font-family: var(--mono); font-size: 9.5px; letter-spacing: .16em; margin-left: 8px; }
   .hello { font-weight: 300; font-size: clamp(38px, 5vw, 60px); margin: 18px 0 4px; }
   .uemail { font-size: 10px; letter-spacing: .1em; text-transform: none; }
-  .newcard { align-items: center; justify-content: center; text-align: center; border-style: dashed; cursor: pointer; background: none; }
-  .newcard:hover { border-color: rgba(255, 195, 90, .45); }
-  .newcard .plus { font-size: 54px; font-weight: 300; color: var(--acc2); line-height: 1; }
-  #view { min-height: 40vh; }
+  #view { min-height: 40vh; margin-top: 26px; }
 </style>
 </head>
 <body>
@@ -34,51 +19,30 @@
 <div class="wrap">
   <header class="top">
     <a class="logo" href="./"><i></i><b>UNFOLD WORLDS</b></a>
-    <nav><span class="mono uemail" id="me"></span><a class="btn small gold" href="admin.html" id="console" style="display:none">Console</a><a class="btn small" href="./">Galerie</a><button class="btn small" id="acct">Mon compte</button><button class="btn small" id="out">Déconnexion</button></nav>
+    <nav><span class="mono uemail" id="me"></span><a class="btn small gold" href="admin.html" id="console" style="display:none">Console</a><a class="btn small" href="./">Cours gratuits</a><button class="btn small" id="acct">Mon compte</button><button class="btn small" id="out">Déconnexion</button></nav>
   </header>
-  <h1 class="hello">Vos mondes</h1>
-  <div class="orgs" id="orgs"></div>
-  <div class="sec-h" id="head" style="display:none"><h2 id="orgname"></h2><div class="tabs"><button class="tab on" data-t="projects">Projets</button><button class="tab" data-t="members">Membres</button></div></div>
+  <h1 class="hello" id="hello">Mes présentations</h1>
   <div id="view"></div>
 </div>
-
-<dialog id="d-org"><form method="dialog" id="f-org">
-  <h3>Nouvelle compagnie</h3>
-  <div class="field"><label>Nom</label><input class="input" name="name" required minlength="2" maxlength="80" placeholder="Église de la Grâce, Studio Aurora…"></div>
-  <div class="field"><label>Adresse (lettres, chiffres, tirets)</label><input class="input" name="slug" required pattern="[a-z0-9][a-z0-9-]{0,38}[a-z0-9]" placeholder="eglise-de-la-grace"></div>
-  <div class="row"><button class="btn gold" value="ok">CRÉER</button><button class="btn" value="cancel" formnovalidate>ANNULER</button></div>
-  <div class="msg" id="m-org"></div>
-</form></dialog>
-
-<dialog id="d-proj"><form method="dialog" id="f-proj">
-  <h3>Nouveau monde</h3>
-  <div class="field"><label>Titre</label><input class="input" name="title" required maxlength="140" placeholder="Grandir dans son leadership"></div>
-  <div class="field"><label>Sous-titre</label><input class="input" name="subtitle" maxlength="160" placeholder="Une phrase qui donne envie"></div>
-  <div class="field"><label>Auteur / orateur</label><input class="input" name="author" maxlength="120"></div>
-  <div class="field"><label>Visibilité</label><select class="input" name="visibility"><option value="private">Privé — membres de la compagnie</option><option value="unlisted">Par lien — ceux qui ont le lien</option><option value="public">Public — visible dans la galerie</option></select></div>
-  <div class="row"><button class="btn gold" value="ok">CRÉER</button><button class="btn" value="cancel" formnovalidate>ANNULER</button></div>
-  <div class="msg" id="m-proj"></div>
-</form></dialog>
 
 <dialog id="d-acct"><form method="dialog" id="f-acct">
   <h3>Mon compte</h3>
   <div class="mono" id="acct-mail" style="text-transform:none;letter-spacing:.04em;margin-bottom:16px"></div>
-  <div class="field"><label>Choisir un mot de passe (8 caractères minimum)</label><input class="input" name="pw" type="password" minlength="8" maxlength="72" required autocomplete="new-password"></div>
-  <div class="field"><label>Le retaper</label><input class="input" name="pw2" type="password" minlength="8" maxlength="72" required autocomplete="new-password"></div>
+  <div class="field"><label>Nouveau mot de passe (6 caractères minimum)</label><input class="input" name="pw" type="password" minlength="6" maxlength="72" required autocomplete="new-password"></div>
+  <div class="field"><label>Le retaper</label><input class="input" name="pw2" type="password" minlength="6" maxlength="72" required autocomplete="new-password"></div>
   <div class="row"><button class="btn gold" value="ok">ENREGISTRER</button><button class="btn" value="cancel" id="acct-close" formnovalidate>FERMER</button></div>
-  <div class="msg" id="m-acct">Ensuite, vous pourrez vous connecter avec votre e-mail et ce mot de passe.</div>
+  <div class="msg" id="m-acct"></div>
 </form></dialog>
 <div class="toast" id="toast"></div>
 <script src="lib/supabase.js"></script>
 <script type="module">
-import { sb, esc, slugify, site } from './config.js';
+import { sb, esc, site } from './config.js';
 import { setBg } from './bg.js';
 setBg({ hue: [255, 122, 26], fx: 0.75, fy: 0.15, mode: 'drift', pull: 0.3, speed: 0.4, amt: 0.6 });
 
 const $ = (id) => document.getElementById(id);
 const toast = (t) => { $('toast').textContent = t; $('toast').classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => $('toast').classList.remove('on'), 2200); };
-const ROLE = { owner: 'Propriétaire', editor: 'Éditeur', presenter: 'Présentateur', viewer: 'Lecteur' };
-const VIS = { private: 'privé', unlisted: 'par lien', public: 'public' };
+const VIS = { private: 'privée', unlisted: 'par lien', public: 'publique' };
 
 // a password-reset e-mail lands here with #…type=recovery (read it before the client swallows the hash)
 const recovering = /type=recovery/.test(location.hash);
@@ -86,156 +50,46 @@ const { data: { session } } = await sb().auth.getSession();
 if (!session) { location.replace('login.html'); await new Promise(() => {}); } // stop here while the browser leaves
 const me = session.user;
 $('me').textContent = me.email;
-// platform admins get the console link (the page itself re-checks, and so does the server)
+if (me.user_metadata?.name) $('hello').textContent = `Bonjour ${me.user_metadata.name}`;
+$('out').onclick = async () => { await sb().auth.signOut(); location.replace('./'); };
 sb().from('platform_admins').select('user_id').eq('user_id', me.id).maybeSingle().then(({ data }) => { if (data) $('console').style.display = ''; });
-// every account must have a password: until it has one, this window cannot be dismissed
+
+// ---- password: a temporary one (set by the admin) must be replaced at the first sign-in
 let mustSetPw = !me.user_metadata?.has_password || recovering;
 function openAcct(required) {
   $('f-acct').reset(); $('acct-mail').textContent = me.email; $('m-acct').className = 'msg';
   $('acct-close').style.display = required ? 'none' : '';
-  $('m-acct').textContent = required ? 'Pour sécuriser votre compte, choisissez votre mot de passe. Vous vous connecterez ensuite avec votre e-mail et ce mot de passe.' : 'Ensuite, vous pourrez vous connecter avec votre e-mail et ce mot de passe.';
+  $('m-acct').textContent = required ? 'Bienvenue ! Choisissez votre propre mot de passe pour continuer.' : 'Vous vous connecterez ensuite avec ce mot de passe.';
   $('d-acct').showModal();
 }
-$('d-acct').addEventListener('cancel', (e) => { if (mustSetPw) e.preventDefault(); }); // Échap ne ferme pas tant qu'il manque le mot de passe
+$('d-acct').addEventListener('cancel', (e) => { if (mustSetPw) e.preventDefault(); });
 $('acct').onclick = () => openAcct(false);
-if (mustSetPw) openAcct(true);
 $('f-acct').addEventListener('submit', async (e) => {
-  const f = e.target;
   if (e.submitter?.value !== 'ok') return;
   e.preventDefault();
+  const f = e.target;
   if (f.pw.value !== f.pw2.value) { $('m-acct').textContent = 'Les deux mots de passe ne sont pas identiques.'; $('m-acct').className = 'msg bad'; return; }
   const { error } = await sb().auth.updateUser({ password: f.pw.value, data: { has_password: true } });
-  if (error) { $('m-acct').textContent = /same|different/i.test(error.message) ? 'C’est déjà votre mot de passe.' : /weak|short/i.test(error.message) ? 'Mot de passe trop faible.' : error.message; $('m-acct').className = 'msg bad'; return; }
-  mustSetPw = false; history.replaceState(null, '', location.pathname);
-  $('d-acct').close(); toast('mot de passe enregistré');
+  if (error) { $('m-acct').textContent = /same|different/i.test(error.message) ? 'Choisissez un mot de passe différent du mot de passe temporaire.' : /weak|short/i.test(error.message) ? 'Mot de passe trop faible.' : error.message; $('m-acct').className = 'msg bad'; return; }
+  mustSetPw = false; $('d-acct').close(); toast('mot de passe enregistré');
 });
-$('out').onclick = async () => { await sb().auth.signOut(); location.replace('./'); };
+if (mustSetPw) openAcct(true);
 
-let orgs = [], cur = null, tab = 'projects';
-const can = (roles) => cur && roles.includes(cur.role);
-
-async function loadOrgs(selectId) {
-  const { data, error } = await sb().from('memberships').select('role, organizations(id, name, slug)').eq('user_id', me.id).order('created_at');
-  if (error) { $('view').innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
-  orgs = data.filter((m) => m.organizations).map((m) => ({ ...m.organizations, role: m.role }));
-  const keep = selectId || cur?.id || localStorage.getItem('uw-org');
-  cur = orgs.find((o) => o.id === keep) || orgs[0] || null;
-  renderOrgs(); render();
+// ---- my presentations (only the ones given to me; the admin creates and assigns them)
+const { data, error } = await sb().from('projects').select('slug, title, subtitle, author, visibility, share_token, updated_at').eq('owner_id', me.id).order('updated_at', { ascending: false });
+if (error) $('view').innerHTML = `<div class="empty">${esc(error.message)}</div>`;
+else if (!data.length) $('view').innerHTML = '<div class="empty">Aucune présentation ne vous est encore attribuée. L’administrateur vous en donnera l’accès.</div>';
+else {
+  $('view').innerHTML = '<div class="grid">' + data.map((p, i) => `<div class="card">
+      <div class="mono org">${esc(p.author || '')}</div><h3>${esc(p.title)}</h3><p>${esc(p.subtitle || '')}</p>
+      <div class="foot"><a class="btn small gold" target="_blank" rel="noopener" href="play.html?w=${encodeURIComponent(p.slug)}">Présenter</a>
+        ${p.visibility !== 'private' ? `<button class="btn small" data-i="${i}">Lien</button>` : ''}<span class="pill ${p.visibility}">${VIS[p.visibility]}</span></div></div>`).join('') + '</div>';
+  $('view').querySelectorAll('[data-i]').forEach((b) => (b.onclick = async () => {
+    const p = data[+b.dataset.i];
+    const url = p.visibility === 'public' ? `${site()}play.html?w=${p.slug}` : `${site()}play.html?t=${p.share_token}`;
+    try { await navigator.clipboard.writeText(url); toast('lien copié'); } catch { prompt('Lien :', url); }
+  }));
 }
-function renderOrgs() {
-  $('orgs').innerHTML = orgs.map((o) => `<button class="orgbtn ${cur && o.id === cur.id ? 'on' : ''}" data-id="${o.id}">${esc(o.name)}<small>${ROLE[o.role]}</small></button>`).join('')
-    + '<button class="btn small" id="neworg">+ Nouvelle compagnie</button>';
-  $('orgs').querySelectorAll('.orgbtn').forEach((b) => (b.onclick = () => { cur = orgs.find((o) => o.id === b.dataset.id); localStorage.setItem('uw-org', cur.id); renderOrgs(); render(); }));
-  $('neworg').onclick = () => { $('f-org').reset(); $('m-org').textContent = ''; $('d-org').showModal(); };
-}
-document.querySelectorAll('.tab').forEach((t) => (t.onclick = () => { tab = t.dataset.t; document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === t)); render(); }));
-
-async function render() {
-  if (!cur) {
-    $('head').style.display = 'none';
-    $('view').innerHTML = '<div class="panel" style="max-width:560px"><div class="mono">Pour commencer</div><h3 style="font-weight:300;font-size:32px;margin:10px 0">Créez votre compagnie</h3><p style="color:var(--dim);font-style:italic;font-size:19px;margin:0 0 20px">Une compagnie regroupe vos mondes et les personnes qui y travaillent. Personne d’autre ne les voit, sauf ceux que vous rendez publics.</p><button class="btn gold" id="first">+ NOUVELLE COMPAGNIE</button></div>';
-    $('first').onclick = () => $('neworg').click();
-    return;
-  }
-  $('head').style.display = ''; $('orgname').textContent = cur.name;
-  tab === 'projects' ? renderProjects() : renderMembers();
-}
-
-async function renderProjects() {
-  const { data, error } = await sb().from('projects').select('id, slug, title, subtitle, author, visibility, share_token, updated_at').eq('org_id', cur.id).order('updated_at', { ascending: false });
-  if (error) { $('view').innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
-  const edit = can(['owner', 'editor']), owner = can(['owner']);
-  $('view').innerHTML = '<div class="grid">' + data.map((p) => `<div class="card" data-id="${p.id}">
-      <div class="mono org">${esc(cur.name)}</div><h3>${esc(p.title)}</h3><p>${esc(p.subtitle || '')}</p>
-      <div class="foot">
-        <a class="btn small gold" target="_blank" rel="noopener" href="play.html?p=${encodeURIComponent(cur.slug)}/${encodeURIComponent(p.slug)}">Présenter</a>
-        ${p.visibility !== 'private' ? `<button class="btn small" data-a="link">Lien</button>` : ''}
-        ${edit ? `<select data-a="vis">${Object.entries(VIS).map(([v, l]) => `<option value="${v}" ${v === p.visibility ? 'selected' : ''}>${l}</option>`).join('')}</select>` : `<span class="pill ${p.visibility}">${VIS[p.visibility]}</span>`}
-        ${owner ? `<button class="btn small danger" data-a="del">Supprimer</button>` : ''}
-      </div></div>`).join('')
-    + (edit ? '<button class="card newcard" id="newproj"><div><div class="plus">+</div><div class="mono" style="margin-top:12px">Nouveau monde</div></div></button>' : '') + '</div>'
-    + (!data.length && !edit ? '<div class="empty">Aucun monde dans cette compagnie.</div>' : '');
-  $('newproj')?.addEventListener('click', () => { $('f-proj').reset(); $('m-proj').textContent = ''; $('d-proj').showModal(); });
-  $('view').querySelectorAll('.card[data-id]').forEach((card) => {
-    const p = data.find((x) => x.id === card.dataset.id);
-    card.querySelector('[data-a="link"]')?.addEventListener('click', async () => {
-      const url = p.visibility === 'public' ? `${site()}play.html?p=${cur.slug}/${p.slug}` : `${site()}play.html?t=${p.share_token}`;
-      try { await navigator.clipboard.writeText(url); toast('lien copié'); } catch { prompt('Lien du monde :', url); }
-    });
-    card.querySelector('[data-a="vis"]')?.addEventListener('change', async (e) => {
-      const { error } = await sb().from('projects').update({ visibility: e.target.value }).eq('id', p.id);
-      toast(error ? error.message : `maintenant ${VIS[e.target.value]}`); renderProjects();
-    });
-    card.querySelector('[data-a="del"]')?.addEventListener('click', async () => {
-      if (!confirm(`Supprimer définitivement « ${p.title} » ?`)) return;
-      const { error } = await sb().from('projects').delete().eq('id', p.id);
-      toast(error ? error.message : 'monde supprimé'); renderProjects();
-    });
-  });
-}
-
-async function renderMembers() {
-  const { data, error } = await sb().rpc('org_members', { p_org: cur.id });
-  if (error) { $('view').innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
-  const owner = can(['owner']);
-  $('view').innerHTML = `<div class="members">${data.map((m) => `<div class="member" data-u="${m.user_id}"><div class="who">${esc(m.email)}${m.user_id === me.id ? '<span class="me">VOUS</span>' : ''}</div>
-      <div class="row">${owner && m.user_id !== me.id ? `<select class="input" style="width:auto;padding:9px 12px;font-size:15px" data-a="role">${Object.entries(ROLE).map(([v, l]) => `<option value="${v}" ${v === m.role ? 'selected' : ''}>${l}</option>`).join('')}</select><button class="btn small danger" data-a="rm">Retirer</button>` : `<span class="pill">${ROLE[m.role]}</span>`}</div></div>`).join('')}</div>`
-    + (owner ? `<form class="panel" id="f-mem" style="margin-top:22px"><div class="mono">Ajouter une personne</div><div class="row" style="margin-top:14px"><input class="input" style="flex:1;min-width:220px" name="email" type="email" required placeholder="adresse e-mail"><select class="input" style="width:auto" name="role">${Object.entries(ROLE).filter(([v]) => v !== 'owner').map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}<option value="owner">Propriétaire</option></select><button class="btn gold">AJOUTER</button></div><div class="msg" id="m-mem">La personne doit s’être connectée une fois à Unfold Worlds.</div></form>` : '');
-  $('view').querySelectorAll('.member').forEach((row) => {
-    row.querySelector('[data-a="role"]')?.addEventListener('change', async (e) => {
-      const { error } = await sb().from('memberships').update({ role: e.target.value }).eq('org_id', cur.id).eq('user_id', row.dataset.u);
-      toast(error ? error.message : 'rôle mis à jour');
-    });
-    row.querySelector('[data-a="rm"]')?.addEventListener('click', async () => {
-      if (!confirm('Retirer cette personne de la compagnie ?')) return;
-      const { error } = await sb().from('memberships').delete().eq('org_id', cur.id).eq('user_id', row.dataset.u);
-      toast(error ? error.message : 'personne retirée'); renderMembers();
-    });
-  });
-  $('f-mem')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const f = new FormData(e.target);
-    const { data: r, error } = await sb().rpc('add_member', { p_org: cur.id, p_email: f.get('email'), p_role: f.get('role') });
-    const m = $('m-mem');
-    if (error) { m.textContent = error.message; m.className = 'msg bad'; return; }
-    if (r === 'no_account') { m.textContent = 'Aucun compte avec cet e-mail : demandez-lui de se connecter une fois sur Unfold Worlds, puis réessayez.'; m.className = 'msg bad'; return; }
-    toast('personne ajoutée'); renderMembers();
-  });
-}
-
-// ---- create a company
-const fo = $('f-org');
-fo.name.addEventListener('input', () => { if (!fo.slug.dataset.touched) fo.slug.value = slugify(fo.name.value); });
-fo.slug.addEventListener('input', () => (fo.slug.dataset.touched = 1));
-$('d-org').addEventListener('close', async () => {
-  if ($('d-org').returnValue !== 'ok') return;
-  const { data, error } = await sb().from('organizations').insert({ name: fo.name.value.trim(), slug: fo.slug.value.trim(), created_by: me.id }).select('id').single();
-  if (error) { toast(/duplicate|unique/.test(error.message) ? 'cette adresse est déjà prise' : error.message); return; }
-  toast('compagnie créée'); loadOrgs(data.id);
-});
-
-// ---- create a world: a ready-to-present opening + closing, edited later
-function starter({ title, subtitle, author }) {
-  const t = esc(title), s = esc(subtitle || ''), a = esc(author || '');
-  return {
-    brand: title.toUpperCase().slice(0, 24), parts: { 1: title }, budgets: {},
-    scenes: [
-      { id: 'title', part: 1, title, min: 1, steps: 1, notes: 'Ouverture.', bg: { mode: 'drift', fx: 0.5, fy: 0.5, pull: 0, hue: [255, 122, 26], speed: 0.6 }, snd: 'awaken',
-        html: `<div class="t-title words" data-s="0" style="font-size:110px;top:330px">${t}</div><div class="rule t-rule" data-s="0" style="left:660px;width:600px;top:640px"></div><div class="t-sub" data-s="0">${s}</div><div class="mono t-auth" data-s="0">${a}</div>` },
-      { id: 'fin', part: 1, title: 'Merci', min: 0, steps: 1, notes: 'Fin.', bg: { mode: 'drift', fx: 0.5, fy: 0.5, pull: 0, hue: [255, 122, 26], speed: 0.5 }, snd: 'awaken',
-        html: `<div class="end-t words" data-s="0">MERCI</div><div class="mono end-s" data-s="0">${t}${a ? ' · ' + a : ''}</div>` },
-    ],
-  };
-}
-$('d-proj').addEventListener('close', async () => {
-  if ($('d-proj').returnValue !== 'ok') return;
-  const f = $('f-proj'), title = f.title.value.trim();
-  const row = { org_id: cur.id, title, subtitle: f.subtitle.value.trim() || null, author: f.author.value.trim() || null, visibility: f.visibility.value, slug: slugify(title) + '-' + Math.random().toString(36).slice(2, 6), content: starter({ title, subtitle: f.subtitle.value.trim(), author: f.author.value.trim() }) };
-  const { error } = await sb().from('projects').insert(row);
-  toast(error ? error.message : 'monde créé'); renderProjects();
-});
-
-loadOrgs();
 </script>
 </body>
 </html>

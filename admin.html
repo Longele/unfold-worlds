@@ -10,27 +10,26 @@
 <link rel="stylesheet" href="portal.css">
 <style>
   .hello { font-weight: 300; font-size: clamp(38px, 5vw, 60px); margin: 18px 0 4px; }
-  .badge { font-family: var(--mono); font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase; padding: 5px 9px; border-radius: 999px; border: 1px solid rgba(255,195,90,.5); color: var(--acc2); }
+  .badge { font-family: var(--mono); font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase; padding: 5px 9px; border-radius: 999px; border: 1px solid rgba(255,195,90,.5); color: var(--acc2); white-space: nowrap; }
+  .badge.warn { border-color: rgba(255,143,143,.5); color: var(--bad); }
   .tabs { display: flex; gap: 6px; margin: 18px 0 22px; flex-wrap: wrap; }
   .tab { padding: 10px 16px; border-radius: 999px; border: 1px solid transparent; font-family: var(--mono); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); background: none; cursor: pointer; }
   .tab.on { border-color: var(--line); color: var(--fg); background: rgba(255,255,255,.04); }
   .list { display: grid; gap: 10px; }
   .item { border: 1px solid var(--line); border-radius: 18px; padding: 16px 18px; background: rgba(10,12,18,.6); backdrop-filter: blur(10px); }
   .item .h { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .item .t { font-size: 22px; word-break: break-all; }
+  .item .t { font-size: 22px; word-break: break-word; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .item .meta { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; color: var(--dim); margin-top: 6px; line-height: 1.7; }
   .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
   .chip { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--fg); }
-  .chip b { color: var(--acc2); font-weight: 400; margin-left: 6px; }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } }
-  .mrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
-  .mrow:first-child { border-top: 0; }
-  .sel { padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line); background: #0e1118; font-size: 15px; }
-  details summary { cursor: pointer; list-style: none; }
-  details summary::-webkit-details-marker { display: none; }
-  .members { margin-top: 12px; padding-top: 4px; }
-  .pwshow { font-family: var(--mono); font-size: 16px; letter-spacing: .06em; padding: 12px 14px; border-radius: 12px; background: rgba(255,195,90,.08); border: 1px dashed rgba(255,195,90,.45); word-break: break-all; margin-top: 10px; }
+  .sel { padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line); background: #0e1118; font-size: 15px; max-width: 100%; }
+  .checks { display: grid; gap: 6px; max-height: 180px; overflow: auto; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; }
+  .checks label, .tick { display: flex; gap: 10px; align-items: center; font-size: 17px; text-transform: none; letter-spacing: 0; color: var(--fg); font-family: var(--serif); cursor: pointer; }
+  .tick { font-size: 15px; margin: 4px 0 14px; }
+  input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--acc); }
+  .pwshow { font-family: var(--mono); font-size: 18px; letter-spacing: .06em; padding: 12px 14px; border-radius: 12px; background: rgba(255,195,90,.08); border: 1px dashed rgba(255,195,90,.45); word-break: break-all; margin-top: 10px; }
   .search { max-width: 360px; }
 </style>
 </head>
@@ -39,45 +38,46 @@
 <div class="wrap">
   <header class="top">
     <a class="logo" href="./"><i></i><b>UNFOLD WORLDS</b></a>
-    <nav><span class="badge">super-admin</span><a class="btn small" href="app.html">Mes mondes</a><button class="btn small" id="out">Déconnexion</button></nav>
+    <nav><span class="badge">super-admin</span><a class="btn small" href="app.html">Mes présentations</a><button class="btn small" id="out">Déconnexion</button></nav>
   </header>
   <h1 class="hello">Console</h1>
   <div class="mono" id="stats"></div>
-  <div class="tabs"><button class="tab on" data-t="users">Utilisateurs</button><button class="tab" data-t="orgs">Compagnies</button></div>
+  <div class="tabs"><button class="tab on" data-t="people">Personnes</button><button class="tab" data-t="pres">Présentations</button></div>
   <div id="view"></div>
 </div>
 
 <dialog id="d-pw"><form method="dialog" id="f-pw">
-  <h3>Nouveau mot de passe</h3>
+  <h3>Réinitialiser le mot de passe</h3>
   <div class="mono" id="pw-who" style="text-transform:none;letter-spacing:.04em;margin-bottom:14px"></div>
-  <div class="field"><label>Mot de passe (8 caractères minimum)</label><div class="row"><input class="input" name="pw" minlength="8" maxlength="72" required style="flex:1" autocomplete="new-password"><button type="button" class="btn small" data-gen>Générer</button></div></div>
+  <div class="field"><label>Nouveau mot de passe (6 caractères minimum)</label><div class="row"><input class="input" name="pw" minlength="6" maxlength="72" required style="flex:1" autocomplete="off"><button type="button" class="btn small" data-gen>Générer</button></div></div>
+  <label class="tick"><input type="checkbox" name="temp" checked> Temporaire : la personne choisira le sien à la prochaine connexion</label>
   <div class="row"><button class="btn gold" value="ok">ENREGISTRER</button><button class="btn" value="cancel" formnovalidate>ANNULER</button></div>
 </form></dialog>
 
-<dialog id="d-done"><h3 id="done-t">Compte créé</h3><div class="mono" style="text-transform:none;letter-spacing:.04em;line-height:1.7" id="done-m"></div><div class="pwshow" id="done-pw"></div><div class="row" style="margin-top:18px"><button class="btn small" id="done-copy">Copier</button><button class="btn gold small" id="done-ok">OK</button></div></dialog>
+<dialog id="d-done"><h3 id="done-t"></h3><div class="mono" style="text-transform:none;letter-spacing:.04em;line-height:1.7" id="done-m"></div><div class="pwshow" id="done-pw"></div><div class="row" style="margin-top:18px"><button class="btn small" id="done-copy">Copier</button><button class="btn gold small" id="done-ok">OK</button></div></dialog>
 
 <div class="toast" id="toast"></div>
 <script src="lib/supabase.js"></script>
 <script type="module">
-import { sb, esc, slugify, SUPABASE_URL, SUPABASE_KEY } from './config.js';
+import { sb, esc, slugify, site, SUPABASE_URL, SUPABASE_KEY } from './config.js';
 import { setBg } from './bg.js';
 setBg({ hue: [255, 150, 60], fx: 0.8, fy: 0.12, mode: 'drift', pull: 0.25, speed: 0.4, amt: 0.5 });
 
 const $ = (id) => document.getElementById(id);
 const toast = (t) => { $('toast').textContent = t; $('toast').classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => $('toast').classList.remove('on'), 2600); };
-const ROLE = { owner: 'Propriétaire', editor: 'Éditeur', presenter: 'Présentateur', viewer: 'Lecteur' };
+const VIS = { private: 'privée', unlisted: 'par lien', public: 'publique' };
 const date = (d) => (d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
-const genPw = () => { const a = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'; return Array.from(crypto.getRandomValues(new Uint8Array(14)), (b) => a[b % a.length]).join(''); };
+const genPw = () => { const a = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'; return Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => a[b % a.length]).join(''); };
 
-// ---- only platform admins get past this point
+// ---- only platform admins get past this point (the database and the server check again)
 const { data: { session } } = await sb().auth.getSession();
 if (!session) { location.replace('login.html'); await new Promise(() => {}); }
 const me = session.user;
 const { data: isSuper } = await sb().from('platform_admins').select('user_id').eq('user_id', me.id).maybeSingle();
 if (!isSuper) { location.replace('app.html'); await new Promise(() => {}); }
 $('out').onclick = async () => { await sb().auth.signOut(); location.replace('./'); };
+const { data: home } = await sb().from('organizations').select('id').eq('slug', 'unfold').maybeSingle();
 
-// server-side actions (service role lives in the edge function, never here)
 async function call(action, payload) {
   const { data: { session: s } } = await sb().auth.getSession();
   const r = await fetch(`${SUPABASE_URL}/functions/v1/admin-users`, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: `Bearer ${s.access_token}` }, body: JSON.stringify({ action, ...payload }) });
@@ -86,143 +86,128 @@ async function call(action, payload) {
   return j;
 }
 
-let tab = 'users', D = { orgs: [], users: [], members: [] }, q = '';
+let tab = 'people', D = { users: [], pres: [] }, q = '';
 document.querySelectorAll('.tab').forEach((t) => (t.onclick = () => { tab = t.dataset.t; document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === t)); render(); }));
-
 async function load() {
   const { data, error } = await sb().rpc('admin_overview');
   if (error) { $('view').innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
-  D = { orgs: data.filter((r) => r.kind === 'org'), users: data.filter((r) => r.kind === 'user'), members: data.filter((r) => r.kind === 'member') };
-  D.orgs.sort((a, b) => a.name.localeCompare(b.name)); D.users.sort((a, b) => a.email.localeCompare(b.email));
-  $('stats').textContent = `${D.users.length} utilisateur${D.users.length > 1 ? 's' : ''} · ${D.orgs.length} compagnie${D.orgs.length > 1 ? 's' : ''} · ${D.orgs.reduce((a, o) => a + o.projects, 0)} monde(s)`;
+  D = { users: data.filter((r) => r.kind === 'user').sort((a, b) => a.email.localeCompare(b.email)), pres: data.filter((r) => r.kind === 'project').sort((a, b) => a.title.localeCompare(b.title)) };
+  $('stats').textContent = `${D.users.length} personne${D.users.length > 1 ? 's' : ''} · ${D.pres.length} présentation${D.pres.length > 1 ? 's' : ''} · ${D.pres.filter((p) => p.visibility === 'public').length} publique(s)`;
   render();
 }
-const orgName = (id) => D.orgs.find((o) => o.id === id)?.name || '?';
-const userEmail = (id) => D.users.find((u) => u.id === id)?.email || '?';
-const orgOptions = (sel = '') => '<option value="">— aucune —</option>' + D.orgs.map((o) => `<option value="${o.id}" ${o.id === sel ? 'selected' : ''}>${esc(o.name)}</option>`).join('');
-const roleOptions = (sel = 'viewer') => Object.entries(ROLE).map(([v, l]) => `<option value="${v}" ${v === sel ? 'selected' : ''}>${l}</option>`).join('');
-const render = () => (tab === 'users' ? renderUsers() : renderOrgs());
+const render = () => (tab === 'people' ? renderPeople() : renderPres());
+const emailOf = (id) => D.users.find((u) => u.id === id)?.email;
+const userOptions = (sel) => '<option value="">— personne —</option>' + D.users.map((u) => `<option value="${u.id}" ${u.id === sel ? 'selected' : ''}>${esc(u.email)}</option>`).join('');
+function wireGen(root) { root.querySelectorAll('[data-gen]').forEach((g) => (g.onclick = () => { g.parentElement.querySelector('input').value = genPw(); })); }
+function showDone(t, m, pw) { $('done-t').textContent = t; $('done-m').innerHTML = m; $('done-pw').textContent = pw; $('d-done').showModal(); }
+$('done-ok').onclick = () => { $('done-pw').textContent = ''; $('d-done').close(); };
+$('done-copy').onclick = async () => { try { await navigator.clipboard.writeText($('done-pw').textContent); toast('copié'); } catch { toast('copie impossible'); } };
+async function assign(ids, owner) { for (const id of ids) { const { error } = await sb().from('projects').update({ owner_id: owner }).eq('id', id); if (error) throw error; } }
 
-// ================= users =================
-function renderUsers() {
+// ================= people =================
+function renderPeople() {
   const list = D.users.filter((u) => !q || u.email.includes(q.toLowerCase()));
   $('view').innerHTML = `
-    <form class="panel" id="f-new" style="margin-bottom:22px">
-      <div class="mono">Créer un compte</div>
+    <form class="panel" id="f-new" style="margin-bottom:22px" autocomplete="off">
+      <div class="mono">Ajouter une personne</div>
       <div class="grid2" style="margin-top:14px">
-        <div class="field"><label>E-mail</label><input class="input" name="email" type="email" required autocomplete="off"></div>
-        <div class="field"><label>Mot de passe</label><div class="row"><input class="input" name="pw" minlength="8" maxlength="72" required style="flex:1" autocomplete="new-password"><button type="button" class="btn small" data-gen>Générer</button></div></div>
-        <div class="field"><label>Compagnie (facultatif)</label><select class="input" name="org">${orgOptions()}</select></div>
-        <div class="field"><label>Rôle dans la compagnie</label><select class="input" name="role">${roleOptions('editor')}</select></div>
+        <div class="field"><label>Nom (affiché)</label><input class="input" name="name" maxlength="80" placeholder="Prénom Nom"></div>
+        <div class="field"><label>E-mail</label><input class="input" name="email" type="email" required></div>
+        <div class="field"><label>Mot de passe (6 caractères minimum)</label><div class="row"><input class="input" name="pw" minlength="6" maxlength="72" required style="flex:1"><button type="button" class="btn small" data-gen>Générer</button></div></div>
+        <div class="field"><label>Ses présentations</label><div class="checks">${D.pres.map((p) => `<label><input type="checkbox" name="p" value="${p.id}"> ${esc(p.title)}${p.owner_id ? ` <span class="mono" style="font-size:9px">(à ${esc(emailOf(p.owner_id) || '?')})</span>` : ''}</label>`).join('') || '<span class="mono" style="font-size:10px">aucune présentation</span>'}</div></div>
       </div>
-      <button class="btn gold">CRÉER LE COMPTE</button><div class="msg" id="m-new">Le compte est actif tout de suite : la personne se connecte avec son e-mail et ce mot de passe, ou par lien e-mail.</div>
+      <label class="tick"><input type="checkbox" name="temp" checked> Mot de passe temporaire : la personne choisira le sien à sa première connexion</label>
+      <button class="btn gold">AJOUTER</button><div class="msg" id="m-new">Personne ne peut s’inscrire seul : seuls les comptes ajoutés ici existent.</div>
     </form>
     <div class="row" style="margin-bottom:12px"><input class="input search" id="q" placeholder="chercher un e-mail" value="${esc(q)}"></div>
     <div class="list">${list.map((u) => {
-      const ms = D.members.filter((m) => m.id === u.id);
-      return `<div class="item" data-u="${u.id}"><div class="h"><div class="t">${esc(u.email)} ${u.role === 'super' ? '<span class="badge">super-admin</span>' : ''} ${u.id === me.id ? '<span class="badge" style="color:var(--fg)">vous</span>' : ''}</div>
-        <div class="row"><button class="btn small" data-a="pw">Mot de passe</button><button class="btn small" data-a="super">${u.role === 'super' ? 'Retirer super-admin' : 'Rendre super-admin'}</button>${u.id !== me.id ? '<button class="btn small danger" data-a="del">Supprimer</button>' : ''}</div></div>
-        <div class="meta">créé le ${date(u.created_at)} · dernière connexion ${date(u.last_sign_in_at)}</div>
-        <div class="chips">${ms.length ? ms.map((m) => `<span class="chip">${esc(orgName(m.org_id))}<b>${ROLE[m.role]}</b></span>`).join('') : '<span class="mono" style="font-size:10px">aucune compagnie</span>'}</div></div>`;
-    }).join('') || '<div class="empty">Aucun utilisateur.</div>'}</div>`;
-  $('q').oninput = (e) => { q = e.target.value; const pos = e.target.selectionStart; renderUsers(); $('q').focus(); $('q').setSelectionRange(pos, pos); };
+      const mine = D.pres.filter((p) => p.owner_id === u.id);
+      return `<div class="item" data-u="${u.id}"><div class="h"><div class="t">${esc(u.email)}${u.role === 'super' ? '<span class="badge">super-admin</span>' : ''}${u.id === me.id ? '<span class="badge" style="color:var(--fg)">vous</span>' : ''}${!u.has_password ? '<span class="badge warn">mot de passe à choisir</span>' : ''}</div>
+        <div class="row"><button class="btn small" data-a="pw">Réinitialiser le mot de passe</button><button class="btn small" data-a="super">${u.role === 'super' ? 'Retirer super-admin' : 'Rendre super-admin'}</button>${u.id !== me.id ? '<button class="btn small danger" data-a="del">Supprimer</button>' : ''}</div></div>
+        <div class="meta">ajouté le ${date(u.created_at)} · dernière connexion ${date(u.last_sign_in_at)}</div>
+        <div class="chips">${mine.length ? mine.map((p) => `<span class="chip">${esc(p.title)} · ${VIS[p.visibility]}</span>`).join('') : '<span class="mono" style="font-size:10px">aucune présentation</span>'}</div></div>`;
+    }).join('') || '<div class="empty">Personne.</div>'}</div>`;
+  $('q').oninput = (e) => { q = e.target.value; const pos = e.target.selectionStart; renderPeople(); $('q').focus(); $('q').setSelectionRange(pos, pos); };
   wireGen($('f-new'));
   $('f-new').onsubmit = async (e) => {
     e.preventDefault();
     const f = e.target, b = f.querySelector('.btn.gold'); b.disabled = true;
+    const ids = [...f.querySelectorAll('input[name=p]:checked')].map((x) => x.value);
     try {
-      const r = await call('create_user', { email: f.email.value, password: f.pw.value, org_id: f.org.value || null, role: f.role.value });
-      showDone('Compte créé', `${esc(f.email.value)}${f.org.value ? ` · ${esc(orgName(f.org.value))} (${ROLE[f.role.value]})` : ''}${r.warning ? '<br>' + esc(r.warning) : ''}<br>Transmettez ce mot de passe à la personne par un canal sûr : il ne sera plus affiché.`, f.pw.value);
+      const r = await call('create_user', { email: f.email.value, password: f.pw.value, name: f.name.value.trim(), temporary: f.temp.checked });
+      if (ids.length) await assign(ids, r.user_id);
+      showDone('Personne ajoutée', `${esc(f.email.value)}${ids.length ? ` · ${ids.length} présentation(s)` : ''}<br>Connexion : ${esc(site())}login.html<br>${f.temp.checked ? 'Mot de passe temporaire — elle en choisira un à sa première connexion :' : 'Mot de passe :'}`, f.pw.value);
       f.reset(); load();
     } catch (err) { $('m-new').textContent = err.message; $('m-new').className = 'msg bad'; }
     b.disabled = false;
   };
   $('view').querySelectorAll('.item[data-u]').forEach((it) => {
     const u = D.users.find((x) => x.id === it.dataset.u);
-    it.querySelector('[data-a="pw"]').onclick = () => openPw(u);
+    it.querySelector('[data-a="pw"]').onclick = () => { pwUser = u; $('f-pw').reset(); $('pw-who').textContent = u.email; wireGen($('f-pw')); $('d-pw').showModal(); };
     it.querySelector('[data-a="super"]').onclick = async () => {
       const on = u.role !== 'super';
       if (!confirm(on ? `Donner à ${u.email} l’accès complet à toute la plateforme ?` : `Retirer l’accès super-admin de ${u.email} ?`)) return;
       try { await call('set_super', { user_id: u.id, on }); toast(on ? 'super-admin ajouté' : 'accès retiré'); load(); } catch (err) { toast(err.message); }
     };
     it.querySelector('[data-a="del"]')?.addEventListener('click', async () => {
-      if (!confirm(`Supprimer définitivement le compte ${u.email} ? Ses accès aux compagnies disparaissent aussi.`)) return;
+      if (!confirm(`Supprimer définitivement le compte ${u.email} ? Ses présentations restent, sans titulaire.`)) return;
       try { await call('delete_user', { user_id: u.id }); toast('compte supprimé'); load(); } catch (err) { toast(err.message); }
     });
   });
 }
-function wireGen(root) { root.querySelectorAll('[data-gen]').forEach((g) => (g.onclick = () => { const i = g.parentElement.querySelector('input'); i.value = genPw(); i.type = 'text'; })); }
 let pwUser = null;
-function openPw(u) { pwUser = u; $('f-pw').reset(); $('pw-who').textContent = u.email; wireGen($('f-pw')); $('d-pw').showModal(); }
 $('d-pw').addEventListener('close', async () => {
   if ($('d-pw').returnValue !== 'ok' || !pwUser) return;
-  const pw = $('f-pw').pw.value;
-  try { await call('set_password', { user_id: pwUser.id, password: pw }); showDone('Mot de passe changé', `${esc(pwUser.email)}<br>Transmettez-le par un canal sûr : il ne sera plus affiché.`, pw); } catch (err) { toast(err.message); }
+  const f = $('f-pw'), pw = f.pw.value, temp = f.temp.checked;
+  try { await call('set_password', { user_id: pwUser.id, password: pw, temporary: temp }); showDone('Mot de passe réinitialisé', `${esc(pwUser.email)}<br>${temp ? 'Temporaire — à changer à la prochaine connexion :' : 'Nouveau mot de passe :'}`, pw); load(); } catch (err) { toast(err.message); }
 });
-function showDone(t, m, pw) { $('done-t').textContent = t; $('done-m').innerHTML = m; $('done-pw').textContent = pw; $('d-done').showModal(); }
-$('done-ok').onclick = () => { $('done-pw').textContent = ''; $('d-done').close(); };
-$('done-copy').onclick = async () => { try { await navigator.clipboard.writeText($('done-pw').textContent); toast('copié'); } catch { toast('copie impossible'); } };
 
-// ================= companies =================
-function renderOrgs() {
-  $('view').innerHTML = `
-    <form class="panel" id="f-org" style="margin-bottom:22px">
-      <div class="mono">Créer une compagnie</div>
-      <div class="grid2" style="margin-top:14px">
-        <div class="field"><label>Nom</label><input class="input" name="name" required minlength="2" maxlength="80"></div>
-        <div class="field"><label>Adresse (lettres, chiffres, tirets)</label><input class="input" name="slug" required pattern="[a-z0-9][a-z0-9-]{0,38}[a-z0-9]"></div>
-        <div class="field"><label>Propriétaire</label><select class="input" name="owner"><option value="">— moi —</option>${D.users.map((u) => `<option value="${u.id}">${esc(u.email)}</option>`).join('')}</select></div>
-      </div>
-      <button class="btn gold">CRÉER LA COMPAGNIE</button><div class="msg" id="m-org"></div>
-    </form>
-    <div class="list">${D.orgs.map((o) => {
-      const ms = D.members.filter((m) => m.org_id === o.id);
-      return `<details class="item" data-o="${o.id}"><summary><div class="h"><div class="t">${esc(o.name)}</div><div class="row"><span class="chip">${o.projects} monde(s)</span><span class="chip">${o.members} membre(s)</span></div></div>
-        <div class="meta">/${esc(o.slug)} · créée le ${date(o.created_at)} · cliquer pour gérer</div></summary>
-        <div class="members">${ms.map((m) => `<div class="mrow" data-u="${m.id}"><span style="font-size:18px;word-break:break-all">${esc(userEmail(m.id))}</span><div class="row"><select class="sel" data-a="role">${roleOptions(m.role)}</select><button class="btn small danger" data-a="rm">Retirer</button></div></div>`).join('') || '<div class="mono" style="font-size:10px;padding:10px 0">aucun membre</div>'}
-          <form class="row" data-a="add" style="margin-top:12px"><select class="sel" name="user" required><option value="">ajouter un utilisateur…</option>${D.users.filter((u) => !ms.some((m) => m.id === u.id)).map((u) => `<option value="${u.id}">${esc(u.email)}</option>`).join('')}</select><select class="sel" name="role">${roleOptions('editor')}</select><button class="btn small gold">Ajouter</button></form>
-          <div class="row" style="margin-top:14px"><a class="btn small" href="app.html">Voir ses mondes</a><button class="btn small danger" data-a="delorg">Supprimer la compagnie</button></div>
-        </div></details>`;
-    }).join('') || '<div class="empty">Aucune compagnie.</div>'}</div>`;
-
-  const fo = $('f-org');
-  fo.name.oninput = () => { if (!fo.slug.dataset.t) fo.slug.value = slugify(fo.name.value); };
-  fo.slug.oninput = () => (fo.slug.dataset.t = 1);
-  fo.onsubmit = async (e) => {
-    e.preventDefault();
-    const { data, error } = await sb().from('organizations').insert({ name: fo.name.value.trim(), slug: fo.slug.value.trim(), created_by: me.id }).select('id').single();
-    if (error) { $('m-org').textContent = /duplicate|unique/.test(error.message) ? 'cette adresse est déjà prise' : error.message; $('m-org').className = 'msg bad'; return; }
-    const owner = fo.owner.value;
-    if (owner && owner !== me.id) { // hand it over: the chosen person owns it, the admin steps out
-      await sb().from('memberships').insert({ org_id: data.id, user_id: owner, role: 'owner' });
-      await sb().from('memberships').delete().eq('org_id', data.id).eq('user_id', me.id);
-    }
-    toast('compagnie créée'); load();
+// ================= presentations =================
+function starter({ title, subtitle, author }) {
+  const t = esc(title), s = esc(subtitle || ''), a = esc(author || '');
+  return {
+    brand: title.toUpperCase().slice(0, 24), parts: { 1: title }, budgets: {},
+    scenes: [
+      { id: 'title', part: 1, title, min: 1, steps: 1, notes: 'Ouverture.', bg: { mode: 'drift', fx: 0.5, fy: 0.5, pull: 0, hue: [255, 122, 26], speed: 0.6 }, snd: 'awaken',
+        html: `<div class="t-title words" data-s="0" style="font-size:110px;top:330px">${t}</div><div class="rule t-rule" data-s="0" style="left:660px;width:600px;top:640px"></div><div class="t-sub" data-s="0">${s}</div><div class="mono t-auth" data-s="0">${a}</div>` },
+      { id: 'fin', part: 1, title: 'Merci', min: 0, steps: 1, notes: 'Fin.', bg: { mode: 'drift', fx: 0.5, fy: 0.5, pull: 0, hue: [255, 122, 26], speed: 0.5 }, snd: 'awaken',
+        html: `<div class="end-t words" data-s="0">MERCI</div><div class="mono end-s" data-s="0">${t}${a ? ' · ' + a : ''}</div>` },
+    ],
   };
-  $('view').querySelectorAll('details[data-o]').forEach((d) => {
-    const org = d.dataset.o;
-    d.querySelectorAll('.mrow').forEach((row) => {
-      row.querySelector('[data-a="role"]').onchange = async (e) => {
-        const { error } = await sb().from('memberships').update({ role: e.target.value }).eq('org_id', org).eq('user_id', row.dataset.u);
-        toast(error ? error.message : 'rôle mis à jour'); load();
-      };
-      row.querySelector('[data-a="rm"]').onclick = async () => {
-        if (!confirm('Retirer cette personne de la compagnie ?')) return;
-        const { error } = await sb().from('memberships').delete().eq('org_id', org).eq('user_id', row.dataset.u);
-        toast(error ? error.message : 'retiré'); load();
-      };
-    });
-    d.querySelector('[data-a="add"]').onsubmit = async (e) => {
-      e.preventDefault();
-      const f = e.target;
-      const { error } = await sb().from('memberships').insert({ org_id: org, user_id: f.user.value, role: f.role.value });
-      toast(error ? error.message : 'membre ajouté'); load();
-    };
-    d.querySelector('[data-a="delorg"]').onclick = async () => {
-      const o = D.orgs.find((x) => x.id === org);
-      if (prompt(`Supprimer « ${o.name} » et ses ${o.projects} monde(s) ? Tapez le nom de la compagnie pour confirmer.`) !== o.name) return;
-      const { error } = await sb().from('organizations').delete().eq('id', org);
-      toast(error ? error.message : 'compagnie supprimée'); load();
+}
+function renderPres() {
+  $('view').innerHTML = `
+    <form class="panel" id="f-pres" style="margin-bottom:22px">
+      <div class="mono">Nouvelle présentation</div>
+      <div class="grid2" style="margin-top:14px">
+        <div class="field"><label>Titre</label><input class="input" name="title" required maxlength="140"></div>
+        <div class="field"><label>Sous-titre</label><input class="input" name="subtitle" maxlength="160"></div>
+        <div class="field"><label>Auteur / orateur (affiché)</label><input class="input" name="author" maxlength="120"></div>
+        <div class="field"><label>Attribuée à</label><select class="input" name="owner">${userOptions('')}</select></div>
+        <div class="field"><label>Visibilité</label><select class="input" name="vis"><option value="private">Privée — seulement son titulaire</option><option value="unlisted">Par lien</option><option value="public">Publique — cours gratuit visible par tous</option></select></div>
+      </div>
+      <button class="btn gold">CRÉER</button><div class="msg">Elle démarre avec une ouverture et une fin ; je mets ensuite le contenu en forme.</div>
+    </form>
+    <div class="list">${D.pres.map((p) => `<div class="item" data-p="${p.id}"><div class="h"><div class="t">${esc(p.title)}</div>
+        <div class="row"><a class="btn small gold" target="_blank" rel="noopener" href="play.html?w=${encodeURIComponent(p.slug)}">Ouvrir</a><button class="btn small danger" data-a="del">Supprimer</button></div></div>
+        <div class="row" style="margin-top:12px"><span class="mono" style="font-size:10px">Titulaire</span><select class="sel" data-a="owner">${userOptions(p.owner_id)}</select>
+          <span class="mono" style="font-size:10px;margin-left:8px">Visibilité</span><select class="sel" data-a="vis">${Object.entries(VIS).map(([v, l]) => `<option value="${v}" ${v === p.visibility ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        <div class="meta">/${esc(p.slug)} · créée le ${date(p.created_at)} · modifiée le ${date(p.last_sign_in_at)}</div></div>`).join('') || '<div class="empty">Aucune présentation.</div>'}</div>`;
+  $('f-pres').onsubmit = async (e) => {
+    e.preventDefault();
+    const f = e.target, title = f.title.value.trim();
+    const row = { org_id: home?.id, title, subtitle: f.subtitle.value.trim() || null, author: f.author.value.trim() || null, owner_id: f.owner.value || null, visibility: f.vis.value,
+      slug: slugify(title) + '-' + Math.random().toString(36).slice(2, 6), content: starter({ title, subtitle: f.subtitle.value.trim(), author: f.author.value.trim() }) };
+    const { error } = await sb().from('projects').insert(row);
+    toast(error ? error.message : 'présentation créée'); if (!error) load();
+  };
+  $('view').querySelectorAll('.item[data-p]').forEach((it) => {
+    const p = D.pres.find((x) => x.id === it.dataset.p);
+    it.querySelector('[data-a="owner"]').onchange = async (e) => { const { error } = await sb().from('projects').update({ owner_id: e.target.value || null }).eq('id', p.id); toast(error ? error.message : 'titulaire mis à jour'); load(); };
+    it.querySelector('[data-a="vis"]').onchange = async (e) => { const { error } = await sb().from('projects').update({ visibility: e.target.value }).eq('id', p.id); toast(error ? error.message : `maintenant ${VIS[e.target.value]}`); load(); };
+    it.querySelector('[data-a="del"]').onclick = async () => {
+      if (prompt(`Supprimer « ${p.title} » ? Tapez SUPPRIMER pour confirmer.`) !== 'SUPPRIMER') return;
+      const { error } = await sb().from('projects').delete().eq('id', p.id); toast(error ? error.message : 'présentation supprimée'); load();
     };
   });
 }

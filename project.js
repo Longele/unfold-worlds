@@ -1,5 +1,5 @@
-// Loads one project for the player: ?p=<company>/<project> (public, or private for its members)
-// or ?t=<share token> (unlisted link). Scene HTML comes from the database, so it is sanitised
+// Loads one presentation for the player: ?w=<slug> (public, or private for its owner / admins),
+// ?t=<share token> (unlisted link), or the older ?p=<company>/<slug>. Scene HTML comes from the database, so it is sanitised
 // before it ever reaches the page.
 import { sb } from './config.js';
 
@@ -27,10 +27,12 @@ function withTimer(sc) {
 
 export async function loadProject() {
   const q = new URLSearchParams(location.search);
-  const ref = q.get('p'), token = q.get('t');
+  const ref = q.get('p'), token = q.get('t'), w = q.get('w');
   let row = null, error = null;
   try {
-    if (token) {
+    if (w) {
+      ({ data: row, error } = await sb().from('projects').select('*').eq('slug', w).maybeSingle());
+    } else if (token) {
       ({ data: row, error } = await sb().rpc('project_by_token', { p_token: token }).maybeSingle());
     } else if (ref && ref.includes('/')) {
       const [org, slug] = ref.split('/');
@@ -38,7 +40,7 @@ export async function loadProject() {
     }
   } catch (e) { error = e; }
   if (error) { failCard('Connexion impossible', 'Le monde n’a pas pu être chargé. Vérifiez la connexion internet, puis rechargez la page.'); throw error; }
-  if (!row) { failCard('Monde introuvable', 'Ce lien ne mène à aucun monde accessible. Il est peut-être privé : connectez-vous avec un compte de la compagnie.'); throw new Error('not found'); }
+  if (!row) { failCard('Présentation introuvable', 'Ce lien ne mène à aucune présentation accessible. Elle est peut-être privée : connectez-vous avec le compte qui y a accès.'); throw new Error('not found'); }
 
   const c = row.content || {};
   const scenes = (c.scenes || []).map((sc) => withTimer({ ...sc, html: window.DOMPurify.sanitize(sc.html || '', PURIFY) }));

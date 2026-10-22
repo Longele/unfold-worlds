@@ -9,16 +9,13 @@
 <link rel="stylesheet" href="portal.css">
 <style>
   .center { min-height: calc(100vh - 90px); display: grid; place-items: center; padding: 20px 0 60px; }
-  .panel { width: min(460px, 100%); text-align: center; }
+  .panel { width: min(440px, 100%); text-align: center; }
   .panel h1 { font-weight: 300; font-size: 44px; margin: 6px 0 6px; }
   .panel .lead { color: var(--dim); font-style: italic; font-size: 19px; margin: 0 0 26px; }
-  .google { width: 100%; background: #f4f1ea; color: #1b1b1b; border-color: transparent; }
-  .google:hover { background: #fff; }
-  .google svg { width: 18px; height: 18px; }
-  .or { display: flex; align-items: center; gap: 12px; margin: 22px 0; }
-  .or::before, .or::after { content: ''; flex: 1; height: 1px; background: var(--line); }
-  #send { width: 100%; }
+  #send, #forgot { width: 100%; }
+  #forgot { margin-top: 10px; }
   .field { text-align: left; }
+  .note { margin-top: 22px; font-size: 10px; text-transform: none; letter-spacing: .04em; line-height: 1.7; }
 </style>
 </head>
 <body>
@@ -27,18 +24,17 @@
   <header class="top"><a class="logo" href="./"><i></i><b>UNFOLD WORLDS</b></a></header>
   <div class="center">
     <div class="panel">
-      <div class="mono">Bienvenue</div>
-      <h1>Entrer</h1>
-      <p class="lead">Retrouvez les mondes de votre compagnie.</p>
-      <button class="btn google" id="google"><svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>CONTINUER AVEC GOOGLE</button>
-      <div class="or mono">ou par e-mail</div>
+      <div class="mono">Espace membres</div>
+      <h1>Connexion</h1>
+      <p class="lead">Retrouvez vos présentations.</p>
       <form id="f">
         <div class="field"><label for="email">Adresse e-mail</label><input class="input" id="email" type="email" autocomplete="email" required placeholder="vous@exemple.com"></div>
-        <div class="field"><label for="pw">Mot de passe</label><input class="input" id="pw" type="password" autocomplete="current-password" placeholder="si vous en avez un"></div>
+        <div class="field"><label for="pw">Mot de passe</label><input class="input" id="pw" type="password" autocomplete="current-password" required></div>
         <button class="btn gold" id="send">SE CONNECTER</button>
-        <button type="button" class="btn" id="magic" style="width:100%;margin-top:10px">MOT DE PASSE OUBLIÉ OU PAS ENCORE CRÉÉ ?</button>
+        <button type="button" class="btn" id="forgot">MOT DE PASSE OUBLIÉ ?</button>
       </form>
       <div class="msg" id="msg"></div>
+      <div class="mono note">Les comptes sont créés par l’administrateur. Sans compte, vous pouvez <a href="./#cours" style="color:var(--acc2)">explorer les cours gratuits</a>.</div>
     </div>
   </div>
 </div>
@@ -54,32 +50,25 @@ const say = (t, cls = '') => { msg.textContent = t; msg.className = 'msg ' + cls
 const { data: { session } } = await sb().auth.getSession();
 if (session) location.replace(back);
 
-document.getElementById('google').onclick = async () => {
-  const { error } = await sb().auth.signInWithOAuth({ provider: 'google', options: { redirectTo: back } });
-  if (error) say(error.message.includes('provider') ? 'La connexion Google n’est pas encore activée. Utilisez l’e-mail.' : error.message, 'bad');
-};
-// with a password (accounts created by a super admin), otherwise a one-time link by e-mail
 document.getElementById('f').onsubmit = async (e) => {
   e.preventDefault();
   const email = document.getElementById('email').value.trim(), password = document.getElementById('pw').value;
-  if (!password) { say('Entrez votre mot de passe, ou utilisez « mot de passe oublié ».', 'bad'); return; }
   const b = document.getElementById('send'); b.disabled = true; say('connexion…');
   const { error } = await sb().auth.signInWithPassword({ email, password });
   b.disabled = false;
   if (error) say(/invalid/i.test(error.message) ? 'E-mail ou mot de passe incorrect.' : error.message, 'bad');
   else location.replace(back);
 };
-async function magic() {
+// a reset link signs you in and opens "choose your password" (it never creates an account)
+document.getElementById('forgot').onclick = async () => {
   const email = document.getElementById('email').value.trim();
   if (!email) { say('Entrez votre e-mail d’abord.', 'bad'); return; }
-  const b = document.getElementById('magic'); b.disabled = true; say('envoi…');
-  // the e-mail link signs you in and opens the "choose your password" window
+  const b = document.getElementById('forgot'); b.disabled = true; say('envoi…');
   const { error } = await sb().auth.resetPasswordForEmail(email, { redirectTo: back });
   b.disabled = false;
   if (error) say(/rate|security|seconds/i.test(error.message) ? 'Un e-mail vient déjà de partir : patientez une minute avant de redemander.' : error.message, 'bad');
-  else say('E-mail envoyé. Cliquez sur le lien : vous choisirez votre mot de passe.', 'ok');
-}
-document.getElementById('magic').onclick = magic;
+  else say('Si ce compte existe, un e-mail est parti. Cliquez sur le lien pour choisir un nouveau mot de passe.', 'ok');
+};
 </script>
 </body>
 </html>
