@@ -80,3 +80,36 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); }
 dialog h3 { font-weight: 300; font-size: 32px; margin: 0 0 18px; }
 footer { position: relative; z-index: 1; padding: 30px 16px 40px; text-align: center; }
 @media (max-width: 560px) { .top { padding: 16px 0; } .logo b { font-size: 14px; letter-spacing: 0.26em; } .btn { padding: 12px 16px; } .panel { padding: 20px; } }
+
+/* ---- shared menu (nav.js) ---- */
+.top nav { gap: 4px; }
+.navlink { font-family: var(--mono); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); text-decoration: none; padding: 11px 14px; border-radius: 999px; transition: color .25s, background .25s; white-space: nowrap; }
+.navlink:hover { color: var(--fg); background: rgba(255,255,255,.04); }
+.navlink.on { color: var(--fg); background: rgba(255,255,255,.06); box-shadow: inset 0 0 0 1px var(--line); }
+.top nav .btn { margin-left: 6px; }
+.acct { position: relative; margin-left: 8px; }
+.acct-btn { display: flex; align-items: center; gap: 10px; padding: 5px 12px 5px 5px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.03); cursor: pointer; color: var(--fg); transition: border-color .25s, background .25s; }
+.acct-btn:hover, .acct.open .acct-btn { border-color: var(--faint); background: rgba(255,255,255,.06); }
+.acct .av { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-family: var(--mono); font-size: 11px; letter-spacing: .04em; color: #1a0d04; background: linear-gradient(140deg, var(--acc), var(--acc2)); flex: none; }
+.acct .who { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; text-align: left; }
+.acct .who b { font-weight: 400; font-size: 16px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct .who small { font-family: var(--mono); font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--acc2); }
+.acct-btn svg { width: 14px; height: 14px; stroke: var(--dim); fill: none; stroke-width: 2; transition: transform .25s; }
+.acct.open .acct-btn svg { transform: rotate(180deg); }
+.acct-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; min-width: 230px; padding: 8px; border-radius: 16px; border: 1px solid var(--line); background: rgba(14,17,24,.97); backdrop-filter: blur(14px); box-shadow: 0 20px 50px rgba(0,0,0,.5); opacity: 0; transform: translateY(-6px); pointer-events: none; transition: opacity .2s, transform .25s var(--ease); }
+.acct.open .acct-menu { opacity: 1; transform: none; pointer-events: auto; }
+.acct-mail { font-family: var(--mono); font-size: 10px; letter-spacing: .04em; color: var(--dim); padding: 8px 10px 10px; border-bottom: 1px solid var(--line); margin-bottom: 6px; word-break: break-all; }
+.acct-menu a, .acct-menu button { display: block; width: 100%; text-align: left; padding: 10px; border-radius: 10px; font-size: 17px; color: var(--fg); text-decoration: none; background: none; border: 0; cursor: pointer; }
+.acct-menu a:hover, .acct-menu button:hover { background: rgba(255,255,255,.06); }
+.acct-menu [data-out] { color: var(--bad); }
+@media (max-width: 640px) {
+  .top { flex-wrap: wrap; }
+  .navlink { padding: 9px 10px; font-size: 10px; letter-spacing: .14em; }
+  .acct .who { display: none; }
+  .acct-btn { padding: 4px; }
+  .acct-btn svg { display: none; }
+}
+
+/* ---- big screens (4K walls at 100 % scaling): grow the whole page instead of leaving it tiny ---- */
+@media (min-width: 2200px) { html { zoom: 1.45; } }
+@media (min-width: 3200px) { html { zoom: 1.95; } }

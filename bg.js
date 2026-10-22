@@ -57,9 +57,13 @@ export function setBg(o) {
 export function pulse(k = 1) { S.e = Math.min(1.4, S.e + 0.9 * k); S.flare = Math.min(1.2, S.flare + 1 * k); }
 
 let prog, U = {};
-let scale = 0.5, W = 0, H = 0;
+// Resolution follows the real (physical) pixels of the screen so a 4K wall stays crisp, capped at
+// ~2200 px wide internally (the silk is soft by nature); 'quality' drops by itself on slow GPUs.
+let quality = 1, W = 0, H = 0;
 function resize() {
-  W = Math.max(2, Math.round(innerWidth * scale)); H = Math.max(2, Math.round(innerHeight * scale));
+  const dpr = Math.min(window.devicePixelRatio || 1, 3), pw = innerWidth * dpr, ph = innerHeight * dpr;
+  const k = Math.min(0.6, 2200 / pw) * quality;
+  W = Math.max(2, Math.round(pw * k)); H = Math.max(2, Math.round(ph * k));
   canvas.width = W; canvas.height = H;
   gl && gl.viewport(0, 0, W, H);
 }
@@ -73,12 +77,13 @@ if (gl) {
   for (const u of ['uRes', 'uT', 'uE', 'uAmt', 'uSpin', 'uFlare', 'uC1', 'uC2', 'uF', 'uFlow']) U[u] = gl.getUniformLocation(prog, u);
 }
 addEventListener('resize', resize); resize();
+matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`).addEventListener?.('change', resize); // moved to another screen
 
 // keep frame time honest on weak GPUs: drop resolution if we fall behind
 let last = performance.now(), slow = 0, flowX = 0, flowY = 0;
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (dt > 0.034 && scale > 0.3) { if (++slow > 40) { scale -= 0.08; resize(); slow = 0; } } else slow = Math.max(0, slow - 1);
+  if (dt > 0.034 && quality > 0.45) { if (++slow > 40) { quality -= 0.12; resize(); slow = 0; } } else slow = Math.max(0, slow - 1);
   const k = Math.min(1, dt * 1.2);
   for (const key of ['fx', 'fy', 'amt', 'spin', 'flowx', 'flowy']) S[key] += (T[key] - S[key]) * k;
   for (let i = 0; i < 3; i++) { S.c1[i] += (T.c1[i] - S.c1[i]) * k; S.c2[i] += (T.c2[i] - S.c2[i]) * k; }

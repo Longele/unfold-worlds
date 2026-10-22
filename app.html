@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mes présentations · Unfold Worlds</title>
+<title>Mes mondes · Unfold Worlds</title>
 <meta name="theme-color" content="#07090d">
 <link rel="icon" href="icon-192.png">
 <link rel="manifest" href="site.webmanifest">
@@ -19,15 +19,17 @@
 <div class="wrap">
   <header class="top">
     <a class="logo" href="./"><i></i><b>UNFOLD WORLDS</b></a>
-    <nav><span class="mono uemail" id="me"></span><a class="btn small gold" href="admin.html" id="console" style="display:none">Console</a><a class="btn small" href="./">Cours gratuits</a><button class="btn small" id="acct">Mon compte</button><button class="btn small" id="out">Déconnexion</button></nav>
+    <nav id="nav"></nav>
   </header>
-  <h1 class="hello" id="hello">Mes présentations</h1>
+  <h1 class="hello" id="hello">Mes mondes</h1>
+  <div class="mono" id="sub"></div>
   <div id="view"></div>
 </div>
 
 <dialog id="d-acct"><form method="dialog" id="f-acct">
   <h3>Mon compte</h3>
   <div class="mono" id="acct-mail" style="text-transform:none;letter-spacing:.04em;margin-bottom:16px"></div>
+  <div class="field"><label>Nom affiché</label><input class="input" name="name" maxlength="80" autocomplete="name"></div>
   <div class="field"><label>Nouveau mot de passe (6 caractères minimum)</label><input class="input" name="pw" type="password" minlength="6" maxlength="72" required autocomplete="new-password"></div>
   <div class="field"><label>Le retaper</label><input class="input" name="pw2" type="password" minlength="6" maxlength="72" required autocomplete="new-password"></div>
   <div class="row"><button class="btn gold" value="ok">ENREGISTRER</button><button class="btn" value="cancel" id="acct-close" formnovalidate>FERMER</button></div>
@@ -37,48 +39,53 @@
 <script src="lib/supabase.js"></script>
 <script type="module">
 import { sb, esc, site } from './config.js';
+import { mountNav, displayName } from './nav.js';
 import { setBg } from './bg.js';
 setBg({ hue: [255, 122, 26], fx: 0.75, fy: 0.15, mode: 'drift', pull: 0.3, speed: 0.4, amt: 0.6 });
 
 const $ = (id) => document.getElementById(id);
 const toast = (t) => { $('toast').textContent = t; $('toast').classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => $('toast').classList.remove('on'), 2200); };
-const VIS = { private: 'privée', unlisted: 'par lien', public: 'publique' };
+const VIS = { private: 'privé', unlisted: 'par lien', public: 'public' };
 
 // a password-reset e-mail lands here with #…type=recovery (read it before the client swallows the hash)
 const recovering = /type=recovery/.test(location.hash);
 const { data: { session } } = await sb().auth.getSession();
 if (!session) { location.replace('login.html'); await new Promise(() => {}); } // stop here while the browser leaves
 const me = session.user;
-$('me').textContent = me.email;
-if (me.user_metadata?.name) $('hello').textContent = `Bonjour ${me.user_metadata.name}`;
-$('out').onclick = async () => { await sb().auth.signOut(); location.replace('./'); };
-sb().from('platform_admins').select('user_id').eq('user_id', me.id).maybeSingle().then(({ data }) => { if (data) $('console').style.display = ''; });
+const { isSuper } = await mountNav('mine');
+$('hello').textContent = `Bonjour ${displayName(me)}`;
+$('sub').textContent = isSuper ? 'Super-admin · les mondes qui vous sont attribués — tout le reste est dans la Console' : 'Les mondes qui vous sont attribués';
 
 // ---- password: a temporary one (set by the admin) must be replaced at the first sign-in
 let mustSetPw = !me.user_metadata?.has_password || recovering;
 function openAcct(required) {
   $('f-acct').reset(); $('acct-mail').textContent = me.email; $('m-acct').className = 'msg';
+  $('f-acct').name.value = me.user_metadata?.name || '';
+  const pwReq = required || false; $('f-acct').pw.required = pwReq; $('f-acct').pw2.required = pwReq;
   $('acct-close').style.display = required ? 'none' : '';
-  $('m-acct').textContent = required ? 'Bienvenue ! Choisissez votre propre mot de passe pour continuer.' : 'Vous vous connecterez ensuite avec ce mot de passe.';
+  $('m-acct').textContent = required ? 'Bienvenue ! Choisissez votre propre mot de passe pour continuer.' : 'Laissez le mot de passe vide pour ne changer que le nom.';
   $('d-acct').showModal();
 }
 $('d-acct').addEventListener('cancel', (e) => { if (mustSetPw) e.preventDefault(); });
-$('acct').onclick = () => openAcct(false);
+const fromMenu = () => { if (location.hash === '#compte' && !mustSetPw) { openAcct(false); history.replaceState(null, '', location.pathname); } };
+addEventListener('hashchange', fromMenu);
 $('f-acct').addEventListener('submit', async (e) => {
   if (e.submitter?.value !== 'ok') return;
   e.preventDefault();
   const f = e.target;
   if (f.pw.value !== f.pw2.value) { $('m-acct').textContent = 'Les deux mots de passe ne sont pas identiques.'; $('m-acct').className = 'msg bad'; return; }
-  const { error } = await sb().auth.updateUser({ password: f.pw.value, data: { has_password: true } });
+  const upd = { data: { name: f.name.value.trim() } };
+  if (f.pw.value) { upd.password = f.pw.value; upd.data.has_password = true; }
+  const { error } = await sb().auth.updateUser(upd);
   if (error) { $('m-acct').textContent = /same|different/i.test(error.message) ? 'Choisissez un mot de passe différent du mot de passe temporaire.' : /weak|short/i.test(error.message) ? 'Mot de passe trop faible.' : error.message; $('m-acct').className = 'msg bad'; return; }
-  mustSetPw = false; $('d-acct').close(); toast('mot de passe enregistré');
+  mustSetPw = false; $('d-acct').close(); toast(f.pw.value ? 'compte mis à jour' : 'nom mis à jour'); setTimeout(() => location.reload(), 700);
 });
-if (mustSetPw) openAcct(true);
+if (mustSetPw) openAcct(true); else fromMenu();
 
-// ---- my presentations (only the ones given to me; the admin creates and assigns them)
+// ---- my worlds (only the ones given to me; the admin creates and assigns them)
 const { data, error } = await sb().from('projects').select('slug, title, subtitle, author, visibility, share_token, updated_at').eq('owner_id', me.id).order('updated_at', { ascending: false });
 if (error) $('view').innerHTML = `<div class="empty">${esc(error.message)}</div>`;
-else if (!data.length) $('view').innerHTML = '<div class="empty">Aucune présentation ne vous est encore attribuée. L’administrateur vous en donnera l’accès.</div>';
+else if (!data.length) $('view').innerHTML = (isSuper ? '<div class="empty">Aucun monde ne vous est attribué. Créez-en et attribuez-les depuis la <a href="admin.html" style="color:var(--acc2)">Console</a>.</div>' : '<div class="empty">Aucun monde ne vous est encore attribué. L’administrateur vous en donnera l’accès.</div>');
 else {
   $('view').innerHTML = '<div class="grid">' + data.map((p, i) => `<div class="card">
       <div class="mono org">${esc(p.author || '')}</div><h3>${esc(p.title)}</h3><p>${esc(p.subtitle || '')}</p>

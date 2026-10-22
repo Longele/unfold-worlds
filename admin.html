@@ -38,11 +38,11 @@
 <div class="wrap">
   <header class="top">
     <a class="logo" href="./"><i></i><b>UNFOLD WORLDS</b></a>
-    <nav><span class="badge">super-admin</span><a class="btn small" href="app.html">Mes présentations</a><button class="btn small" id="out">Déconnexion</button></nav>
+    <nav id="nav"></nav>
   </header>
   <h1 class="hello">Console</h1>
   <div class="mono" id="stats"></div>
-  <div class="tabs"><button class="tab on" data-t="people">Personnes</button><button class="tab" data-t="pres">Présentations</button></div>
+  <div class="tabs"><button class="tab on" data-t="people">Personnes</button><button class="tab" data-t="pres">Mondes</button></div>
   <div id="view"></div>
 </div>
 
@@ -61,11 +61,12 @@
 <script type="module">
 import { sb, esc, slugify, site, SUPABASE_URL, SUPABASE_KEY } from './config.js';
 import { setBg } from './bg.js';
+import { mountNav } from './nav.js';
 setBg({ hue: [255, 150, 60], fx: 0.8, fy: 0.12, mode: 'drift', pull: 0.25, speed: 0.4, amt: 0.5 });
 
 const $ = (id) => document.getElementById(id);
 const toast = (t) => { $('toast').textContent = t; $('toast').classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => $('toast').classList.remove('on'), 2600); };
-const VIS = { private: 'privée', unlisted: 'par lien', public: 'publique' };
+const VIS = { private: 'privé', unlisted: 'par lien', public: 'public' };
 const date = (d) => (d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 const genPw = () => { const a = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'; return Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => a[b % a.length]).join(''); };
 
@@ -75,7 +76,7 @@ if (!session) { location.replace('login.html'); await new Promise(() => {}); }
 const me = session.user;
 const { data: isSuper } = await sb().from('platform_admins').select('user_id').eq('user_id', me.id).maybeSingle();
 if (!isSuper) { location.replace('app.html'); await new Promise(() => {}); }
-$('out').onclick = async () => { await sb().auth.signOut(); location.replace('./'); };
+mountNav('console');
 const { data: home } = await sb().from('organizations').select('id').eq('slug', 'unfold').maybeSingle();
 
 async function call(action, payload) {
@@ -92,12 +93,12 @@ async function load() {
   const { data, error } = await sb().rpc('admin_overview');
   if (error) { $('view').innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
   D = { users: data.filter((r) => r.kind === 'user').sort((a, b) => a.email.localeCompare(b.email)), pres: data.filter((r) => r.kind === 'project').sort((a, b) => a.title.localeCompare(b.title)) };
-  $('stats').textContent = `${D.users.length} personne${D.users.length > 1 ? 's' : ''} · ${D.pres.length} présentation${D.pres.length > 1 ? 's' : ''} · ${D.pres.filter((p) => p.visibility === 'public').length} publique(s)`;
+  $('stats').textContent = `${D.users.length} personne${D.users.length > 1 ? 's' : ''} · ${D.pres.length} monde${D.pres.length > 1 ? 's' : ''} · ${D.pres.filter((p) => p.visibility === 'public').length} public(s)`;
   render();
 }
 const render = () => (tab === 'people' ? renderPeople() : renderPres());
-const emailOf = (id) => D.users.find((u) => u.id === id)?.email;
-const userOptions = (sel) => '<option value="">— personne —</option>' + D.users.map((u) => `<option value="${u.id}" ${u.id === sel ? 'selected' : ''}>${esc(u.email)}</option>`).join('');
+const emailOf = (id) => { const u = D.users.find((x) => x.id === id); return u ? u.name || u.email : null; };
+const userOptions = (sel) => '<option value="">— personne —</option>' + D.users.map((u) => `<option value="${u.id}" ${u.id === sel ? 'selected' : ''}>${esc(u.name ? `${u.name} — ${u.email}` : u.email)}</option>`).join('');
 function wireGen(root) { root.querySelectorAll('[data-gen]').forEach((g) => (g.onclick = () => { g.parentElement.querySelector('input').value = genPw(); })); }
 function showDone(t, m, pw) { $('done-t').textContent = t; $('done-m').innerHTML = m; $('done-pw').textContent = pw; $('d-done').showModal(); }
 $('done-ok').onclick = () => { $('done-pw').textContent = ''; $('d-done').close(); };
@@ -106,7 +107,7 @@ async function assign(ids, owner) { for (const id of ids) { const { error } = aw
 
 // ================= people =================
 function renderPeople() {
-  const list = D.users.filter((u) => !q || u.email.includes(q.toLowerCase()));
+  const list = D.users.filter((u) => !q || (u.email + ' ' + (u.name || '')).toLowerCase().includes(q.toLowerCase()));
   $('view').innerHTML = `
     <form class="panel" id="f-new" style="margin-bottom:22px" autocomplete="off">
       <div class="mono">Ajouter une personne</div>
@@ -114,18 +115,18 @@ function renderPeople() {
         <div class="field"><label>Nom (affiché)</label><input class="input" name="name" maxlength="80" placeholder="Prénom Nom"></div>
         <div class="field"><label>E-mail</label><input class="input" name="email" type="email" required></div>
         <div class="field"><label>Mot de passe (6 caractères minimum)</label><div class="row"><input class="input" name="pw" minlength="6" maxlength="72" required style="flex:1"><button type="button" class="btn small" data-gen>Générer</button></div></div>
-        <div class="field"><label>Ses présentations</label><div class="checks">${D.pres.map((p) => `<label><input type="checkbox" name="p" value="${p.id}"> ${esc(p.title)}${p.owner_id ? ` <span class="mono" style="font-size:9px">(à ${esc(emailOf(p.owner_id) || '?')})</span>` : ''}</label>`).join('') || '<span class="mono" style="font-size:10px">aucune présentation</span>'}</div></div>
+        <div class="field"><label>Ses mondes</label><div class="checks">${D.pres.map((p) => `<label><input type="checkbox" name="p" value="${p.id}"> ${esc(p.title)}${p.owner_id ? ` <span class="mono" style="font-size:9px">(à ${esc(emailOf(p.owner_id) || '?')})</span>` : ''}</label>`).join('') || '<span class="mono" style="font-size:10px">aucun monde</span>'}</div></div>
       </div>
       <label class="tick"><input type="checkbox" name="temp" checked> Mot de passe temporaire : la personne choisira le sien à sa première connexion</label>
       <button class="btn gold">AJOUTER</button><div class="msg" id="m-new">Personne ne peut s’inscrire seul : seuls les comptes ajoutés ici existent.</div>
     </form>
-    <div class="row" style="margin-bottom:12px"><input class="input search" id="q" placeholder="chercher un e-mail" value="${esc(q)}"></div>
+    <div class="row" style="margin-bottom:12px"><input class="input search" id="q" placeholder="chercher un nom ou un e-mail" value="${esc(q)}"></div>
     <div class="list">${list.map((u) => {
       const mine = D.pres.filter((p) => p.owner_id === u.id);
-      return `<div class="item" data-u="${u.id}"><div class="h"><div class="t">${esc(u.email)}${u.role === 'super' ? '<span class="badge">super-admin</span>' : ''}${u.id === me.id ? '<span class="badge" style="color:var(--fg)">vous</span>' : ''}${!u.has_password ? '<span class="badge warn">mot de passe à choisir</span>' : ''}</div>
+      return `<div class="item" data-u="${u.id}"><div class="h"><div class="t">${esc(u.name || u.email)}${u.role === 'super' ? '<span class="badge">super-admin</span>' : ''}${u.id === me.id ? '<span class="badge" style="color:var(--fg)">vous</span>' : ''}${!u.has_password ? '<span class="badge warn">mot de passe à choisir</span>' : ''}</div>
         <div class="row"><button class="btn small" data-a="pw">Réinitialiser le mot de passe</button><button class="btn small" data-a="super">${u.role === 'super' ? 'Retirer super-admin' : 'Rendre super-admin'}</button>${u.id !== me.id ? '<button class="btn small danger" data-a="del">Supprimer</button>' : ''}</div></div>
-        <div class="meta">ajouté le ${date(u.created_at)} · dernière connexion ${date(u.last_sign_in_at)}</div>
-        <div class="chips">${mine.length ? mine.map((p) => `<span class="chip">${esc(p.title)} · ${VIS[p.visibility]}</span>`).join('') : '<span class="mono" style="font-size:10px">aucune présentation</span>'}</div></div>`;
+        <div class="meta">${u.name ? esc(u.email) + ' · ' : ''}ajouté le ${date(u.created_at)} · dernière connexion ${date(u.last_sign_in_at)}</div>
+        <div class="chips">${mine.length ? mine.map((p) => `<span class="chip">${esc(p.title)} · ${VIS[p.visibility]}</span>`).join('') : '<span class="mono" style="font-size:10px">aucun monde</span>'}</div></div>`;
     }).join('') || '<div class="empty">Personne.</div>'}</div>`;
   $('q').oninput = (e) => { q = e.target.value; const pos = e.target.selectionStart; renderPeople(); $('q').focus(); $('q').setSelectionRange(pos, pos); };
   wireGen($('f-new'));
@@ -136,7 +137,7 @@ function renderPeople() {
     try {
       const r = await call('create_user', { email: f.email.value, password: f.pw.value, name: f.name.value.trim(), temporary: f.temp.checked });
       if (ids.length) await assign(ids, r.user_id);
-      showDone('Personne ajoutée', `${esc(f.email.value)}${ids.length ? ` · ${ids.length} présentation(s)` : ''}<br>Connexion : ${esc(site())}login.html<br>${f.temp.checked ? 'Mot de passe temporaire — elle en choisira un à sa première connexion :' : 'Mot de passe :'}`, f.pw.value);
+      showDone('Personne ajoutée', `${esc(f.email.value)}${ids.length ? ` · ${ids.length} monde(s)` : ''}<br>Connexion : ${esc(site())}login.html<br>${f.temp.checked ? 'Mot de passe temporaire — elle en choisira un à sa première connexion :' : 'Mot de passe :'}`, f.pw.value);
       f.reset(); load();
     } catch (err) { $('m-new').textContent = err.message; $('m-new').className = 'msg bad'; }
     b.disabled = false;
@@ -150,7 +151,7 @@ function renderPeople() {
       try { await call('set_super', { user_id: u.id, on }); toast(on ? 'super-admin ajouté' : 'accès retiré'); load(); } catch (err) { toast(err.message); }
     };
     it.querySelector('[data-a="del"]')?.addEventListener('click', async () => {
-      if (!confirm(`Supprimer définitivement le compte ${u.email} ? Ses présentations restent, sans titulaire.`)) return;
+      if (!confirm(`Supprimer définitivement le compte ${u.email} ? Ses mondes restent, sans titulaire.`)) return;
       try { await call('delete_user', { user_id: u.id }); toast('compte supprimé'); load(); } catch (err) { toast(err.message); }
     });
   });
@@ -178,13 +179,13 @@ function starter({ title, subtitle, author }) {
 function renderPres() {
   $('view').innerHTML = `
     <form class="panel" id="f-pres" style="margin-bottom:22px">
-      <div class="mono">Nouvelle présentation</div>
+      <div class="mono">Nouveau monde</div>
       <div class="grid2" style="margin-top:14px">
         <div class="field"><label>Titre</label><input class="input" name="title" required maxlength="140"></div>
         <div class="field"><label>Sous-titre</label><input class="input" name="subtitle" maxlength="160"></div>
         <div class="field"><label>Auteur / orateur (affiché)</label><input class="input" name="author" maxlength="120"></div>
         <div class="field"><label>Attribuée à</label><select class="input" name="owner">${userOptions('')}</select></div>
-        <div class="field"><label>Visibilité</label><select class="input" name="vis"><option value="private">Privée — seulement son titulaire</option><option value="unlisted">Par lien</option><option value="public">Publique — cours gratuit visible par tous</option></select></div>
+        <div class="field"><label>Visibilité</label><select class="input" name="vis"><option value="private">Privé — seulement son titulaire</option><option value="unlisted">Par lien — ceux qui ont le lien</option><option value="public">Public — visible par tous dans « Explorer »</option></select></div>
       </div>
       <button class="btn gold">CRÉER</button><div class="msg">Elle démarre avec une ouverture et une fin ; je mets ensuite le contenu en forme.</div>
     </form>
@@ -192,14 +193,14 @@ function renderPres() {
         <div class="row"><a class="btn small gold" target="_blank" rel="noopener" href="play.html?w=${encodeURIComponent(p.slug)}">Ouvrir</a><button class="btn small danger" data-a="del">Supprimer</button></div></div>
         <div class="row" style="margin-top:12px"><span class="mono" style="font-size:10px">Titulaire</span><select class="sel" data-a="owner">${userOptions(p.owner_id)}</select>
           <span class="mono" style="font-size:10px;margin-left:8px">Visibilité</span><select class="sel" data-a="vis">${Object.entries(VIS).map(([v, l]) => `<option value="${v}" ${v === p.visibility ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-        <div class="meta">/${esc(p.slug)} · créée le ${date(p.created_at)} · modifiée le ${date(p.last_sign_in_at)}</div></div>`).join('') || '<div class="empty">Aucune présentation.</div>'}</div>`;
+        <div class="meta">/${esc(p.slug)} · créé le ${date(p.created_at)} · modifié le ${date(p.last_sign_in_at)}</div></div>`).join('') || '<div class="empty">Aucun monde.</div>'}</div>`;
   $('f-pres').onsubmit = async (e) => {
     e.preventDefault();
     const f = e.target, title = f.title.value.trim();
     const row = { org_id: home?.id, title, subtitle: f.subtitle.value.trim() || null, author: f.author.value.trim() || null, owner_id: f.owner.value || null, visibility: f.vis.value,
       slug: slugify(title) + '-' + Math.random().toString(36).slice(2, 6), content: starter({ title, subtitle: f.subtitle.value.trim(), author: f.author.value.trim() }) };
     const { error } = await sb().from('projects').insert(row);
-    toast(error ? error.message : 'présentation créée'); if (!error) load();
+    toast(error ? error.message : 'monde créé'); if (!error) load();
   };
   $('view').querySelectorAll('.item[data-p]').forEach((it) => {
     const p = D.pres.find((x) => x.id === it.dataset.p);
@@ -207,7 +208,7 @@ function renderPres() {
     it.querySelector('[data-a="vis"]').onchange = async (e) => { const { error } = await sb().from('projects').update({ visibility: e.target.value }).eq('id', p.id); toast(error ? error.message : `maintenant ${VIS[e.target.value]}`); load(); };
     it.querySelector('[data-a="del"]').onclick = async () => {
       if (prompt(`Supprimer « ${p.title} » ? Tapez SUPPRIMER pour confirmer.`) !== 'SUPPRIMER') return;
-      const { error } = await sb().from('projects').delete().eq('id', p.id); toast(error ? error.message : 'présentation supprimée'); load();
+      const { error } = await sb().from('projects').delete().eq('id', p.id); toast(error ? error.message : 'monde supprimé'); load();
     };
   });
 }

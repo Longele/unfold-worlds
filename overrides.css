@@ -176,3 +176,8 @@ body.tv .setup .hint { display: none; }
 .blind .voice.in .wv { animation: wave 2.4s ease-out infinite; }
 .blind .voice.in .v2 { animation-delay: 0.3s; } .blind .voice.in .v3 { animation-delay: 0.6s; } .blind .voice.in .v4 { animation-delay: 0.9s; }
 @keyframes wave { 0% { opacity: 0; transform: translateX(40px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateX(-60px); } }
+
+/* ---- big screens (4K at 100 % scaling): the scenes already scale with the viewport; the opening card,
+   presenter menu and toasts are fixed-size UI, so they grow with the screen too ---- */
+@media (min-width: 2200px) { #begin > .setup, .esc-in, #toast, #pairmini, #turn > div { zoom: 1.45; } }
+@media (min-width: 3200px) { #begin > .setup, .esc-in, #toast, #pairmini, #turn > div { zoom: 1.95; } }
