@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07090d">
+<title>En un mot · Unfold Worlds</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%225%22 fill=%22%23ff7a1a%22/%3E%3C/svg%3E">
+<style>
+@font-face { font-family: 'Cormorant Garamond'; font-weight: 300; src: url(fonts/cormorant-garamond-latin-300-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Cormorant Garamond'; font-weight: 300; font-style: italic; src: url(fonts/cormorant-garamond-latin-300-italic.woff2) format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-weight: 400; src: url(fonts/jetbrains-mono-latin-400-normal.woff2) format('woff2'); }
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: #07090d; color: #ece6da; font-family: 'Cormorant Garamond', serif; }
+body { display: grid; place-items: center; min-height: 100vh; padding: 28px; text-align: center;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255,122,26,.22), transparent 60%), radial-gradient(ellipse at 50% 110%, rgba(60,70,150,.3), transparent 60%), #07090d; }
+.mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .24em; text-transform: uppercase; color: rgba(236,230,218,.6); }
+h1 { font-weight: 300; font-size: 40px; line-height: 1.08; margin: 14px 0 30px; }
+h1 em { color: #ffc35a; }
+input { width: 100%; max-width: 340px; font: 300 40px 'Cormorant Garamond', serif; text-align: center; color: #ece6da; background: none; border: 0; border-bottom: 1px solid rgba(236,230,218,.3); outline: none; padding: 8px 0; }
+input:focus { border-color: #ffc35a; }
+button { margin-top: 30px; font: 400 13px 'JetBrains Mono', monospace; letter-spacing: .3em; padding: 17px 40px; border: 0; border-radius: 999px; background: linear-gradient(140deg, #ff7a1a, #ffc35a); color: #1a0d04; }
+button:disabled { opacity: .4; }
+#msg { margin-top: 22px; min-height: 2.4em; line-height: 1.6; text-transform: none; letter-spacing: .08em; }
+.sent h1 { opacity: .5; }
+.flyer { position: fixed; left: 50%; top: 45%; transform: translate(-50%, -50%); font-size: 44px; font-weight: 300; color: #ffc35a; pointer-events: none; transition: transform 1.1s cubic-bezier(.6,0,.2,1), opacity 1.1s; }
+</style>
+</head>
+<body>
+<main>
+  <div class="mono">Unfold Worlds · en direct</div>
+  <h1>Pour vous, le leadership, c’est… <em>en un mot&nbsp;?</em></h1>
+  <form id="f"><input id="w" maxlength="22" autocomplete="off" autocapitalize="off" placeholder="…" enterkeyhint="send"><br><button id="b" disabled>ENVOYER</button></form>
+  <div class="mono" id="msg">connexion à l’écran…</div>
+</main>
+<script type="module">
+import { join, cleanRoom } from './net.js';
+const f = document.getElementById('f'), w = document.getElementById('w'), b = document.getElementById('b'), msg = document.getElementById('msg');
+const room = cleanRoom(location.hash.slice(1));
+const IDLE = 'votre mot apparaît à l’écran, anonymement';
+let open = false, done = false, pending = false, link = null;
+try { done = localStorage.getItem('uw-mot-' + room) === 'done'; } catch {}
+function setOpen(o) {
+  open = o;
+  if (done) { b.disabled = w.disabled = true; msg.textContent = 'merci — vous avez donné vos mots'; return; }
+  b.disabled = !open;
+  msg.textContent = open ? IDLE : 'le vote ouvre dans un instant…';
+  if (open) { navigator.vibrate && navigator.vibrate(15); if (pending && w.value.trim()) { pending = false; f.requestSubmit(); } }
+}
+function finish() { done = true; w.disabled = b.disabled = true; document.body.classList.add('sent'); try { localStorage.setItem('uw-mot-' + room, 'done'); } catch {} }
+function onMessage(m) {
+  if (m.t === 'vote') { if (m.q) document.querySelector('h1').textContent = m.q; setOpen(m.open); }
+  if (m.t === 'word') {
+    if (m.ok) {
+      msg.textContent = m.left > 0 ? `merci — c’est à l’écran · encore ${m.left} mot${m.left > 1 ? 's' : ''} possible${m.left > 1 ? 's' : ''}` : 'merci — regardez l’écran';
+      if (!m.left) finish();
+    } else if (m.why === 'closed') { setOpen(false); pending = true; msg.textContent = 'le vote ouvre dans un instant… votre mot partira dès l’ouverture'; }
+    else if (m.left === 0) { finish(); msg.textContent = 'merci — vous avez donné vos 3 mots'; }
+    else msg.textContent = 'un instant… puis réessayez';
+    setTimeout(() => { if (!done) b.disabled = !open; }, 1200);
+  }
+}
+f.onsubmit = (e) => {
+  e.preventDefault();
+  const v = w.value.trim(); if (!v) return w.focus();
+  if (!open) { pending = true; msg.textContent = 'le vote ouvre dans un instant… votre mot partira dès l’ouverture'; return; }
+  b.disabled = true;
+  if (!link?.send({ t: 'word', w: v })) { msg.textContent = 'connexion perdue — réessayez dans un instant'; b.disabled = false; return; }
+  const fl = document.createElement('div'); fl.className = 'flyer'; fl.textContent = v; document.body.append(fl);
+  requestAnimationFrame(() => requestAnimationFrame(() => { fl.style.transform = 'translate(-50%, -260%) scale(.6)'; fl.style.opacity = 0; }));
+  setTimeout(() => fl.remove(), 1300);
+  navigator.vibrate && navigator.vibrate(20);
+  w.value = '';
+};
+if (room.length !== 4) msg.textContent = 'lien incomplet — scannez le QR affiché à l’écran';
+else {
+  try {
+    link = await join({ room, meta: () => ({ role: 'audience' }), onMessage, onStatus: (s) => {
+      if (s === 'no-screen') { b.disabled = true; msg.textContent = 'recherche de l’écran…'; }
+      if (s === 'lost') { b.disabled = true; msg.textContent = 'reconnexion…'; }
+    } });
+  } catch { msg.textContent = 'pas de connexion internet'; }
+}
+</script>
+</body>
+</html>

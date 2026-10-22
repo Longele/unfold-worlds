@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#07090d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="remote.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Télécommande · Unfold Worlds</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%225%22 fill=%22%23ff7a1a%22/%3E%3C/svg%3E">
+<style>
+@font-face { font-family: 'Cormorant Garamond'; font-weight: 300; src: url(fonts/cormorant-garamond-latin-300-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Cormorant Garamond'; font-weight: 300; font-style: italic; src: url(fonts/cormorant-garamond-latin-300-italic.woff2) format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-weight: 400; src: url(fonts/jetbrains-mono-latin-400-normal.woff2) format('woff2'); }
+:root { --night: #07090d; --fg: #ece6da; --dim: rgba(236,230,218,.6); --faint: rgba(236,230,218,.28); --line: rgba(236,230,218,.14); --acc: #ff7a1a; --acc2: #ffc35a;
+  --serif: 'Cormorant Garamond', serif; --mono: 'JetBrains Mono', monospace; }
+body[data-part='2'] { --acc: #f0b24a; --acc2: #ffe39a; }
+body[data-part='3'] { --acc: #e8709f; --acc2: #ffb88a; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; background: var(--night); color: var(--fg); font-family: var(--serif); overflow: hidden; overscroll-behavior: none; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+body::before { content: ''; position: fixed; inset: -20%; background: radial-gradient(ellipse at 30% 0%, color-mix(in srgb, var(--acc) 22%, transparent), transparent 55%), radial-gradient(ellipse at 100% 100%, rgba(60,70,150,.25), transparent 55%); pointer-events: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.mono { font-family: var(--mono); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+#app { position: relative; height: 100%; display: flex; flex-direction: column; padding: calc(env(safe-area-inset-top) + 12px) 14px calc(env(safe-area-inset-bottom) + 12px); gap: 10px; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.brand { font-size: 14px; letter-spacing: .4em; font-weight: 300; }
+.live { display: flex; align-items: center; gap: 7px; }
+.live i { width: 8px; height: 8px; border-radius: 50%; background: #e05555; box-shadow: 0 0 10px #e05555; }
+.live.ok i { background: #6fdc8c; box-shadow: 0 0 10px #6fdc8c; }
+.awake { font-size: 9.5px; opacity: 0; transition: opacity .4s; }
+.awake.on { opacity: .8; }
+.clock { font-family: var(--mono); font-size: 15px; letter-spacing: .06em; color: var(--fg); }
+.bar { height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; flex: none; }
+.bar b { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--acc), var(--acc2)); transition: width .6s; }
+.card { position: relative; border: 1px solid var(--line); border-radius: 22px; padding: 14px 16px; background: rgba(255,255,255,.025); backdrop-filter: blur(10px); overflow: hidden; }
+.now { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.now .part { color: var(--acc); font-size: 10px; }
+.now h1 { font-weight: 300; font-size: 27px; line-height: 1.05; margin: 6px 0 8px; }
+.dots { display: flex; gap: 6px; flex-wrap: wrap; }
+.dots i { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--faint); }
+.dots i.on { background: var(--acc); border-color: var(--acc); }
+.dots i.cur { box-shadow: 0 0 10px var(--acc); transform: scale(1.3); }
+.meta { display: flex; justify-content: space-between; margin-top: 8px; font-size: 10px; }
+.meta .over { color: var(--acc2); }
+.notes { flex: 1; min-height: 0; overflow: auto; margin-top: 10px; font-size: 19px; line-height: 1.36; color: var(--fg); -webkit-user-select: text; user-select: text; }
+.warn { display: none; margin-top: 8px; padding: 9px 11px; border-radius: 12px; background: rgba(224,85,85,.14); color: #ffb3b3; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; line-height: 1.55; }
+.warn.on { display: block; }
+.upnext { flex: none; border-color: color-mix(in srgb, var(--acc) 45%, transparent); background: color-mix(in srgb, var(--acc) 9%, rgba(255,255,255,.02)); }
+.upnext .k { color: var(--acc2); font-size: 10px; display: flex; justify-content: space-between; }
+.upnext .what { font-size: 25px; line-height: 1.12; margin: 6px 0 2px; font-weight: 300; max-height: 2.3em; overflow: hidden; }
+.upnext .then { font-style: italic; color: var(--dim); font-size: 16px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pad { position: absolute; inset: 0; display: none; place-items: center; text-align: center; background: radial-gradient(circle at var(--px, 50%) var(--py, 50%), color-mix(in srgb, var(--acc2) 30%, transparent), transparent 40%), rgba(7,9,13,.985); touch-action: none; z-index: 2; }
+.pad.on { display: grid; }
+.pad .mono { line-height: 2; }
+.tools { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; flex: none; }
+.tool { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 9px 0 7px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.03); }
+.tool svg { width: 20px; height: 20px; stroke: var(--fg); fill: none; stroke-width: 1.5; }
+.tool span { font-family: var(--mono); font-size: 8px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+.tool.on { background: color-mix(in srgb, var(--acc) 22%, transparent); border-color: var(--acc); }
+.tool.on span { color: var(--fg); }
+.tool.vote.on { background: rgba(111,220,140,.16); border-color: #6fdc8c; }
+.tool.quit svg { stroke: #ff9b9b; }
+.nav { display: grid; grid-template-columns: 1fr 2.6fr; gap: 10px; height: 21vh; min-height: 130px; max-height: 210px; flex: none; }
+.nav button { border-radius: 26px; display: grid; place-items: center; position: relative; overflow: hidden; transition: transform .12s; }
+.nav button:active { transform: scale(.97); }
+.prev { border: 1px solid var(--line); background: rgba(255,255,255,.03); }
+.prev svg { width: 32px; height: 32px; stroke: var(--fg); fill: none; stroke-width: 1.4; }
+.next { background: linear-gradient(140deg, var(--acc), var(--acc2)); color: #1a0d04; box-shadow: 0 16px 46px color-mix(in srgb, var(--acc) 38%, transparent); text-align: center; }
+.next .l { font-family: var(--mono); font-size: 13px; letter-spacing: .34em; }
+.next .t { display: block; font-size: 20px; font-weight: 300; margin-top: 7px; padding: 0 14px; line-height: 1.1; max-height: 2.3em; overflow: hidden; }
+.next::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at var(--rx, 50%) var(--ry, 50%), rgba(255,255,255,.55), transparent 40%); opacity: 0; transition: opacity .5s; }
+.next.flash::after { opacity: 1; transition: none; }
+.sheet { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; justify-content: flex-end; background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .3s; }
+.sheet.on { opacity: 1; pointer-events: auto; }
+.sheet .in { max-height: 78vh; overflow: auto; background: #0e1118; border-top: 1px solid var(--line); border-radius: 26px 26px 0 0; padding: 18px 12px calc(env(safe-area-inset-bottom) + 18px); transform: translateY(30px); transition: transform .35s; }
+.sheet.on .in { transform: none; }
+.sheet li { list-style: none; padding: 13px 14px; border-radius: 14px; display: flex; justify-content: space-between; gap: 10px; font-size: 20px; color: var(--dim); }
+.sheet li.cur { color: var(--fg); background: color-mix(in srgb, var(--acc) 16%, transparent); }
+.sheet li .m { font-family: var(--mono); font-size: 11px; opacity: .6; align-self: center; }
+.sheet ol { margin: 0; padding: 0; }
+.sheet h3 { margin: 4px 14px 10px; }
+#confirm .in { text-align: center; padding: 26px 20px calc(env(safe-area-inset-bottom) + 26px); }
+#confirm h2 { font-weight: 300; font-size: 32px; margin: 8px 0 6px; }
+#confirm .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 22px; }
+#confirm button { padding: 18px 0; border-radius: 18px; font-family: var(--mono); font-size: 12px; letter-spacing: .24em; border: 1px solid var(--line); }
+#confirm .yes { background: #b8423f; border-color: #b8423f; color: #fff; }
+#confirm .stack { display: grid; gap: 10px; margin-top: 18px; }
+.full { position: fixed; inset: 0; z-index: 20; display: none; place-items: center; text-align: center; padding: 28px; background: var(--night); overflow: auto; }
+.full.on { display: grid; }
+.full h2 { font-weight: 300; font-size: 40px; margin: 10px 0 6px; letter-spacing: .3em; padding-left: .3em; }
+.full .lead { font-size: 22px; color: var(--dim); font-style: italic; margin: 0 auto 26px; max-width: 22em; line-height: 1.35; }
+.full input { width: 260px; font: 300 34px var(--mono); letter-spacing: .18em; text-align: center; text-transform: uppercase; color: var(--fg); background: none; border: 0; border-bottom: 1px solid var(--faint); outline: none; padding: 8px 0; }
+.btn { display: block; width: 100%; max-width: 320px; margin: 14px auto 0; font-family: var(--mono); font-size: 12px; letter-spacing: .26em; padding: 17px 20px; border-radius: 999px; background: linear-gradient(140deg, #ff7a1a, #ffc35a); color: #1a0d04; }
+.btn.ghost { background: none; color: var(--fg); border: 1px solid var(--line); }
+.btn.cast { display: none; }
+.btn.cast.on { display: block; }
+.or { margin: 24px 0 6px; }
+.err { color: #ff9b9b; min-height: 1.6em; margin-top: 14px; text-transform: none; letter-spacing: .04em; }
+.hint { margin-top: 26px; text-transform: none; letter-spacing: .04em; line-height: 1.7; max-width: 26em; }
+.castbtn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; flex: none; }
+.castbtn svg { width: 18px; height: 18px; stroke: var(--fg); fill: none; stroke-width: 1.5; }
+.castin { text-align: center; padding: 22px 20px calc(env(safe-area-inset-bottom) + 22px) !important; }
+.castin h2 { font-weight: 300; font-size: 32px; margin: 6px 0 4px; }
+.castin .btn { max-width: 380px; }
+.cnote { text-transform: none; letter-spacing: .03em; line-height: 1.6; margin: 10px auto 4px; max-width: 30em; font-size: 11px; }
+.cnote:empty { display: none; }
+/* ---- responsive ---- */
+.cols { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.info, .ctrl { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.info { flex: 1; }
+@media (max-width: 420px) { .awt { display: none; } }
+@media (max-width: 360px) {
+  .brand { letter-spacing: .25em; font-size: 13px; }
+  .live .mono { font-size: 9.5px; letter-spacing: .1em; }
+  .tool span { font-size: 7px; letter-spacing: .04em; }
+  .now h1 { font-size: 24px; }
+  .notes { font-size: 17px; }
+  .upnext .what { font-size: 21px; }
+}
+/* landscape phones and tablets: info on the left, controls on the right */
+@media (orientation: landscape) and (max-height: 560px), (orientation: landscape) and (min-width: 700px) {
+  .cols { flex-direction: row; }
+  .info { flex: 1.25; }
+  .ctrl { flex: 1; justify-content: flex-end; }
+  .nav { height: auto; flex: 1; max-height: none; min-height: 0; }
+  .tools { grid-template-columns: repeat(3, 1fr); }
+}
+@media (orientation: landscape) and (max-height: 560px) {
+  #app { padding-top: calc(env(safe-area-inset-top) + 8px); gap: 6px; padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); }
+  .now h1 { font-size: 22px; margin: 4px 0 6px; }
+  .notes { font-size: 16px; margin-top: 6px; }
+  .upnext .what { font-size: 19px; }
+  .tool { padding: 6px 0 5px; }
+}
+@media (min-width: 700px) { #app { max-width: 1100px; margin: 0 auto; } .notes { font-size: 21px; } }
+@media (orientation: portrait) and (min-width: 700px) { #app { max-width: 680px; } .nav { height: 24vh; max-height: 280px; } }
+/* full-screen panels scroll instead of being cut off on short screens */
+.full { display: none; place-items: initial; overflow-y: auto; }
+.full.on { display: flex; }
+.full > div { margin: auto; padding: 10px 0; }
+@media (max-height: 560px) { .full h2 { font-size: 30px; margin: 4px 0; } .full .lead { font-size: 17px; margin-bottom: 12px; } .full input { font-size: 26px; } .btn { padding: 13px 18px; margin-top: 10px; } .or { margin: 10px 0 2px; } .hint { margin-top: 12px; } }
+video.keep { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body data-part="1">
+<div id="app">
+  <header><span class="brand">UNFOLD</span><span class="mono awake" id="awake">☀<span class="awt"> écran actif</span></span><span class="live" id="live"><i></i><span class="mono" id="livet">connexion…</span></span><span class="clock" id="clock">00:00</span><button class="castbtn" id="t-cast" aria-label="Afficher sur un écran"><svg viewBox="0 0 24 24"><path d="M3 18.5a2.5 2.5 0 012.5 2.5M3 14.5a6.5 6.5 0 016.5 6.5M3 10.5A10.5 10.5 0 0113.5 21"/><path d="M6 5h13a2 2 0 012 2v10a2 2 0 01-2 2h-3"/></svg></button></header>
+  <div class="bar"><b id="bar"></b></div>
+  <div class="cols"><div class="info">
+  <div class="card now" id="card">
+    <div class="mono part" id="part">—</div>
+    <h1 id="title">En attente de l’écran</h1>
+    <div class="dots" id="dots"></div>
+    <div class="meta mono"><span id="pos"></span><span id="stime"></span></div>
+    <div class="notes" id="notes"></div>
+    <div class="warn" id="fullw">L’ordinateur n’est pas en plein écran : cliquez une fois sur son écran (ou appuyez sur F11).</div>
+    <div class="warn" id="warn">Son coupé par le navigateur de l’ordinateur : cliquez une fois sur l’écran de l’ordinateur (ou appuyez sur une touche).</div>
+    <div class="pad" id="pad"><div class="mono">projecteur actif<br>glissez le doigt ici<br>pour éclairer un point de l’écran</div></div>
+  </div>
+  <div class="card upnext"><div class="mono k"><span id="upk">Au prochain clic</span><span id="ups"></span></div><div class="what" id="upw">—</div><div class="then" id="upt"></div></div>
+  </div><div class="ctrl">
+  <div class="tools">
+    <button class="tool" id="t-black"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M9 20h6M12 16v4"/><path d="M4 5l16 11"/></svg><span>Noir</span></button>
+    <button class="tool" id="t-spot"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3"/></svg><span>Projecteur</span></button>
+    <button class="tool vote" id="t-vote"><svg viewBox="0 0 24 24"><path d="M4 7h10M4 12h16M4 17h7"/><circle cx="18.5" cy="6.5" r="2.5"/></svg><span id="vote-l">Vote</span></button>
+    <button class="tool" id="t-mute"><svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 010 6M18 6.5a7.5 7.5 0 010 11"/></svg><span>Son</span></button>
+    <button class="tool" id="t-list"><svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r=".8"/><circle cx="4" cy="12" r=".8"/><circle cx="4" cy="18" r=".8"/></svg><span>Scènes</span></button>
+    <button class="tool quit" id="t-quit"><svg viewBox="0 0 24 24"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1011.4 0"/></svg><span>Fin</span></button>
+  </div>
+  <div class="nav">
+    <button class="prev" id="prev" aria-label="Précédent"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button class="next" id="next"><span><span class="l" id="nextl">SUIVANT</span><span class="t" id="nextt"></span></span></button>
+  </div>
+  </div></div>
+</div>
+
+<div class="sheet" id="sheet"><div class="in"><h3 class="mono">Aller à la scène</h3><ol id="list"></ol></div></div>
+<div class="sheet" id="confirm"><div class="in"><div class="mono">Contrôle de l’écran</div><h2>Que faire ?</h2>
+  <div class="stack"><button id="exitfs">SORTIR DU PLEIN ÉCRAN</button><button class="yes" id="yes">TERMINER (ÉCRAN NOIR)</button><button id="no">ANNULER</button></div>
+  <div class="mono" style="text-transform:none;letter-spacing:.04em;margin-top:14px">Sur l’ordinateur : touche Q ou Échap, ou souris dans le coin haut-droit, pour le menu caché.</div></div></div>
+<div class="sheet" id="armsheet"><div class="in castin"><div class="mono">Avant de commencer</div><h2>L’ordinateur n’est pas prêt</h2>
+  <div class="mono cnote">Le navigateur de l’ordinateur bloque le son et le plein écran tant qu’on ne l’a pas touché. Cliquez une fois sur l’écran de l’ordinateur (une note sonne), puis touchez Commencer.</div>
+  <button class="btn" id="arm-ok">OK, JE CLIQUE SUR L’ORDINATEUR</button><button class="btn ghost" id="arm-go">COMMENCER QUAND MÊME</button></div></div>
+
+<div class="sheet" id="castsheet"><div class="in castin">
+  <div class="mono">Afficher sur un écran</div><h2>Où projeter ?</h2>
+  <button class="btn" id="c-find">CHERCHER UNE TV / CHROMECAST</button>
+  <div class="mono cnote" id="c-findnote"></div>
+  <button class="btn ghost" id="c-phone">PRÉSENTER DEPUIS CE TÉLÉPHONE</button>
+  <div class="mono cnote" id="c-help"></div>
+  <button class="btn ghost" id="c-close">FERMER</button>
+</div></div>
+<div class="full" id="byeov"><div><div class="mono">Unfold Worlds</div><h2>MERCI</h2><p class="lead">La présentation est terminée.</p><button class="btn ghost" id="again">SE RECONNECTER</button></div></div>
+
+<div class="full" id="pair"><div>
+  <div class="mono">Télécommande</div><h2>UNFOLD</h2>
+  <p class="lead">Ouvrez la présentation sur l’ordinateur relié au projecteur, puis scannez son QR — ou tapez le code affiché.</p>
+  <input id="code" maxlength="9" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD-1234">
+  <button class="btn" id="go">CONNECTER</button>
+  <div class="mono or">ou</div>
+  <button class="btn ghost" id="cast">AFFICHER SUR UN ÉCRAN…</button>
+  <div class="mono err" id="err"></div>
+  <div class="mono hint" id="hint"></div>
+</div></div>
+
+<video class="keep" id="keep" muted loop playsinline><source src="lib/wake.webm" type="video/webm"><source src="lib/wake.mp4" type="video/mp4"></video>
+
+<script type="module">
+import { join, randCode, cleanRoom } from './net.js';
+import { CAST_APP_ID } from './cast-config.js';
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+let PARTS = {};
+const store = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+let playLink = null;
+let link = null, st = null, meta = null, sceneT = Date.now(), lastIdx = -1;
+let cred = store.get('uw-remote') || {}; // { room, token }
+const buzz = (ms = 12) => navigator.vibrate && navigator.vibrate(ms);
+const mmss = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
+const clip = (t, n) => (t && t.length > n ? t.slice(0, n - 1) + '…' : t || '');
+
+// ---------- connection ----------
+function live(ok, txt) { $('live').classList.toggle('ok', ok); $('livet').textContent = txt; }
+async function connect(room, pin) {
+  link?.close(); link = null;
+  $('pair').classList.remove('on'); live(false, 'connexion…');
+  try {
+    link = await join({
+      room,
+      meta: () => ({ role: 'remote', token: cred.room === room ? cred.token : undefined, pin }),
+      onMessage,
+      onStatus: (s) => {
+        if (s === 'open') live(true, 'connecté');
+        if (s === 'lost') live(false, 'reconnexion…');
+        if (s === 'no-screen') live(false, 'écran introuvable…');
+      },
+    });
+  } catch { live(false, 'pas d’internet'); $('err').textContent = 'Pas de connexion internet sur ce téléphone.'; showPair(); }
+}
+function onMessage(m) {
+  if (m.t === 'paired') { cred = { room: m.room, token: m.token }; store.set('uw-remote', cred); history.replaceState(null, '', location.pathname); buzz([10, 40, 10]); }
+  else if (m.t === 'denied') { link?.close(); cred = {}; store.set('uw-remote', cred); $('err').textContent = 'Code expiré ou incorrect — regardez le code affiché sur l’écran.'; showPair(); }
+  else if (m.t === 'meta') { meta = m.scenes; PARTS = m.parts || {}; if (m.brand) document.querySelector('.brand').textContent = m.brand; if (m.play) playLink = m.play; renderList(); if (st) draw(st); }
+  else if (m.t === 'state') draw(m);
+  else if (m.t === 'bye') { $('byeov').classList.add('on'); }
+}
+function showPair() { $('pair').classList.add('on'); }
+function fromInput(v) {
+  const c = v.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return { room: cleanRoom(c.slice(0, 4)), pin: c.slice(4, 8) };
+}
+$('go').onclick = () => { const { room, pin } = fromInput($('code').value); if (room.length !== 4 || pin.length !== 4) { $('err').textContent = 'Le code ressemble à ABCD-1234.'; return; } $('err').textContent = ''; connect(room, pin); };
+$('code').addEventListener('input', (e) => { const c = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8); e.target.value = c.length > 4 ? `${c.slice(0, 4)}-${c.slice(4)}` : c; });
+$('again').onclick = () => { $('byeov').classList.remove('on'); cred.room ? connect(cred.room) : showPair(); };
+
+// ---------- show the deck on a screen ----------
+// 1) Chrome on Android: the Presentation API lists nearby Cast screens (Chromecast, Google TV, Cast TVs)
+//    and opens the deck there; this phone stays the remote, already paired by a token in the URL.
+// 2) Anywhere else: run the deck on this phone and mirror the phone with the system (AirPlay / Smart View).
+const ua = navigator.userAgent;
+const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isAndroid = /Android/.test(ua);
+const canCast = 'PresentationRequest' in window;
+// with a registered Cast app the phone launches receiver.html on the Chromecast itself
+const castURL = (room, token) => { if (CAST_APP_ID) return `cast:${CAST_APP_ID}?clientId=${randCode(10)}`; const u = new URL(playLink || './play.html', location.href); u.searchParams.set('cast', token); u.searchParams.set('room', room); return u.href; };
+function openCast() {
+  $('pair').classList.remove('on');
+  $('c-find').style.display = canCast ? '' : 'none';
+  $('c-findnote').textContent = canCast ? (CAST_APP_ID ? 'Chromecast ou Google TV sur le même Wi-Fi que ce téléphone. La présentation s’ouvre sur la TV et ce téléphone reste la télécommande.' : 'Chromecast, Google TV ou TV compatible Cast, sur le même Wi-Fi que ce téléphone.') : '';
+  $('c-help').textContent = isIOS
+    ? 'Sur iPhone, Safari ne peut pas chercher d’écran. Ouvrez le Centre de contrôle → Recopie de l’écran → choisissez l’Apple TV / la TV AirPlay, puis touchez « Présenter depuis ce téléphone ». Touchez à droite pour avancer, à gauche pour reculer.'
+    : isAndroid
+      ? (canCast ? 'Aucun écran dans la liste ? Utilisez la recopie d’écran du téléphone (Paramètres rapides → Diffuser / Smart View), puis « Présenter depuis ce téléphone ».' : 'Ouvrez cette page dans Chrome pour chercher les écrans Cast. Sinon : Paramètres rapides → Diffuser / Smart View, puis « Présenter depuis ce téléphone ».')
+      : 'Le téléphone affichera la présentation en plein écran : touchez à droite pour avancer, à gauche pour reculer.';
+  $('castsheet').classList.add('on');
+}
+function closeCast() { $('castsheet').classList.remove('on'); if (!link) showPair(); }
+$('cast').onclick = openCast;
+$('t-cast').onclick = () => { buzz(); openCast(); };
+$('c-close').onclick = closeCast;
+$('castsheet').onclick = (e) => { if (e.target.id === 'castsheet') closeCast(); };
+$('c-phone').onclick = () => { const u = new URL(playLink || './', location.href); u.searchParams.set('phone', '1'); location.href = u.href; };
+$('c-find').onclick = async () => {
+  const room = randCode(4), token = randCode(16);
+  try {
+    const req = new PresentationRequest([castURL(room, token)]);
+    const conn = await req.start(); // the browser shows the list of screens it can see
+    const hello = () => { try { conn.send(JSON.stringify({ room, token })); } catch {} };
+    if (conn.state === 'connected') hello(); conn.addEventListener('connect', hello);
+    cred = { room, token }; store.set('uw-remote', cred);
+    $('castsheet').classList.remove('on');
+    setTimeout(() => connect(room), CAST_APP_ID ? 6000 : 2500); // give the TV a moment to load the deck
+  } catch (e) {
+    $('c-findnote').textContent = e.name === 'NotAllowedError' ? 'Recherche annulée.' : 'Aucun écran trouvé. Chromecast n’ouvre pas les pages web lancées depuis un téléphone : utilisez « Caster mon écran » (appli Google Home) puis « Présenter depuis ce téléphone », ou diffusez depuis l’ordinateur (touche Q → Diffuser sur une TV).';
+  }
+};
+
+// ---------- drawing ----------
+function renderList() {
+  if (!meta) return;
+  $('list').innerHTML = meta.map((s, i) => `<li data-i="${i}" class="${st && st.started && i === st.idx ? 'cur' : ''}"><span>${i + 1}. ${esc(s.title)}</span><span class="m">${s.min ? s.min + '′' : ''}</span></li>`).join('');
+}
+function draw(m) {
+  st = m;
+  if (!meta) return;
+  const sc = meta[m.idx], nx = meta[m.idx + 1], nx2 = meta[m.idx + 2];
+  document.body.dataset.part = sc.part;
+  if (m.idx !== lastIdx) { sceneT = Date.now(); lastIdx = m.idx; renderList(); }
+  const total = meta.reduce((a, s) => a + s.steps, 0), done = meta.slice(0, m.idx).reduce((a, s) => a + s.steps, 0) + m.step + 1;
+  $('bar').style.width = m.started ? `${(done / total) * 100}%` : '0';
+  $('part').textContent = PARTS[sc.part] || '';
+  $('title').textContent = m.started ? sc.title : 'Prêt à commencer';
+  $('dots').innerHTML = m.started ? Array.from({ length: sc.steps }, (_, i) => `<i class="${i <= m.step ? 'on' : ''} ${i === m.step ? 'cur' : ''}"></i>`).join('') : '';
+  $('pos').textContent = m.started ? `scène ${m.idx + 1}/${meta.length} · point ${m.step + 1}/${sc.steps}` : '';
+  $('notes').textContent = m.started ? sc.notes || '' : 'Quand vous touchez « Commencer », la salle passe au noir puis le titre apparaît.';
+
+  // what the next click shows, and what comes after
+  let k, sub, what, then;
+  if (!m.started) { k = 'Au premier clic'; sub = ''; what = meta[0].title; then = meta[1] ? `puis → ${meta[1].title}` : ''; }
+  else if (m.step < sc.steps - 1) {
+    k = 'Au prochain clic'; sub = `point ${m.step + 2}/${sc.steps}`;
+    what = sc.points?.[m.step + 1] || `point ${m.step + 2}`;
+    then = nx ? `scène suivante → ${nx.title}` : 'dernière scène';
+  } else if (nx) {
+    k = 'Scène suivante'; sub = `${m.idx + 2}/${meta.length}`;
+    what = nx.title; then = nx2 ? `puis → ${nx2.title}` : 'puis : fin';
+  } else { k = 'Fin'; sub = ''; what = 'Dernière scène'; then = ''; }
+  $('upk').textContent = k; $('ups').textContent = sub; $('upw').textContent = clip(what, 80); $('upt').textContent = then;
+  $('nextl').textContent = !m.started ? 'COMMENCER' : m.step < sc.steps - 1 ? 'POINT SUIVANT' : nx ? 'SCÈNE SUIVANTE' : 'FIN';
+  $('nextt').textContent = clip(what, 46);
+
+  $('t-black').classList.toggle('on', m.black);
+  $('t-spot').classList.toggle('on', m.spot); $('pad').classList.toggle('on', m.spot);
+  const v = m.vote || {}; $('t-vote').classList.toggle('on', !!v.open); $('vote-l').textContent = v.open ? `Vote ${v.total || ''}` : 'Vote';
+  $('t-mute').classList.toggle('on', m.muted); $('t-mute').querySelector('span').textContent = m.muted ? 'Muet' : 'Son';
+  $('fullw').classList.toggle('on', m.full === false);
+  $('warn').classList.toggle('on', !m.audio && !m.muted && (m.started || m.armed === false));
+}
+setInterval(() => {
+  if (!st || !st.started || !meta) return;
+  $('clock').textContent = mmss(Date.now() - st.t0);
+  const sc = meta[st.idx], el = Date.now() - sceneT;
+  $('stime').textContent = sc.min ? `${mmss(el)} / ${sc.min}′` : mmss(el);
+  $('stime').classList.toggle('over', sc.min && el > sc.min * 60000);
+}, 500);
+
+// ---------- controls ----------
+const cmd = (c, extra = {}) => { if (!link?.send({ cmd: c, ...extra })) { live(false, 'reconnexion…'); buzz([30, 30, 30]); } };
+const nextBtn = $('next');
+nextBtn.addEventListener('pointerdown', (e) => {
+  const r = nextBtn.getBoundingClientRect(); nextBtn.style.setProperty('--rx', `${e.clientX - r.left}px`); nextBtn.style.setProperty('--ry', `${e.clientY - r.top}px`);
+  nextBtn.classList.add('flash'); requestAnimationFrame(() => requestAnimationFrame(() => nextBtn.classList.remove('flash')));
+  buzz(14);
+  if (st && !st.started && st.armed === false) { $('armsheet').classList.add('on'); return; }
+  cmd(st && st.started ? 'next' : 'start');
+});
+$('prev').addEventListener('pointerdown', () => { buzz(8); cmd('prev'); });
+$('t-black').onclick = () => { buzz(); cmd('black'); };
+$('t-spot').onclick = () => { buzz(); cmd('spot', { on: !(st && st.spot) }); };
+$('t-vote').onclick = () => { buzz(); cmd('vote', { open: !(st && st.vote && st.vote.open) }); };
+$('t-mute').onclick = () => { buzz(); cmd('mute'); };
+$('t-list').onclick = () => { buzz(); $('sheet').classList.add('on'); $('list').querySelector('.cur')?.scrollIntoView({ block: 'center' }); };
+$('sheet').onclick = (e) => { const li = e.target.closest('li'); if (li) { buzz(20); cmd('go', { idx: +li.dataset.i }); } $('sheet').classList.remove('on'); };
+$('t-quit').onclick = () => { buzz(20); $('confirm').classList.add('on'); };
+$('confirm').onclick = (e) => { if (e.target.id === 'confirm') $('confirm').classList.remove('on'); };
+$('no').onclick = () => $('confirm').classList.remove('on');
+$('exitfs').onclick = () => { buzz(); cmd('exitfs'); $('confirm').classList.remove('on'); };
+$('arm-ok').onclick = () => $('armsheet').classList.remove('on');
+$('arm-go').onclick = () => { $('armsheet').classList.remove('on'); cmd('start'); };
+$('armsheet').onclick = (e) => { if (e.target.id === 'armsheet') $('armsheet').classList.remove('on'); };
+$('yes').onclick = () => { buzz([20, 60, 20]); cmd('quit'); $('confirm').classList.remove('on'); };
+
+// trackpad -> spotlight (relative moves, batched ~40/s)
+const pad = $('pad'); let lx = 0, ly = 0, ax = 0, ay = 0, flushT = 0;
+pad.addEventListener('pointerdown', (e) => { pad.setPointerCapture(e.pointerId); lx = e.clientX; ly = e.clientY; });
+pad.addEventListener('pointermove', (e) => {
+  if (!e.buttons && e.pointerType === 'mouse') return;
+  const r = pad.getBoundingClientRect();
+  pad.style.setProperty('--px', `${e.clientX - r.left}px`); pad.style.setProperty('--py', `${e.clientY - r.top}px`);
+  ax += (e.clientX - lx) / r.width * 1.5; ay += (e.clientY - ly) / r.width * 1.5; lx = e.clientX; ly = e.clientY;
+  if (!flushT) flushT = setTimeout(() => { link?.send({ cmd: 'move', dx: ax, dy: ay }); ax = ay = 0; flushT = 0; }, 25);
+});
+
+// ---------- never let the phone sleep during the talk ----------
+let lock = null;
+async function wake() {
+  if (lock && !lock.released) return;
+  try {
+    lock = await navigator.wakeLock.request('screen');
+    lock.addEventListener('release', () => $('awake').classList.remove('on'));
+    $('awake').classList.add('on'); return;
+  } catch { /* not supported or refused: fall back to a silent looping video, which keeps the screen on */ }
+  try { await $('keep').play(); $('awake').classList.add('on'); } catch {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { wake(); if (link && !link.open && cred.room) connect(cred.room); } });
+addEventListener('pointerdown', wake, { capture: true });
+wake();
+
+// ---------- start ----------
+const h = location.hash.slice(1);
+if (h) { const { room, pin } = fromInput(h); connect(room, pin); }
+else if (cred.room) connect(cred.room);
+else showPair();
+</script>
+</body>
+</html>

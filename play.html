@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unfold Worlds</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%225%22 fill=%22%23ff7a1a%22/%3E%3C/svg%3E">
+<link rel="manifest" href="site.webmanifest">
+<meta name="theme-color" content="#07090d">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="overrides.css">
+</head>
+<body data-part="1">
+<canvas id="bg"></canvas>
+<div id="vig"></div>
+<div id="stage"></div>
+<div id="grain"></div>
+<div id="spot"></div>
+<div id="prog"></div>
+<div id="black"></div>
+<div id="toast"></div>
+<div id="turn"><div><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/></svg><div class="mono">tournez le téléphone<br>touchez à droite : suivant · à gauche : précédent</div></div></div>
+<div id="esc" aria-hidden="true"><div class="esc-in">
+  <div class="mono k">Présentateur</div>
+  <button data-a="full" id="esc-full">Sortir du plein écran</button>
+  <button data-a="cast" id="esc-cast">Diffuser sur une TV / Chromecast…</button>
+  <button data-a="black">Écran noir</button>
+  <button data-a="end">Terminer la présentation</button>
+  <button data-a="close" class="ghost">Fermer ce menu</button>
+  <div class="mono tip">Q · Échap · ou coin haut-droit</div>
+</div></div>
+<div id="pairmini"><div class="qr" id="qr-mini"></div><div class="mono" id="mini-txt"></div></div>
+<div id="begin">
+  <div class="setup">
+    <div class="brandmark">UNFOLD</div>
+    <div class="mono sub">chargement du monde…</div>
+    <div class="pair">
+      <div class="qr" id="qr-pair"></div>
+      <div class="pair-txt">
+        <div class="mono k">Télécommande</div>
+        <div class="big-s">Scannez avec votre téléphone</div>
+        <div class="mono" id="pair-url"></div>
+        <div class="code">code <b id="pair-code">––––</b></div>
+        <div class="status" id="pair-status"><i></i><span>en attente du téléphone…</span></div>
+      </div>
+    </div>
+    <div class="mono hint"><span class="h-a">Cliquez une fois sur cet écran : son et plein écran</span><span class="h-b">✓ Prêt — « Commencer » sur le téléphone, ou touche suivante</span></div>
+  </div>
+</div>
+<script src="lib/qrcode.js"></script>
+<script src="lib/supabase.js"></script>
+<script src="lib/purify.min.js"></script>
+<script type="module" src="player.js"></script>
+</body>
+</html>
