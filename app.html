@@ -34,7 +34,7 @@
 <div class="wrap">
   <header class="top">
     <a class="logo" href="./"><i></i><b>UNFOLD WORLDS</b></a>
-    <nav><span class="mono uemail" id="me"></span><a class="btn small" href="./">Galerie</a><button class="btn small" id="out">Déconnexion</button></nav>
+    <nav><span class="mono uemail" id="me"></span><a class="btn small gold" href="admin.html" id="console" style="display:none">Console</a><a class="btn small" href="./">Galerie</a><button class="btn small" id="out">Déconnexion</button></nav>
   </header>
   <h1 class="hello">Vos mondes</h1>
   <div class="orgs" id="orgs"></div>
@@ -76,6 +76,8 @@ const { data: { session } } = await sb().auth.getSession();
 if (!session) { location.replace('login.html'); await new Promise(() => {}); } // stop here while the browser leaves
 const me = session.user;
 $('me').textContent = me.email;
+// platform admins get the console link (the page itself re-checks, and so does the server)
+sb().from('platform_admins').select('user_id').eq('user_id', me.id).maybeSingle().then(({ data }) => { if (data) $('console').style.display = ''; });
 $('out').onclick = async () => { await sb().auth.signOut(); location.replace('./'); };
 
 let orgs = [], cur = null, tab = 'projects';

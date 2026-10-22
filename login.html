@@ -34,7 +34,9 @@
       <div class="or mono">ou par e-mail</div>
       <form id="f">
         <div class="field"><label for="email">Adresse e-mail</label><input class="input" id="email" type="email" autocomplete="email" required placeholder="vous@exemple.com"></div>
-        <button class="btn gold" id="send">RECEVOIR UN LIEN DE CONNEXION</button>
+        <div class="field"><label for="pw">Mot de passe</label><input class="input" id="pw" type="password" autocomplete="current-password" placeholder="si vous en avez un"></div>
+        <button class="btn gold" id="send">SE CONNECTER</button>
+        <button type="button" class="btn" id="magic" style="width:100%;margin-top:10px">PAS DE MOT DE PASSE ? RECEVOIR UN LIEN</button>
       </form>
       <div class="msg" id="msg"></div>
     </div>
@@ -56,15 +58,27 @@ document.getElementById('google').onclick = async () => {
   const { error } = await sb().auth.signInWithOAuth({ provider: 'google', options: { redirectTo: back } });
   if (error) say(error.message.includes('provider') ? 'La connexion Google n’est pas encore activée. Utilisez l’e-mail.' : error.message, 'bad');
 };
+// with a password (accounts created by a super admin), otherwise a one-time link by e-mail
 document.getElementById('f').onsubmit = async (e) => {
   e.preventDefault();
+  const email = document.getElementById('email').value.trim(), password = document.getElementById('pw').value;
+  if (!password) return magic();
+  const b = document.getElementById('send'); b.disabled = true; say('connexion…');
+  const { error } = await sb().auth.signInWithPassword({ email, password });
+  b.disabled = false;
+  if (error) say(/invalid/i.test(error.message) ? 'E-mail ou mot de passe incorrect.' : error.message, 'bad');
+  else location.replace(back);
+};
+async function magic() {
   const email = document.getElementById('email').value.trim();
-  const b = document.getElementById('send'); b.disabled = true; say('envoi…');
+  if (!email) { say('Entrez votre e-mail d’abord.', 'bad'); return; }
+  const b = document.getElementById('magic'); b.disabled = true; say('envoi…');
   const { error } = await sb().auth.signInWithOtp({ email, options: { emailRedirectTo: back } });
   b.disabled = false;
   if (error) say(/rate|security/i.test(error.message) ? 'Trop de demandes : réessayez dans une minute.' : error.message, 'bad');
   else say('Lien envoyé. Ouvrez l’e-mail sur cet appareil et cliquez dessus.', 'ok');
-};
+}
+document.getElementById('magic').onclick = magic;
 </script>
 </body>
 </html>
