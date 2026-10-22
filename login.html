@@ -36,7 +36,7 @@
         <div class="field"><label for="email">Adresse e-mail</label><input class="input" id="email" type="email" autocomplete="email" required placeholder="vous@exemple.com"></div>
         <div class="field"><label for="pw">Mot de passe</label><input class="input" id="pw" type="password" autocomplete="current-password" placeholder="si vous en avez un"></div>
         <button class="btn gold" id="send">SE CONNECTER</button>
-        <button type="button" class="btn" id="magic" style="width:100%;margin-top:10px">PAS DE MOT DE PASSE ? RECEVOIR UN LIEN</button>
+        <button type="button" class="btn" id="magic" style="width:100%;margin-top:10px">MOT DE PASSE OUBLIÉ OU PAS ENCORE CRÉÉ ?</button>
       </form>
       <div class="msg" id="msg"></div>
     </div>
@@ -62,7 +62,7 @@ document.getElementById('google').onclick = async () => {
 document.getElementById('f').onsubmit = async (e) => {
   e.preventDefault();
   const email = document.getElementById('email').value.trim(), password = document.getElementById('pw').value;
-  if (!password) return magic();
+  if (!password) { say('Entrez votre mot de passe, ou utilisez « mot de passe oublié ».', 'bad'); return; }
   const b = document.getElementById('send'); b.disabled = true; say('connexion…');
   const { error } = await sb().auth.signInWithPassword({ email, password });
   b.disabled = false;
@@ -73,10 +73,11 @@ async function magic() {
   const email = document.getElementById('email').value.trim();
   if (!email) { say('Entrez votre e-mail d’abord.', 'bad'); return; }
   const b = document.getElementById('magic'); b.disabled = true; say('envoi…');
-  const { error } = await sb().auth.signInWithOtp({ email, options: { emailRedirectTo: back } });
+  // the e-mail link signs you in and opens the "choose your password" window
+  const { error } = await sb().auth.resetPasswordForEmail(email, { redirectTo: back });
   b.disabled = false;
-  if (error) say(/rate|security/i.test(error.message) ? 'Trop de demandes : réessayez dans une minute.' : error.message, 'bad');
-  else say('Lien envoyé. Ouvrez l’e-mail sur cet appareil et cliquez dessus.', 'ok');
+  if (error) say(/rate|security|seconds/i.test(error.message) ? 'Un e-mail vient déjà de partir : patientez une minute avant de redemander.' : error.message, 'bad');
+  else say('E-mail envoyé. Cliquez sur le lien : vous choisirez votre mot de passe.', 'ok');
 }
 document.getElementById('magic').onclick = magic;
 </script>

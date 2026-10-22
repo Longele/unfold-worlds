@@ -65,7 +65,7 @@
   <div class="mono" id="acct-mail" style="text-transform:none;letter-spacing:.04em;margin-bottom:16px"></div>
   <div class="field"><label>Choisir un mot de passe (8 caractères minimum)</label><input class="input" name="pw" type="password" minlength="8" maxlength="72" required autocomplete="new-password"></div>
   <div class="field"><label>Le retaper</label><input class="input" name="pw2" type="password" minlength="8" maxlength="72" required autocomplete="new-password"></div>
-  <div class="row"><button class="btn gold" value="ok">ENREGISTRER</button><button class="btn" value="cancel" formnovalidate>FERMER</button></div>
+  <div class="row"><button class="btn gold" value="ok">ENREGISTRER</button><button class="btn" value="cancel" id="acct-close" formnovalidate>FERMER</button></div>
   <div class="msg" id="m-acct">Ensuite, vous pourrez vous connecter avec votre e-mail et ce mot de passe.</div>
 </form></dialog>
 <div class="toast" id="toast"></div>
@@ -80,20 +80,33 @@ const toast = (t) => { $('toast').textContent = t; $('toast').classList.add('on'
 const ROLE = { owner: 'Propriétaire', editor: 'Éditeur', presenter: 'Présentateur', viewer: 'Lecteur' };
 const VIS = { private: 'privé', unlisted: 'par lien', public: 'public' };
 
+// a password-reset e-mail lands here with #…type=recovery (read it before the client swallows the hash)
+const recovering = /type=recovery/.test(location.hash);
 const { data: { session } } = await sb().auth.getSession();
 if (!session) { location.replace('login.html'); await new Promise(() => {}); } // stop here while the browser leaves
 const me = session.user;
 $('me').textContent = me.email;
 // platform admins get the console link (the page itself re-checks, and so does the server)
 sb().from('platform_admins').select('user_id').eq('user_id', me.id).maybeSingle().then(({ data }) => { if (data) $('console').style.display = ''; });
-$('acct').onclick = () => { $('f-acct').reset(); $('acct-mail').textContent = me.email; $('m-acct').className = 'msg'; $('d-acct').showModal(); };
+// every account must have a password: until it has one, this window cannot be dismissed
+let mustSetPw = !me.user_metadata?.has_password || recovering;
+function openAcct(required) {
+  $('f-acct').reset(); $('acct-mail').textContent = me.email; $('m-acct').className = 'msg';
+  $('acct-close').style.display = required ? 'none' : '';
+  $('m-acct').textContent = required ? 'Pour sécuriser votre compte, choisissez votre mot de passe. Vous vous connecterez ensuite avec votre e-mail et ce mot de passe.' : 'Ensuite, vous pourrez vous connecter avec votre e-mail et ce mot de passe.';
+  $('d-acct').showModal();
+}
+$('d-acct').addEventListener('cancel', (e) => { if (mustSetPw) e.preventDefault(); }); // Échap ne ferme pas tant qu'il manque le mot de passe
+$('acct').onclick = () => openAcct(false);
+if (mustSetPw) openAcct(true);
 $('f-acct').addEventListener('submit', async (e) => {
   const f = e.target;
   if (e.submitter?.value !== 'ok') return;
   e.preventDefault();
   if (f.pw.value !== f.pw2.value) { $('m-acct').textContent = 'Les deux mots de passe ne sont pas identiques.'; $('m-acct').className = 'msg bad'; return; }
-  const { error } = await sb().auth.updateUser({ password: f.pw.value });
+  const { error } = await sb().auth.updateUser({ password: f.pw.value, data: { has_password: true } });
   if (error) { $('m-acct').textContent = /same|different/i.test(error.message) ? 'C’est déjà votre mot de passe.' : /weak|short/i.test(error.message) ? 'Mot de passe trop faible.' : error.message; $('m-acct').className = 'msg bad'; return; }
+  mustSetPw = false; history.replaceState(null, '', location.pathname);
   $('d-acct').close(); toast('mot de passe enregistré');
 });
 $('out').onclick = async () => { await sb().auth.signOut(); location.replace('./'); };
