@@ -167,8 +167,8 @@ video.keep { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-event
     <div class="dots" id="dots"></div>
     <div class="meta mono"><span id="pos"></span><span id="stime"></span></div>
     <div class="notes" id="notes"></div>
-    <div class="warn" id="fullw">L’ordinateur n’est pas en plein écran : cliquez une fois sur son écran (ou appuyez sur F11).</div>
-    <div class="warn" id="warn">Son coupé par le navigateur de l’ordinateur : cliquez une fois sur l’écran de l’ordinateur (ou appuyez sur une touche).</div>
+    <div class="warn" id="fullw">Pas en plein écran : cliquez une fois sur l’écran de l’ordinateur.</div>
+    <div class="warn" id="warn">Son coupé : cliquez une fois sur l’écran de l’ordinateur.</div>
     <div class="pad" id="pad"><div class="mono">projecteur actif<br>glissez le doigt ici<br>pour éclairer un point de l’écran</div></div>
   </div>
   <div class="card upnext"><div class="mono k"><span id="upk">Au prochain clic</span><span id="ups"></span></div><div class="what" id="upw">·</div><div class="then" id="upt"></div></div>
@@ -192,9 +192,9 @@ video.keep { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-event
 <div class="sheet" id="sheet"><div class="in"><h3 class="mono">Aller à la scène</h3><ol id="list"></ol></div></div>
 <div class="sheet" id="confirm"><div class="in"><div class="mono">Contrôle de l’écran</div><h2>Que faire ?</h2>
   <div class="stack"><button id="exitfs">SORTIR DU PLEIN ÉCRAN</button><button class="yes" id="yes">TERMINER (ÉCRAN NOIR)</button><button id="no">ANNULER</button></div>
-  <div class="mono" style="text-transform:none;letter-spacing:.04em;margin-top:14px">Sur l’ordinateur : touche Q ou Échap, ou souris dans le coin haut-droit, pour le menu caché.</div></div></div>
+  </div></div>
 <div class="sheet" id="armsheet"><div class="in castin"><div class="mono">Avant de commencer</div><h2>L’ordinateur n’est pas prêt</h2>
-  <div class="mono cnote">Le navigateur de l’ordinateur bloque le son et le plein écran tant qu’on ne l’a pas touché. Cliquez une fois sur l’écran de l’ordinateur (une note sonne), puis touchez Commencer.</div>
+  <div class="mono cnote">Cliquez une fois sur l’écran de l’ordinateur, puis Commencer.</div>
   <button class="btn" id="arm-ok">OK, JE CLIQUE SUR L’ORDINATEUR</button><button class="btn ghost" id="arm-go">COMMENCER QUAND MÊME</button></div></div>
 
 <div class="sheet" id="castsheet"><div class="in castin">
@@ -209,7 +209,7 @@ video.keep { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-event
 
 <div class="full" id="pair"><div>
   <div class="mono">Télécommande</div><h2>UNFOLD</h2>
-  <p class="lead">Ouvrez la présentation sur l’ordinateur relié au projecteur, puis scannez son QR ou tapez le code affiché.</p>
+  <p class="lead">Code affiché sur l’écran</p>
   <input id="code" maxlength="9" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD-1234">
   <button class="btn" id="go">CONNECTER</button>
   <div class="mono or">ou</div>
@@ -281,12 +281,8 @@ const castURL = (room, token) => { if (CAST_APP_ID) return `cast:${CAST_APP_ID}?
 function openCast() {
   $('pair').classList.remove('on');
   $('c-find').style.display = canCast ? '' : 'none';
-  $('c-findnote').textContent = canCast ? (CAST_APP_ID ? 'Chromecast ou Google TV sur le même Wi-Fi que ce téléphone. La présentation s’ouvre sur la TV et ce téléphone reste la télécommande.' : 'Chromecast, Google TV ou TV compatible Cast, sur le même Wi-Fi que ce téléphone.') : '';
-  $('c-help').textContent = isIOS
-    ? 'Sur iPhone, Safari ne peut pas chercher d’écran. Ouvrez le Centre de contrôle → Recopie de l’écran → choisissez l’Apple TV / la TV AirPlay, puis touchez « Présenter depuis ce téléphone ». Touchez à droite pour avancer, à gauche pour reculer.'
-    : isAndroid
-      ? (canCast ? 'Aucun écran dans la liste ? Utilisez la recopie d’écran du téléphone (Paramètres rapides → Diffuser / Smart View), puis « Présenter depuis ce téléphone ».' : 'Ouvrez cette page dans Chrome pour chercher les écrans Cast. Sinon : Paramètres rapides → Diffuser / Smart View, puis « Présenter depuis ce téléphone ».')
-      : 'Le téléphone affichera la présentation en plein écran : touchez à droite pour avancer, à gauche pour reculer.';
+  $('c-findnote').textContent = '';
+  $('c-help').textContent = isIOS ? 'iPhone : Centre de contrôle, Recopie de l’écran.' : isAndroid ? 'Android : Paramètres rapides, Diffuser l’écran.' : '';
   $('castsheet').classList.add('on');
 }
 function closeCast() { $('castsheet').classList.remove('on'); if (!link) showPair(); }
@@ -306,7 +302,7 @@ $('c-find').onclick = async () => {
     $('castsheet').classList.remove('on');
     setTimeout(() => connect(room), CAST_APP_ID ? 6000 : 2500); // give the TV a moment to load the deck
   } catch (e) {
-    $('c-findnote').textContent = e.name === 'NotAllowedError' ? 'Recherche annulée.' : 'Aucun écran trouvé. Chromecast n’ouvre pas les pages web lancées depuis un téléphone : utilisez « Caster mon écran » (appli Google Home) puis « Présenter depuis ce téléphone », ou diffusez depuis l’ordinateur (touche Q → Diffuser sur une TV).';
+    $('c-findnote').textContent = e.name === 'NotAllowedError' ? 'Recherche annulée.' : 'Aucun écran trouvé.';
   }
 };
 
@@ -327,7 +323,7 @@ function draw(m) {
   $('title').textContent = m.started ? sc.title : 'Prêt à commencer';
   $('dots').innerHTML = m.started ? Array.from({ length: sc.steps }, (_, i) => `<i class="${i <= m.step ? 'on' : ''} ${i === m.step ? 'cur' : ''}"></i>`).join('') : '';
   $('pos').textContent = m.started ? `scène ${m.idx + 1}/${meta.length} · point ${m.step + 1}/${sc.steps}` : '';
-  $('notes').textContent = m.started ? sc.notes || '' : 'Quand vous touchez « Commencer », la salle passe au noir puis le titre apparaît.';
+  $('notes').textContent = m.started ? sc.notes || '' : '';
 
   // what the next click shows, and what comes after
   let k, sub, what, then;

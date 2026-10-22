@@ -24,9 +24,7 @@
   <header class="top"><a class="logo" href="./"><i></i><b>UNFOLD WORLDS</b></a><nav id="nav"></nav></header>
   <div class="center">
     <div class="panel">
-      <div class="mono">Espace membres</div>
       <h1>Connexion</h1>
-      <p class="lead">Retrouvez vos mondes.</p>
       <form id="f">
         <div class="field"><label for="email">Adresse e-mail</label><input class="input" id="email" type="email" autocomplete="email" required placeholder="vous@exemple.com"></div>
         <div class="field"><label for="pw">Mot de passe</label><input class="input" id="pw" type="password" autocomplete="current-password" required></div>
@@ -34,7 +32,6 @@
         <button type="button" class="btn" id="forgot">MOT DE PASSE OUBLIÉ ?</button>
       </form>
       <div class="msg" id="msg"></div>
-      <div class="mono note">Les comptes sont créés par l’administrateur. Sans compte, vous pouvez <a href="./#mondes" style="color:var(--acc2)">explorer les mondes publics</a>.</div>
     </div>
   </div>
 </div>
@@ -68,8 +65,8 @@ document.getElementById('forgot').onclick = async () => {
   const b = document.getElementById('forgot'); b.disabled = true; say('envoi…');
   const { error } = await sb().auth.resetPasswordForEmail(email, { redirectTo: back });
   b.disabled = false;
-  if (error) say(/rate|security|seconds/i.test(error.message) ? 'Un e-mail vient déjà de partir : patientez une minute avant de redemander.' : error.message, 'bad');
-  else say('Si ce compte existe, un e-mail est parti. Cliquez sur le lien pour choisir un nouveau mot de passe.', 'ok');
+  if (error) say(/rate|security|seconds/i.test(error.message) ? 'Réessayez dans une minute.' : error.message, 'bad');
+  else say('E-mail envoyé.', 'ok');
 };
 </script>
 </body>

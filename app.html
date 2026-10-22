@@ -54,7 +54,7 @@ if (!session) { location.replace('login.html'); await new Promise(() => {}); } /
 const me = session.user;
 const { isSuper } = await mountNav('mine');
 $('hello').textContent = `Bonjour ${displayName(me)}`;
-$('sub').textContent = isSuper ? 'Super-admin · vos mondes attribués, le reste est dans la Console' : 'Les mondes qui vous sont attribués';
+
 
 // ---- password: a temporary one (set by the admin) must be replaced at the first sign-in
 let mustSetPw = !me.user_metadata?.has_password || recovering;
@@ -63,7 +63,7 @@ function openAcct(required) {
   $('f-acct').name.value = me.user_metadata?.name || '';
   const pwReq = required || false; $('f-acct').pw.required = pwReq; $('f-acct').pw2.required = pwReq;
   $('acct-close').style.display = required ? 'none' : '';
-  $('m-acct').textContent = required ? 'Bienvenue ! Choisissez votre propre mot de passe pour continuer.' : 'Laissez le mot de passe vide pour ne changer que le nom.';
+  $('m-acct').textContent = required ? 'Choisissez votre mot de passe.' : '';
   $('d-acct').showModal();
 }
 $('d-acct').addEventListener('cancel', (e) => { if (mustSetPw) e.preventDefault(); });
@@ -85,7 +85,7 @@ if (mustSetPw) openAcct(true); else fromMenu();
 // ---- my worlds (only the ones given to me; the admin creates and assigns them)
 const { data, error } = await sb().from('projects').select('slug, title, subtitle, author, visibility, share_token, external_url, cover_url, updated_at').eq('owner_id', me.id).order('updated_at', { ascending: false });
 if (error) $('view').innerHTML = `<div class="empty">${esc(error.message)}</div>`;
-else if (!data.length) $('view').innerHTML = (isSuper ? '<div class="empty">Aucun monde ne vous est attribué. Créez-en et attribuez-les depuis la <a href="admin.html" style="color:var(--acc2)">Console</a>.</div>' : '<div class="empty">Aucun monde ne vous est encore attribué. L’administrateur vous en donnera l’accès.</div>');
+else if (!data.length) $('view').innerHTML = '<div class="empty">Aucun monde.</div>';
 else {
   $('view').innerHTML = '<div class="grid">' + data.map((p, i) => `<div class="card${p.cover_url ? ' has-cover' : ''}">
       ${p.cover_url ? `<div class="cover" style="background-image:url('${esc(p.cover_url)}')"></div>` : ''}
