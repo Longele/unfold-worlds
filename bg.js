@@ -1,4 +1,4 @@
-// Living background: "silk light" — domain-warped ribbons of light in the part's colour over deep night,
+// Living background: "silk light", domain-warped ribbons of light in the part's colour over deep night,
 // with an anamorphic flare that sweeps through on every click. Rendered at reduced resolution (it is soft
 // by nature) so it stays smooth on a laptop iGPU driving a projector.
 const canvas = document.getElementById('bg');

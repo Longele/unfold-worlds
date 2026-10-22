@@ -235,7 +235,7 @@ function showPair() {
 function setPaired() {
   const n = remotes.size, st = $('pair-status');
   st.classList.toggle('ok', n > 0);
-  st.querySelector('span').textContent = !net.ok ? 'connexion au service…' : n > 0 ? `téléphone connecté${n > 1 ? ` (${n})` : ''} — prêt` : 'en attente du téléphone…';
+  st.querySelector('span').textContent = !net.ok ? 'connexion au service…' : n > 0 ? `téléphone connecté${n > 1 ? ` (${n})` : ''}, prêt` : 'en attente du téléphone…';
 }
 // what each click will reveal: the text of the elements that appear (or light up) at that step
 const POINTS = SCENES.map((sc) => {
@@ -298,7 +298,7 @@ async function connectNet() {
     net.ok = true; document.body.classList.add('has-server'); setPaired();
   } catch (e) {
     if (e.type === 'unavailable-id' && !castToken) { net.room = randCode(4); store.set(ROOM_KEY, net.room); return connectNet(); }
-    $('pair-status').querySelector('span').textContent = 'pas d’internet — utilisez la télécommande ou le clavier';
+    $('pair-status').querySelector('span').textContent = 'pas d’internet, utilisez la télécommande ou le clavier';
   }
 }
 function onCmd(m) {
@@ -472,7 +472,7 @@ async function castToTV() {
     const req = new PresentationRequest([playURL({ receiver: '1' })]);
     castConn = await req.start();
     const done = () => { castConn = null; A.setMuted(false); say('diffusion arrêtée'); };
-    castConn.onconnect = () => { castState(); for (const [, w] of words) for (let i = 0; i < w.n; i++) castSend({ t: 'word', w: w.text }); A.setMuted(true); say('diffusion sur la TV — le son sort sur la TV'); };
+    castConn.onconnect = () => { castState(); for (const [, w] of words) for (let i = 0; i < w.n; i++) castSend({ t: 'word', w: w.text }); A.setMuted(true); say('diffusion sur la TV, le son sort sur la TV'); };
     castConn.onterminate = done; castConn.onclose = done;
   } catch (e) { if (e.name !== 'NotAllowedError') say('aucun écran trouvé'); }
 }

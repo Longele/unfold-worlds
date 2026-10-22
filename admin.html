@@ -16,21 +16,24 @@
   .tab { padding: 10px 16px; border-radius: 999px; border: 1px solid transparent; font-family: var(--mono); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); background: none; cursor: pointer; }
   .tab.on { border-color: var(--line); color: var(--fg); background: rgba(255,255,255,.04); }
   .list { display: grid; gap: 10px; }
-  .item { border: 1px solid var(--line); border-radius: 18px; padding: 16px 18px; background: rgba(10,12,18,.6); backdrop-filter: blur(10px); }
+  .item { border: 1px solid var(--line); border-radius: 18px; padding: 14px 18px; background: rgba(10,12,18,.6); backdrop-filter: blur(10px); }
   .item .h { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .item .t { font-size: 22px; word-break: break-word; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  .item .meta { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; color: var(--dim); margin-top: 6px; line-height: 1.7; }
+  .item .t { font-size: 21px; word-break: break-word; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .item .meta { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; color: var(--dim); margin-top: 4px; }
   .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-  .chip { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--fg); }
+  .chip { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } }
   .sel { padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line); background: #0e1118; font-size: 15px; max-width: 100%; }
-  .checks { display: grid; gap: 6px; max-height: 180px; overflow: auto; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; }
+  .checks { display: grid; gap: 6px; max-height: 160px; overflow: auto; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; }
   .checks label, .tick { display: flex; gap: 10px; align-items: center; font-size: 17px; text-transform: none; letter-spacing: 0; color: var(--fg); font-family: var(--serif); cursor: pointer; }
-  .tick { font-size: 15px; margin: 4px 0 14px; }
+  .tick { font-size: 15px; margin: 2px 0 14px; }
   input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--acc); }
   .pwshow { font-family: var(--mono); font-size: 18px; letter-spacing: .06em; padding: 12px 14px; border-radius: 12px; background: rgba(255,195,90,.08); border: 1px dashed rgba(255,195,90,.45); word-break: break-all; margin-top: 10px; }
-  .search { max-width: 360px; }
+  .lbl { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+  .ctl { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+  .search { max-width: 320px; }
+  .panel .msg:empty { display: none; }
 </style>
 </head>
 <body>
@@ -42,15 +45,15 @@
   </header>
   <h1 class="hello">Console</h1>
   <div class="mono" id="stats"></div>
-  <div class="tabs"><button class="tab on" data-t="people">Personnes</button><button class="tab" data-t="pres">Mondes</button></div>
+  <div class="tabs"><button class="tab on" data-t="people">Personnes</button><button class="tab" data-t="worlds">Mondes</button></div>
   <div id="view"></div>
 </div>
 
 <dialog id="d-pw"><form method="dialog" id="f-pw">
-  <h3>Réinitialiser le mot de passe</h3>
+  <h3>Mot de passe</h3>
   <div class="mono" id="pw-who" style="text-transform:none;letter-spacing:.04em;margin-bottom:14px"></div>
-  <div class="field"><label>Nouveau mot de passe (6 caractères minimum)</label><div class="row"><input class="input" name="pw" minlength="6" maxlength="72" required style="flex:1" autocomplete="off"><button type="button" class="btn small" data-gen>Générer</button></div></div>
-  <label class="tick"><input type="checkbox" name="temp" checked> Temporaire : la personne choisira le sien à la prochaine connexion</label>
+  <div class="field"><div class="row"><input class="input" name="pw" minlength="6" maxlength="72" required style="flex:1" autocomplete="off" placeholder="6 caractères min."><button type="button" class="btn small" data-gen>Générer</button></div></div>
+  <label class="tick"><input type="checkbox" name="temp" checked> Temporaire</label>
   <div class="row"><button class="btn gold" value="ok">ENREGISTRER</button><button class="btn" value="cancel" formnovalidate>ANNULER</button></div>
 </form></dialog>
 
@@ -67,10 +70,12 @@ setBg({ hue: [255, 150, 60], fx: 0.8, fy: 0.12, mode: 'drift', pull: 0.25, speed
 const $ = (id) => document.getElementById(id);
 const toast = (t) => { $('toast').textContent = t; $('toast').classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => $('toast').classList.remove('on'), 2600); };
 const VIS = { private: 'privé', unlisted: 'par lien', public: 'public' };
-const date = (d) => (d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
+const ROLES = { member: 'Membre', super: 'Super-admin' };
+const date = (d) => (d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '·');
 const genPw = () => { const a = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'; return Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => a[b % a.length]).join(''); };
+const opts = (map, sel) => Object.entries(map).map(([v, l]) => `<option value="${v}" ${v === sel ? 'selected' : ''}>${l}</option>`).join('');
 
-// ---- only platform admins get past this point (the database and the server check again)
+// ---- platform admins only (the database and the server check again)
 const { data: { session } } = await sb().auth.getSession();
 if (!session) { location.replace('login.html'); await new Promise(() => {}); }
 const me = session.user;
@@ -87,18 +92,18 @@ async function call(action, payload) {
   return j;
 }
 
-let tab = 'people', D = { users: [], pres: [] }, q = '';
+let tab = 'people', D = { users: [], worlds: [] }, q = '';
 document.querySelectorAll('.tab').forEach((t) => (t.onclick = () => { tab = t.dataset.t; document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === t)); render(); }));
 async function load() {
   const { data, error } = await sb().rpc('admin_overview');
   if (error) { $('view').innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
-  D = { users: data.filter((r) => r.kind === 'user').sort((a, b) => a.email.localeCompare(b.email)), pres: data.filter((r) => r.kind === 'project').sort((a, b) => a.title.localeCompare(b.title)) };
-  $('stats').textContent = `${D.users.length} personne${D.users.length > 1 ? 's' : ''} · ${D.pres.length} monde${D.pres.length > 1 ? 's' : ''} · ${D.pres.filter((p) => p.visibility === 'public').length} public(s)`;
+  D = { users: data.filter((r) => r.kind === 'user').sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email)), worlds: data.filter((r) => r.kind === 'project').sort((a, b) => a.title.localeCompare(b.title)) };
+  $('stats').textContent = `${D.users.length} personne${D.users.length > 1 ? 's' : ''} · ${D.worlds.length} monde${D.worlds.length > 1 ? 's' : ''}`;
   render();
 }
-const render = () => (tab === 'people' ? renderPeople() : renderPres());
-const emailOf = (id) => { const u = D.users.find((x) => x.id === id); return u ? u.name || u.email : null; };
-const userOptions = (sel) => '<option value="">— personne —</option>' + D.users.map((u) => `<option value="${u.id}" ${u.id === sel ? 'selected' : ''}>${esc(u.name ? `${u.name} — ${u.email}` : u.email)}</option>`).join('');
+const render = () => (tab === 'people' ? renderPeople() : renderWorlds());
+const who = (id) => { const u = D.users.find((x) => x.id === id); return u ? u.name || u.email : null; };
+const userOptions = (sel) => '<option value="">Personne</option>' + D.users.map((u) => `<option value="${u.id}" ${u.id === sel ? 'selected' : ''}>${esc(u.name || u.email)}</option>`).join('');
 function wireGen(root) { root.querySelectorAll('[data-gen]').forEach((g) => (g.onclick = () => { g.parentElement.querySelector('input').value = genPw(); })); }
 function showDone(t, m, pw) { $('done-t').textContent = t; $('done-m').innerHTML = m; $('done-pw').textContent = pw; $('d-done').showModal(); }
 $('done-ok').onclick = () => { $('done-pw').textContent = ''; $('d-done').close(); };
@@ -110,23 +115,24 @@ function renderPeople() {
   const list = D.users.filter((u) => !q || (u.email + ' ' + (u.name || '')).toLowerCase().includes(q.toLowerCase()));
   $('view').innerHTML = `
     <form class="panel" id="f-new" style="margin-bottom:22px" autocomplete="off">
-      <div class="mono">Ajouter une personne</div>
+      <div class="mono">Ajouter</div>
       <div class="grid2" style="margin-top:14px">
-        <div class="field"><label>Nom (affiché)</label><input class="input" name="name" maxlength="80" placeholder="Prénom Nom"></div>
+        <div class="field"><label>Nom</label><input class="input" name="name" maxlength="80"></div>
         <div class="field"><label>E-mail</label><input class="input" name="email" type="email" required></div>
-        <div class="field"><label>Mot de passe (6 caractères minimum)</label><div class="row"><input class="input" name="pw" minlength="6" maxlength="72" required style="flex:1"><button type="button" class="btn small" data-gen>Générer</button></div></div>
-        <div class="field"><label>Ses mondes</label><div class="checks">${D.pres.map((p) => `<label><input type="checkbox" name="p" value="${p.id}"> ${esc(p.title)}${p.owner_id ? ` <span class="mono" style="font-size:9px">(à ${esc(emailOf(p.owner_id) || '?')})</span>` : ''}</label>`).join('') || '<span class="mono" style="font-size:10px">aucun monde</span>'}</div></div>
+        <div class="field"><label>Mot de passe</label><div class="row"><input class="input" name="pw" minlength="6" maxlength="72" required style="flex:1" placeholder="6 caractères min."><button type="button" class="btn small" data-gen>Générer</button></div></div>
+        <div class="field"><label>Rôle</label><select class="input" name="role">${opts(ROLES, 'member')}</select></div>
+        <div class="field" style="grid-column:1/-1"><label>Mondes</label><div class="checks">${D.worlds.map((p) => `<label><input type="checkbox" name="p" value="${p.id}"> ${esc(p.title)}</label>`).join('') || '<span class="mono" style="font-size:10px">aucun</span>'}</div></div>
       </div>
-      <label class="tick"><input type="checkbox" name="temp" checked> Mot de passe temporaire : la personne choisira le sien à sa première connexion</label>
-      <button class="btn gold">AJOUTER</button><div class="msg" id="m-new">Personne ne peut s’inscrire seul : seuls les comptes ajoutés ici existent.</div>
+      <label class="tick"><input type="checkbox" name="temp" checked> Mot de passe temporaire</label>
+      <button class="btn gold">AJOUTER</button><div class="msg" id="m-new"></div>
     </form>
-    <div class="row" style="margin-bottom:12px"><input class="input search" id="q" placeholder="chercher un nom ou un e-mail" value="${esc(q)}"></div>
+    <div class="row" style="margin-bottom:12px"><input class="input search" id="q" placeholder="Rechercher" value="${esc(q)}"></div>
     <div class="list">${list.map((u) => {
-      const mine = D.pres.filter((p) => p.owner_id === u.id);
-      return `<div class="item" data-u="${u.id}"><div class="h"><div class="t">${esc(u.name || u.email)}${u.role === 'super' ? '<span class="badge">super-admin</span>' : ''}${u.id === me.id ? '<span class="badge" style="color:var(--fg)">vous</span>' : ''}${!u.has_password ? '<span class="badge warn">mot de passe à choisir</span>' : ''}</div>
-        <div class="row"><button class="btn small" data-a="pw">Réinitialiser le mot de passe</button><button class="btn small" data-a="super">${u.role === 'super' ? 'Retirer super-admin' : 'Rendre super-admin'}</button>${u.id !== me.id ? '<button class="btn small danger" data-a="del">Supprimer</button>' : ''}</div></div>
-        <div class="meta">${u.name ? esc(u.email) + ' · ' : ''}ajouté le ${date(u.created_at)} · dernière connexion ${date(u.last_sign_in_at)}</div>
-        <div class="chips">${mine.length ? mine.map((p) => `<span class="chip">${esc(p.title)} · ${VIS[p.visibility]}</span>`).join('') : '<span class="mono" style="font-size:10px">aucun monde</span>'}</div></div>`;
+      const mine = D.worlds.filter((p) => p.owner_id === u.id);
+      return `<div class="item" data-u="${u.id}"><div class="h"><div class="t">${esc(u.name || u.email)}${u.id === me.id ? '<span class="badge" style="color:var(--fg)">vous</span>' : ''}${!u.has_password ? '<span class="badge warn">mot de passe à choisir</span>' : ''}</div>
+        <div class="row"><select class="sel" data-a="role">${opts(ROLES, u.role)}</select><button class="btn small" data-a="pw">Mot de passe</button>${u.id !== me.id ? '<button class="btn small danger" data-a="del">Supprimer</button>' : ''}</div></div>
+        <div class="meta">${u.name ? esc(u.email) + ' · ' : ''}dernière connexion ${date(u.last_sign_in_at)}</div>
+        ${mine.length ? `<div class="chips">${mine.map((p) => `<span class="chip">${esc(p.title)}</span>`).join('')}</div>` : ''}</div>`;
     }).join('') || '<div class="empty">Personne.</div>'}</div>`;
   $('q').oninput = (e) => { q = e.target.value; const pos = e.target.selectionStart; renderPeople(); $('q').focus(); $('q').setSelectionRange(pos, pos); };
   wireGen($('f-new'));
@@ -135,35 +141,34 @@ function renderPeople() {
     const f = e.target, b = f.querySelector('.btn.gold'); b.disabled = true;
     const ids = [...f.querySelectorAll('input[name=p]:checked')].map((x) => x.value);
     try {
-      const r = await call('create_user', { email: f.email.value, password: f.pw.value, name: f.name.value.trim(), temporary: f.temp.checked });
+      const r = await call('create_user', { email: f.email.value, password: f.pw.value, name: f.name.value.trim(), role: f.role.value, temporary: f.temp.checked });
       if (ids.length) await assign(ids, r.user_id);
-      showDone('Personne ajoutée', `${esc(f.email.value)}${ids.length ? ` · ${ids.length} monde(s)` : ''}<br>Connexion : ${esc(site())}login.html<br>${f.temp.checked ? 'Mot de passe temporaire — elle en choisira un à sa première connexion :' : 'Mot de passe :'}`, f.pw.value);
+      showDone('Ajouté', `${esc(f.email.value)} · ${ROLES[f.role.value]}<br>${esc(site())}login.html`, f.pw.value);
       f.reset(); load();
     } catch (err) { $('m-new').textContent = err.message; $('m-new').className = 'msg bad'; }
     b.disabled = false;
   };
   $('view').querySelectorAll('.item[data-u]').forEach((it) => {
     const u = D.users.find((x) => x.id === it.dataset.u);
-    it.querySelector('[data-a="pw"]').onclick = () => { pwUser = u; $('f-pw').reset(); $('pw-who').textContent = u.email; wireGen($('f-pw')); $('d-pw').showModal(); };
-    it.querySelector('[data-a="super"]').onclick = async () => {
-      const on = u.role !== 'super';
-      if (!confirm(on ? `Donner à ${u.email} l’accès complet à toute la plateforme ?` : `Retirer l’accès super-admin de ${u.email} ?`)) return;
-      try { await call('set_super', { user_id: u.id, on }); toast(on ? 'super-admin ajouté' : 'accès retiré'); load(); } catch (err) { toast(err.message); }
+    it.querySelector('[data-a="role"]').onchange = async (e) => {
+      try { await call('set_role', { user_id: u.id, role: e.target.value }); toast(`rôle : ${ROLES[e.target.value]}`); } catch (err) { toast(err.message); }
+      load();
     };
+    it.querySelector('[data-a="pw"]').onclick = () => { pwUser = u; $('f-pw').reset(); $('pw-who').textContent = u.name || u.email; wireGen($('f-pw')); $('d-pw').showModal(); };
     it.querySelector('[data-a="del"]')?.addEventListener('click', async () => {
-      if (!confirm(`Supprimer définitivement le compte ${u.email} ? Ses mondes restent, sans titulaire.`)) return;
-      try { await call('delete_user', { user_id: u.id }); toast('compte supprimé'); load(); } catch (err) { toast(err.message); }
+      if (!confirm(`Supprimer ${u.name || u.email} ?`)) return;
+      try { await call('delete_user', { user_id: u.id }); toast('supprimé'); load(); } catch (err) { toast(err.message); }
     });
   });
 }
 let pwUser = null;
 $('d-pw').addEventListener('close', async () => {
   if ($('d-pw').returnValue !== 'ok' || !pwUser) return;
-  const f = $('f-pw'), pw = f.pw.value, temp = f.temp.checked;
-  try { await call('set_password', { user_id: pwUser.id, password: pw, temporary: temp }); showDone('Mot de passe réinitialisé', `${esc(pwUser.email)}<br>${temp ? 'Temporaire — à changer à la prochaine connexion :' : 'Nouveau mot de passe :'}`, pw); load(); } catch (err) { toast(err.message); }
+  const f = $('f-pw'), pw = f.pw.value;
+  try { await call('set_password', { user_id: pwUser.id, password: pw, temporary: f.temp.checked }); showDone('Mot de passe changé', esc(pwUser.name || pwUser.email), pw); load(); } catch (err) { toast(err.message); }
 });
 
-// ================= presentations =================
+// ================= worlds =================
 function starter({ title, subtitle, author }) {
   const t = esc(title), s = esc(subtitle || ''), a = esc(author || '');
   return {
@@ -176,39 +181,45 @@ function starter({ title, subtitle, author }) {
     ],
   };
 }
-function renderPres() {
+const openHref = (p) => p.url || `play.html?w=${encodeURIComponent(p.slug)}`;
+function renderWorlds() {
   $('view').innerHTML = `
-    <form class="panel" id="f-pres" style="margin-bottom:22px">
+    <form class="panel" id="f-w" style="margin-bottom:22px">
       <div class="mono">Nouveau monde</div>
       <div class="grid2" style="margin-top:14px">
+        <div class="field"><label>Type</label><select class="input" name="kind"><option value="deck">Présentation</option><option value="site">Site externe</option></select></div>
+        <div class="field" data-site style="display:none"><label>Adresse du site</label><input class="input" name="url" type="url" placeholder="https://"></div>
         <div class="field"><label>Titre</label><input class="input" name="title" required maxlength="140"></div>
         <div class="field"><label>Sous-titre</label><input class="input" name="subtitle" maxlength="160"></div>
-        <div class="field"><label>Auteur / orateur (affiché)</label><input class="input" name="author" maxlength="120"></div>
-        <div class="field"><label>Attribuée à</label><select class="input" name="owner">${userOptions('')}</select></div>
-        <div class="field"><label>Visibilité</label><select class="input" name="vis"><option value="private">Privé — seulement son titulaire</option><option value="unlisted">Par lien — ceux qui ont le lien</option><option value="public">Public — visible par tous dans « Explorer »</option></select></div>
+        <div class="field"><label>Auteur</label><input class="input" name="author" maxlength="120"></div>
+        <div class="field"><label>Titulaire</label><select class="input" name="owner">${userOptions('')}</select></div>
+        <div class="field"><label>Visibilité</label><select class="input" name="vis">${opts(VIS, 'private')}</select></div>
       </div>
-      <button class="btn gold">CRÉER</button><div class="msg">Elle démarre avec une ouverture et une fin ; je mets ensuite le contenu en forme.</div>
+      <button class="btn gold">CRÉER</button><div class="msg" id="m-w"></div>
     </form>
-    <div class="list">${D.pres.map((p) => `<div class="item" data-p="${p.id}"><div class="h"><div class="t">${esc(p.title)}</div>
-        <div class="row"><a class="btn small gold" target="_blank" rel="noopener" href="play.html?w=${encodeURIComponent(p.slug)}">Ouvrir</a><button class="btn small danger" data-a="del">Supprimer</button></div></div>
-        <div class="row" style="margin-top:12px"><span class="mono" style="font-size:10px">Titulaire</span><select class="sel" data-a="owner">${userOptions(p.owner_id)}</select>
-          <span class="mono" style="font-size:10px;margin-left:8px">Visibilité</span><select class="sel" data-a="vis">${Object.entries(VIS).map(([v, l]) => `<option value="${v}" ${v === p.visibility ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-        <div class="meta">/${esc(p.slug)} · créé le ${date(p.created_at)} · modifié le ${date(p.last_sign_in_at)}</div></div>`).join('') || '<div class="empty">Aucun monde.</div>'}</div>`;
-  $('f-pres').onsubmit = async (e) => {
+    <div class="list">${D.worlds.map((p) => `<div class="item" data-p="${p.id}"><div class="h"><div class="t">${esc(p.title)}${p.url ? '<span class="badge">site</span>' : ''}</div>
+        <div class="row"><a class="btn small gold" target="_blank" rel="noopener" href="${esc(openHref(p))}">Ouvrir</a><button class="btn small danger" data-a="del">Supprimer</button></div></div>
+        <div class="ctl"><span class="lbl">Titulaire</span><select class="sel" data-a="owner">${userOptions(p.owner_id)}</select><span class="lbl">Visibilité</span><select class="sel" data-a="vis">${opts(VIS, p.visibility)}</select></div>
+        <div class="meta">${p.url ? esc(p.url.replace(/^https:\/\//, '')) : '/' + esc(p.slug)}</div></div>`).join('') || '<div class="empty">Aucun monde.</div>'}</div>`;
+  const f = $('f-w');
+  f.kind.onchange = () => { const site = f.kind.value === 'site'; f.querySelector('[data-site]').style.display = site ? '' : 'none'; f.url.required = site; };
+  f.onsubmit = async (e) => {
     e.preventDefault();
-    const f = e.target, title = f.title.value.trim();
+    const title = f.title.value.trim(), site = f.kind.value === 'site';
+    if (site && !/^https:\/\//.test(f.url.value)) { $('m-w').textContent = 'L’adresse doit commencer par https://'; $('m-w').className = 'msg bad'; return; }
     const row = { org_id: home?.id, title, subtitle: f.subtitle.value.trim() || null, author: f.author.value.trim() || null, owner_id: f.owner.value || null, visibility: f.vis.value,
-      slug: slugify(title) + '-' + Math.random().toString(36).slice(2, 6), content: starter({ title, subtitle: f.subtitle.value.trim(), author: f.author.value.trim() }) };
+      slug: slugify(title) + '-' + Math.random().toString(36).slice(2, 6), external_url: site ? f.url.value.trim() : null,
+      content: site ? { scenes: [] } : starter({ title, subtitle: f.subtitle.value.trim(), author: f.author.value.trim() }) };
     const { error } = await sb().from('projects').insert(row);
     toast(error ? error.message : 'monde créé'); if (!error) load();
   };
   $('view').querySelectorAll('.item[data-p]').forEach((it) => {
-    const p = D.pres.find((x) => x.id === it.dataset.p);
-    it.querySelector('[data-a="owner"]').onchange = async (e) => { const { error } = await sb().from('projects').update({ owner_id: e.target.value || null }).eq('id', p.id); toast(error ? error.message : 'titulaire mis à jour'); load(); };
-    it.querySelector('[data-a="vis"]').onchange = async (e) => { const { error } = await sb().from('projects').update({ visibility: e.target.value }).eq('id', p.id); toast(error ? error.message : `maintenant ${VIS[e.target.value]}`); load(); };
+    const p = D.worlds.find((x) => x.id === it.dataset.p);
+    it.querySelector('[data-a="owner"]').onchange = async (e) => { const { error } = await sb().from('projects').update({ owner_id: e.target.value || null }).eq('id', p.id); toast(error ? error.message : 'titulaire changé'); load(); };
+    it.querySelector('[data-a="vis"]').onchange = async (e) => { const { error } = await sb().from('projects').update({ visibility: e.target.value }).eq('id', p.id); toast(error ? error.message : VIS[e.target.value]); load(); };
     it.querySelector('[data-a="del"]').onclick = async () => {
-      if (prompt(`Supprimer « ${p.title} » ? Tapez SUPPRIMER pour confirmer.`) !== 'SUPPRIMER') return;
-      const { error } = await sb().from('projects').delete().eq('id', p.id); toast(error ? error.message : 'monde supprimé'); load();
+      if (prompt(`Supprimer « ${p.title} » ? Tapez SUPPRIMER.`) !== 'SUPPRIMER') return;
+      const { error } = await sb().from('projects').delete().eq('id', p.id); toast(error ? error.message : 'supprimé'); load();
     };
   });
 }

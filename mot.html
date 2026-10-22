@@ -42,7 +42,7 @@ let open = false, done = false, pending = false, link = null;
 try { done = localStorage.getItem('uw-mot-' + room) === 'done'; } catch {}
 function setOpen(o) {
   open = o;
-  if (done) { b.disabled = w.disabled = true; msg.textContent = 'merci — vous avez donné vos mots'; return; }
+  if (done) { b.disabled = w.disabled = true; msg.textContent = 'merci, vous avez donné vos mots'; return; }
   b.disabled = !open;
   msg.textContent = open ? IDLE : 'le vote ouvre dans un instant…';
   if (open) { navigator.vibrate && navigator.vibrate(15); if (pending && w.value.trim()) { pending = false; f.requestSubmit(); } }
@@ -52,10 +52,10 @@ function onMessage(m) {
   if (m.t === 'vote') { if (m.q) document.querySelector('h1').textContent = m.q; setOpen(m.open); }
   if (m.t === 'word') {
     if (m.ok) {
-      msg.textContent = m.left > 0 ? `merci — c’est à l’écran · encore ${m.left} mot${m.left > 1 ? 's' : ''} possible${m.left > 1 ? 's' : ''}` : 'merci — regardez l’écran';
+      msg.textContent = m.left > 0 ? `merci, c’est à l’écran · encore ${m.left} mot${m.left > 1 ? 's' : ''} possible${m.left > 1 ? 's' : ''}` : 'merci, regardez l’écran';
       if (!m.left) finish();
     } else if (m.why === 'closed') { setOpen(false); pending = true; msg.textContent = 'le vote ouvre dans un instant… votre mot partira dès l’ouverture'; }
-    else if (m.left === 0) { finish(); msg.textContent = 'merci — vous avez donné vos 3 mots'; }
+    else if (m.left === 0) { finish(); msg.textContent = 'merci, vous avez donné vos 3 mots'; }
     else msg.textContent = 'un instant… puis réessayez';
     setTimeout(() => { if (!done) b.disabled = !open; }, 1200);
   }
@@ -65,14 +65,14 @@ f.onsubmit = (e) => {
   const v = w.value.trim(); if (!v) return w.focus();
   if (!open) { pending = true; msg.textContent = 'le vote ouvre dans un instant… votre mot partira dès l’ouverture'; return; }
   b.disabled = true;
-  if (!link?.send({ t: 'word', w: v })) { msg.textContent = 'connexion perdue — réessayez dans un instant'; b.disabled = false; return; }
+  if (!link?.send({ t: 'word', w: v })) { msg.textContent = 'connexion perdue, réessayez dans un instant'; b.disabled = false; return; }
   const fl = document.createElement('div'); fl.className = 'flyer'; fl.textContent = v; document.body.append(fl);
   requestAnimationFrame(() => requestAnimationFrame(() => { fl.style.transform = 'translate(-50%, -260%) scale(.6)'; fl.style.opacity = 0; }));
   setTimeout(() => fl.remove(), 1300);
   navigator.vibrate && navigator.vibrate(20);
   w.value = '';
 };
-if (room.length !== 4) msg.textContent = 'lien incomplet — scannez le QR affiché à l’écran';
+if (room.length !== 4) msg.textContent = 'lien incomplet, scannez le QR affiché à l’écran';
 else {
   try {
     link = await join({ room, meta: () => ({ role: 'audience' }), onMessage, onStatus: (s) => {

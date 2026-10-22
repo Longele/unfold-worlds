@@ -113,3 +113,9 @@ footer { position: relative; z-index: 1; padding: 30px 16px 40px; text-align: ce
 /* ---- big screens (4K walls at 100 % scaling): grow the whole page instead of leaving it tiny ---- */
 @media (min-width: 2200px) { html { zoom: 1.45; } }
 @media (min-width: 3200px) { html { zoom: 1.95; } }
+
+/* cards with a picture of the world */
+.card.has-cover { padding-top: 0; }
+.card .cover { margin: 0 -22px 18px; aspect-ratio: 16 / 9; background: #0b0d12 center / cover no-repeat; border-bottom: 1px solid var(--line); transition: transform .6s var(--ease); }
+a.card:hover .cover { transform: scale(1.03); }
+.card.has-cover::before { display: none; }

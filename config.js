@@ -1,4 +1,4 @@
-// Unfold Worlds — public settings. The publishable key is meant to live in the browser:
+// Unfold Worlds, public settings. The publishable key is meant to live in the browser:
 // what each visitor can read or write is decided by Row Level Security in the database.
 export const SUPABASE_URL = 'https://pyjqbnsuspmatwtgxgga.supabase.co';
 export const SUPABASE_KEY = 'sb_publishable_cYzfcf4DCauSUZDLLk7iGg_FkL0scIl';

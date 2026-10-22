@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Unfold Worlds — Every world has a story.</title>
+<title>Unfold Worlds · Every world has a story.</title>
 <meta name="description" content="Présentations, sites et expériences immersives. Explorez librement les mondes publics.">
 <meta name="theme-color" content="#07090d">
 <link rel="icon" href="icon-192.png">
@@ -21,7 +21,7 @@
     <div class="rise">
       <h1>UNFOLD<span>WORLDS</span></h1>
       <p class="tag">Every world has a story.</p>
-      <p class="lead">Présentations, sites et expériences immersives — à vivre en salle ou à l’écran. Chaque monde ouvre la porte d’un nouvel univers.</p>
+      <p class="lead">Présentations, sites et expériences immersives, à vivre en salle ou à l’écran. Chaque monde ouvre la porte d’un nouvel univers.</p>
       <div class="cta"><a class="btn gold" href="#mondes">Explorer les mondes</a></div>
     </div>
   </section>
@@ -41,15 +41,17 @@ import { mountNav } from './nav.js';
 mountNav('explore');
 
 // only public worlds are visible without an account (Row Level Security)
-const { data, error } = await sb().from('projects').select('title, subtitle, author, slug, updated_at').eq('visibility', 'public').order('updated_at', { ascending: false }).limit(60);
+const { data, error } = await sb().from('projects').select('title, subtitle, author, slug, external_url, cover_url, updated_at').eq('visibility', 'public').order('updated_at', { ascending: false }).limit(60);
 const grid = document.getElementById('grid');
 if (error) grid.innerHTML = '<div class="empty">Les mondes n’ont pas pu être chargés.</div>';
 else if (!data.length) grid.innerHTML = '<div class="empty">Aucun monde public pour l’instant.</div>';
 else {
   document.getElementById('count').textContent = `${data.length} monde${data.length > 1 ? 's' : ''}`;
-  grid.innerHTML = data.map((p) => `<a class="card" href="play.html?w=${encodeURIComponent(p.slug)}">
+  // presentations play here; immersive sites open in a new tab
+  grid.innerHTML = data.map((p) => `<a class="card${p.cover_url ? ' has-cover' : ''}" href="${p.external_url ? esc(p.external_url) : `play.html?w=${encodeURIComponent(p.slug)}`}"${p.external_url ? ' target="_blank" rel="noopener"' : ''}>
+    ${p.cover_url ? `<div class="cover" style="background-image:url('${esc(p.cover_url)}')"></div>` : ''}
     <div class="mono org">${esc(p.author || 'Unfold Worlds')}</div><h3>${esc(p.title)}</h3><p>${esc(p.subtitle || '')}</p>
-    <div class="foot"><span class="pill public">libre accès</span></div></a>`).join('');
+    <div class="foot"><span class="pill public">${p.external_url ? 'site immersif' : 'présentation'}</span></div></a>`).join('');
 }
 </script>
 </body>

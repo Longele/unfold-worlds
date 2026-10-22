@@ -153,7 +153,7 @@ body.phone-mode.portrait.started #turn { display: grid; }
 .esc-in button.ghost { color: var(--fg-dim); font-size: 16px; }
 .esc-in .tip { font-size: 9.5px; text-transform: none; letter-spacing: 0.06em; margin: 10px 6px 2px; color: var(--fg-faint); }
 body.receiver #begin, body.receiver #pairmini, body.receiver #esc { display: none !important; }
-/* ---- spotlight: a real beam — the room darkens hard, the circle glows warm ---- */
+/* ---- spotlight: a real beam, the room darkens hard, the circle glows warm ---- */
 #spot { background: radial-gradient(circle at var(--sx, 50%) var(--sy, 50%), rgba(255, 228, 180, 0.16) 0, rgba(255, 205, 140, 0.08) 7vmin, rgba(0, 0, 0, 0) 10.5vmin, rgba(0, 0, 0, 0.84) 19vmin); transition: opacity 0.45s var(--ease); }
 #spot::after { width: 21vmin; height: 21vmin; border: 2px solid rgba(255, 214, 140, 0.85);
   box-shadow: 0 0 22px 4px rgba(255, 170, 70, 0.75), 0 0 90px 20px rgba(255, 150, 50, 0.35), inset 0 0 50px rgba(255, 200, 120, 0.4);

@@ -149,7 +149,7 @@ video.keep { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-event
   <div class="bar"><b id="bar"></b></div>
   <div class="cols"><div class="info">
   <div class="card now" id="card">
-    <div class="mono part" id="part">—</div>
+    <div class="mono part" id="part">·</div>
     <h1 id="title">En attente de l’écran</h1>
     <div class="dots" id="dots"></div>
     <div class="meta mono"><span id="pos"></span><span id="stime"></span></div>
@@ -158,7 +158,7 @@ video.keep { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-event
     <div class="warn" id="warn">Son coupé par le navigateur de l’ordinateur : cliquez une fois sur l’écran de l’ordinateur (ou appuyez sur une touche).</div>
     <div class="pad" id="pad"><div class="mono">projecteur actif<br>glissez le doigt ici<br>pour éclairer un point de l’écran</div></div>
   </div>
-  <div class="card upnext"><div class="mono k"><span id="upk">Au prochain clic</span><span id="ups"></span></div><div class="what" id="upw">—</div><div class="then" id="upt"></div></div>
+  <div class="card upnext"><div class="mono k"><span id="upk">Au prochain clic</span><span id="ups"></span></div><div class="what" id="upw">·</div><div class="then" id="upt"></div></div>
   </div><div class="ctrl">
   <div class="tools">
     <button class="tool" id="t-black"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M9 20h6M12 16v4"/><path d="M4 5l16 11"/></svg><span>Noir</span></button>
@@ -195,7 +195,7 @@ video.keep { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-event
 
 <div class="full" id="pair"><div>
   <div class="mono">Télécommande</div><h2>UNFOLD</h2>
-  <p class="lead">Ouvrez la présentation sur l’ordinateur relié au projecteur, puis scannez son QR — ou tapez le code affiché.</p>
+  <p class="lead">Ouvrez la présentation sur l’ordinateur relié au projecteur, puis scannez son QR ou tapez le code affiché.</p>
   <input id="code" maxlength="9" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD-1234">
   <button class="btn" id="go">CONNECTER</button>
   <div class="mono or">ou</div>
@@ -240,7 +240,7 @@ async function connect(room, pin) {
 }
 function onMessage(m) {
   if (m.t === 'paired') { cred = { room: m.room, token: m.token }; store.set('uw-remote', cred); history.replaceState(null, '', location.pathname); buzz([10, 40, 10]); }
-  else if (m.t === 'denied') { link?.close(); cred = {}; store.set('uw-remote', cred); $('err').textContent = 'Code expiré ou incorrect — regardez le code affiché sur l’écran.'; showPair(); }
+  else if (m.t === 'denied') { link?.close(); cred = {}; store.set('uw-remote', cred); $('err').textContent = 'Code expiré ou incorrect, regardez le code affiché sur l’écran.'; showPair(); }
   else if (m.t === 'meta') { meta = m.scenes; PARTS = m.parts || {}; if (m.brand) document.querySelector('.brand').textContent = m.brand; if (m.play) playLink = m.play; renderList(); if (st) draw(st); }
   else if (m.t === 'state') draw(m);
   else if (m.t === 'bye') { $('byeov').classList.add('on'); }

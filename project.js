@@ -42,6 +42,7 @@ export async function loadProject() {
   if (error) { failCard('Connexion impossible', 'Le monde n’a pas pu être chargé. Vérifiez la connexion internet, puis rechargez la page.'); throw error; }
   if (!row) { failCard('Présentation introuvable', 'Ce lien ne mène à aucune présentation accessible. Elle est peut-être privée : connectez-vous avec le compte qui y a accès.'); throw new Error('not found'); }
 
+  if (row.external_url) { location.replace(row.external_url); await new Promise(() => {}); } // an immersive site lives elsewhere
   const c = row.content || {};
   const scenes = (c.scenes || []).map((sc) => withTimer({ ...sc, html: window.DOMPurify.sanitize(sc.html || '', PURIFY) }));
   if (!scenes.length) { failCard('Monde vide', 'Ce projet n’a pas encore de scènes.'); throw new Error('empty'); }

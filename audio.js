@@ -1,5 +1,5 @@
 // Sound design, no voices and no music bed: CORPUS ElevenLabs SFX + a procedural bell whose pitch climbs
-// with each revealed point. Silence between clicks is deliberate — the room hears the speaker, not a soundtrack.
+// with each revealed point. Silence between clicks is deliberate, the room hears the speaker, not a soundtrack.
 let ctx, master, verb, muted = false;
 const raw = {}, buf = {};
 const NAMES = ['whoosh_a', 'whoosh_b', 'ui_tick', 'ui_open', 'dust', 'awaken', 'membrane', 'spark', 'heartbeat'];
