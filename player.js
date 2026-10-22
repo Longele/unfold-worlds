@@ -379,6 +379,7 @@ function input(fn, remote = false) {
   if (now - lastIn < (remote ? 120 : 220)) return;
   lastIn = now;
   if (!started) { remote || armed ? begin() : arm(); return; }
+  if (!armed && !remote) { arm(); return; } // started from the phone: the first local click only turns on sound + fullscreen
   if (black.classList.contains('on')) { toggleBlack(false); return; }
   fn();
 }

@@ -367,7 +367,8 @@ nextBtn.addEventListener('pointerdown', (e) => {
   const r = nextBtn.getBoundingClientRect(); nextBtn.style.setProperty('--rx', `${e.clientX - r.left}px`); nextBtn.style.setProperty('--ry', `${e.clientY - r.top}px`);
   nextBtn.classList.add('flash'); requestAnimationFrame(() => requestAnimationFrame(() => nextBtn.classList.remove('flash')));
   buzz(14);
-  if (st && !st.started && st.armed === false) { $('armsheet').classList.add('on'); return; }
+  // always start: if the laptop hasn't been clicked yet, the warning banner says so (no blocking sheet:
+  // it opened under the finger and the release closed it again, so the button looked dead)
   cmd(st && st.started ? 'next' : 'start');
 });
 $('prev').addEventListener('pointerdown', () => { buzz(8); cmd('prev'); });
