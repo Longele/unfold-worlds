@@ -212,3 +212,10 @@ body.tv .setup .hint { display: none; }
 @keyframes fsglow { 50% { box-shadow: 0 20px 80px rgba(255, 170, 70, .6); } }
 #begin.armed .fsgo { display: none; }
 #begin .fsgo, #begin .fsgo * { cursor: pointer !important; }
+
+/* Situer: the whole field, framed, with its sum below (no overlap with the lists) */
+.whole .draw { transition: stroke-dashoffset 2.4s cubic-bezier(.45,0,.55,1) !important; filter: drop-shadow(0 0 14px rgba(255, 160, 60, .45)); }
+.whole-sum { position: absolute; left: 0; right: 0; top: 912px; display: flex; justify-content: center; align-items: baseline; gap: 18px; }
+.whole-sum b { font-weight: 300; font-size: 104px; line-height: 1; font-variant-numeric: lining-nums; }
+.whole-sum .mono { font-size: 22px; letter-spacing: .3em; }
+.whole-sum i { width: 10px; height: 10px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 14px var(--acc); margin: 0 26px; align-self: center; }
