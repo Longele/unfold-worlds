@@ -287,7 +287,7 @@ function onConn(c) {
     if (!w) return;
     c._n++; c._t = Date.now(); wordsTotal++;
     addWord(w); castSend({ t: 'word', w }); c.send({ t: 'word', ok: true, left: 3 - c._n });
-    if (wordsTotal % 5 === 0) sync();
+    sync(); // live counter on the presenter's phone
   });
   c.on('close', () => { remotes.delete(c); audience.delete(c); setPaired(); });
 }

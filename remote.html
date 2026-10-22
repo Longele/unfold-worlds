@@ -140,6 +140,19 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 .full.on { display: flex; }
 .full > div { margin: auto; padding: 10px 0; }
 @media (max-height: 560px) { .full h2 { font-size: 30px; margin: 4px 0; } .full .lead { font-size: 17px; margin-bottom: 12px; } .full input { font-size: 26px; } .btn { padding: 13px 18px; margin-top: 10px; } .or { margin: 10px 0 2px; } .hint { margin-top: 12px; } }
+/* the vote: impossible to miss while the audience scene is on */
+.votebar { display: none; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 12px 12px 16px; border-radius: 20px; border: 1px solid var(--line); background: rgba(255,255,255,.04); flex: none; }
+.votebar.on { display: flex; }
+.vb-info { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.vb-info i { width: 12px; height: 12px; border-radius: 50%; background: var(--faint); flex: none; }
+.vb-info span { display: flex; flex-direction: column; line-height: 1.15; }
+.vb-info b { font-weight: 400; font-size: 21px; }
+.vb-info small { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+#vb-btn { flex: none; padding: 15px 18px; border-radius: 16px; font-family: var(--mono); font-size: 12px; letter-spacing: .2em; background: linear-gradient(140deg, #3fbf6a, #8ee6a6); color: #06210f; }
+.votebar.open { border-color: rgba(111,220,140,.6); background: rgba(111,220,140,.1); }
+.votebar.open .vb-info i { background: #6fdc8c; box-shadow: 0 0 12px #6fdc8c; animation: vpulse 1.4s ease-in-out infinite; }
+.votebar.open #vb-btn { background: #b8423f; color: #fff; }
+@keyframes vpulse { 50% { opacity: .35; } }
 video.keep { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 </style>
 </head>
@@ -160,6 +173,7 @@ video.keep { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-event
   </div>
   <div class="card upnext"><div class="mono k"><span id="upk">Au prochain clic</span><span id="ups"></span></div><div class="what" id="upw">·</div><div class="then" id="upt"></div></div>
   </div><div class="ctrl">
+  <div class="votebar" id="votebar"><div class="vb-info"><i></i><span><b id="vb-state">Vote fermé</b><small id="vb-n"></small></span></div><button id="vb-btn">OUVRIR LE VOTE</button></div>
   <div class="tools">
     <button class="tool" id="t-black"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M9 20h6M12 16v4"/><path d="M4 5l16 11"/></svg><span>Noir</span></button>
     <button class="tool" id="t-spot"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3"/></svg><span>Projecteur</span></button>
@@ -332,7 +346,12 @@ function draw(m) {
 
   $('t-black').classList.toggle('on', m.black);
   $('t-spot').classList.toggle('on', m.spot); $('pad').classList.toggle('on', m.spot);
-  const v = m.vote || {}; $('t-vote').classList.toggle('on', !!v.open); $('vote-l').textContent = v.open ? `Vote ${v.total || ''}` : 'Vote';
+  const v = m.vote || {}; $('t-vote').classList.toggle('on', !!v.open);
+  // the vote bar shows on the audience scene, and anywhere a vote is still open
+  const vb = $('votebar'); vb.classList.toggle('on', m.started && (m.scene === 'mot' || !!v.open)); vb.classList.toggle('open', !!v.open);
+  $('vb-state').textContent = v.open ? 'Vote ouvert' : 'Vote fermé';
+  $('vb-n').textContent = v.open ? `${v.total || 0} mot${(v.total || 0) > 1 ? 's' : ''} reçu${(v.total || 0) > 1 ? 's' : ''}` : 'le public ne peut pas envoyer';
+  $('vb-btn').textContent = v.open ? 'FERMER LE VOTE' : 'OUVRIR LE VOTE'; $('vote-l').textContent = v.open ? `Vote ${v.total || ''}` : 'Vote';
   $('t-mute').classList.toggle('on', m.muted); $('t-mute').querySelector('span').textContent = m.muted ? 'Muet' : 'Son';
   $('fullw').classList.toggle('on', m.full === false);
   $('warn').classList.toggle('on', !m.audio && !m.muted && (m.started || m.armed === false));
@@ -358,6 +377,7 @@ nextBtn.addEventListener('pointerdown', (e) => {
 $('prev').addEventListener('pointerdown', () => { buzz(8); cmd('prev'); });
 $('t-black').onclick = () => { buzz(); cmd('black'); };
 $('t-spot').onclick = () => { buzz(); cmd('spot', { on: !(st && st.spot) }); };
+$('vb-btn').onclick = () => { buzz(20); cmd('vote', { open: !(st && st.vote && st.vote.open) }); };
 $('t-vote').onclick = () => { buzz(); cmd('vote', { open: !(st && st.vote && st.vote.open) }); };
 $('t-mute').onclick = () => { buzz(); cmd('mute'); };
 $('t-list').onclick = () => { buzz(); $('sheet').classList.add('on'); $('list').querySelector('.cur')?.scrollIntoView({ block: 'center' }); };
