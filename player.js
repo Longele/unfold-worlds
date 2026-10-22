@@ -386,9 +386,10 @@ function input(fn, remote = false) {
 
 let digits = '';
 // fullscreen needs a gesture on THIS machine: every key / click that isn't already fullscreen asks for it
-const isFull = () => onTV || !!(document.fullscreenElement || matchMedia('(display-mode: fullscreen)').matches);
+const isFull = () => onTV || !!(document.fullscreenElement || matchMedia('(display-mode: fullscreen)').matches || (innerWidth >= screen.width - 1 && innerHeight >= screen.height - 1));
 function ensureFull() { if (!isFull()) document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {}); }
 document.addEventListener('fullscreenchange', () => sync());
+addEventListener('resize', () => { clearTimeout(isFull.t); isFull.t = setTimeout(sync, 250); }); // F11 / kiosk changes the window, not the Fullscreen API
 addEventListener('keydown', (e) => {
   const k = e.key;
   if (menuOpen()) { if (k === 'Escape' || k === 'q' || k === 'Q') toggleMenu(false); return; }
