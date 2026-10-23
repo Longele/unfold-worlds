@@ -1,12 +1,14 @@
 // Link between the screen and phones over the internet, through our own Supabase Realtime (a WebSocket on
 // port 443, like any web page). No direct device-to-device connection, so it works whatever the networks:
-// the laptop on the venue Wi-Fi, the phones on 4G, a guest network, a corporate proxy.
-//   screen  = host(room)        -> listens on channel "uw-<ROOM>"
-//   phone   = join(room, meta)  where meta.role is 'remote' (presenter) or 'audience' (live words)
-// Everyone in a room shares one broadcast channel, so each phone agrees a private key with the screen (ECDH)
-// and everything after the handshake is sealed with AES-GCM: another phone in the room can't read the
-// presenter's token or send commands. The screen decides who may do what (PIN or token it issued).
-// The only clear message is the vote state the screen announces to every audience phone at once.
+// the laptop on the venue Wi-Fi, the phones on 4G or 3G, a guest network, a corporate proxy.
+// Channels per room, so the traffic grows with the number of phones, never with its square:
+//   uw-<ROOM>-r        presenter remote(s) <-> screen, both ways. Each phone agrees a private key with the
+//                      screen (ECDH) and everything after the handshake is sealed (AES-GCM).
+//   uw-<ROOM>-up       audience -> screen. Phones post to it over HTTPS without joining, so they never
+//                      receive each other's words; only the screen listens.
+//   uw-<ROOM>-a        screen -> every audience phone: the vote state, one message for the whole room.
+//   uw-<ROOM>-a-<id>   screen -> one audience phone: its own replies.
+// The screen decides who may do what (PIN or token it issued for the remote, 3 words per phone).
 import { SUPABASE_URL, SUPABASE_KEY } from './config.js';
 
 const ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -43,8 +45,9 @@ async function seal(key, obj) {
 }
 async function unseal(key, { iv, ct }) { return JSON.parse(td.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(iv) }, key, unb64(ct)))); }
 
+const topic = (room, k) => `uw-${room}-${k}`;
 // one socket can hold a topic only once: a page that reconnects first lets go of its previous channel
-async function clearTopic(sb, room) { for (const c of sb.getChannels()) if (c.topic === 'realtime:uw-' + room) await sb.removeChannel(c); }
+async function clearTopic(sb, name) { for (const c of sb.getChannels()) if (c.topic === 'realtime:' + name) await sb.removeChannel(c); }
 
 // a tiny event emitter shaped like the data connections the pages already use
 function conn(meta) {
@@ -55,10 +58,10 @@ function conn(meta) {
 // ---------------------------------------------------------------- screen
 export async function host({ room, onConn, onStatus }) {
   const sb = await rt();
-  await clearTopic(sb, room);
+  await clearTopic(sb, topic(room, 'r')); await clearTopic(sb, topic(room, 'up'));
   const kp = await keypair(), pub = await pubOf(kp);
   const peers = new Map(); // cid -> { c, key, queue, rx, hb }
-  const ch = sb.channel('uw-' + room, { config: { broadcast: { self: false } } });
+  const ch = sb.channel(topic(room, 'r'), { config: { broadcast: { self: false } } });
   const out = (event, payload) => ch.send({ type: 'broadcast', event, payload }).catch(() => {});
   const drop = (cid, tell = true) => {
     const p = peers.get(cid); if (!p) return;
@@ -98,6 +101,33 @@ export async function host({ room, onConn, onStatus }) {
   // a phone that went silent (switched off, out of coverage) is let go
   setInterval(() => { const now = Date.now(); for (const [cid, p] of peers) if (now - p.rx > p.hb) drop(cid); }, 3000);
 
+  // audience: no handshake, no heartbeat; a phone is known from its first message (hello or word)
+  const crowd = new Map(), down = new Map(); // cid -> conn, cid -> its reply channel (posted to, never joined)
+  const all = sb.channel(topic(room, 'a'));
+  const to = (cid) => { let c = down.get(cid); if (!c) { c = sb.channel(topic(room, 'a-' + cid)); down.set(cid, c); } return c; };
+  const member = (cid) => {
+    let c = crowd.get(cid);
+    if (c) return [c, false];
+    c = conn({ role: 'audience' });
+    c.send = (x) => { to(cid).send({ type: 'broadcast', event: 'm', payload: x }).catch(() => {}); return true; };
+    c.close = () => { crowd.delete(cid); c.open = false; c.emit('close'); };
+    crowd.set(cid, c);
+    return [c, true];
+  };
+  const up = sb.channel(topic(room, 'up'));
+  up.on('broadcast', { event: 'ah' }, ({ payload = {} }) => {
+    if (typeof payload.cid !== 'string' || payload.cid.length > 32) return;
+    const [c, fresh] = member(payload.cid);
+    if (fresh) { onConn(c); c.emit('open'); } else c.emit('data', { t: 'hello' }); // back from another app: the current state again
+  });
+  up.on('broadcast', { event: 'aw' }, ({ payload = {} }) => {
+    if (typeof payload.cid !== 'string' || payload.cid.length > 32) return;
+    const [c, fresh] = member(payload.cid);
+    if (fresh) { onConn(c); c.emit('open'); }
+    c.emit('data', payload.d);
+  });
+  up.subscribe();
+
   await new Promise((res, rej) => {
     let first = true;
     const to = setTimeout(() => { if (first) { onStatus?.('offline'); rej(new Error('realtime')); } }, 15000);
@@ -107,20 +137,22 @@ export async function host({ room, onConn, onStatus }) {
     });
   });
   return {
-    // one clear message to every audience phone (the vote state): one send, however many people are in the room
-    broadcast: (d) => out('all', d),
+    // one message to every audience phone (the vote state), however many people are in the room
+    broadcast: (d) => all.send({ type: 'broadcast', event: 'all', payload: d }).catch(() => {}),
   };
 }
 
 // ---------------------------------------------------------------- phone
 // The phone says hello every few seconds until the screen answers, then keeps a heartbeat. When the phone
 // comes back from another app it checks at once and starts over if the screen does not answer.
-export async function join({ room, meta, onMessage, onStatus, hb = 3000 }) {
+export async function join(opts) {
+  if (opts.meta().role === 'audience') return joinAudience(opts);
+  const { room, meta, onMessage, onStatus, hb = 3000 } = opts;
   const sb = await rt();
-  await clearTopic(sb, room);
+  await clearTopic(sb, topic(room, 'r'));
   const cid = randCode(16);
   let kp = null, key = null, ready = false, closed = false, lastPong = 0, helloT = 0, gen = 0;
-  const ch = sb.channel('uw-' + room, { config: { broadcast: { self: false } } });
+  const ch = sb.channel(topic(room, 'r'), { config: { broadcast: { self: false } } });
   const out = (event, payload) => ch.send({ type: 'broadcast', event, payload }).catch(() => {});
   let queue = Promise.resolve();
   const send = (d) => { if (!key) return false; const k = key; queue = queue.then(async () => out('m', { cid, ...(await seal(k, d)) })); return true; };
@@ -153,7 +185,6 @@ export async function join({ room, meta, onMessage, onStatus, hb = 3000 }) {
       onMessage(d);
     });
   });
-  ch.on('broadcast', { event: 'all' }, ({ payload }) => { if (ready && meta().role === 'audience') onMessage(payload); });
   ch.on('broadcast', { event: 'who' }, ({ payload = {} }) => { if (payload.cid === cid) lost(); });
   ch.on('broadcast', { event: 'bye' }, ({ payload = {} }) => { if (payload.cid === cid && ready) lost(); });
 
@@ -189,6 +220,46 @@ export async function join({ room, meta, onMessage, onStatus, hb = 3000 }) {
       document.removeEventListener('visibilitychange', onVis);
       removeEventListener('pageshow', onVis); removeEventListener('online', onVis); removeEventListener('focus', onVis);
       (ready ? out('bye', { cid }) : Promise.resolve()).finally(() => sb.removeChannel(ch));
+    },
+  };
+}
+
+// ---------------------------------------------------------------- audience phone
+// Light on purpose (3G, hundreds of phones): listen to the room's vote state and to its own replies,
+// post words over HTTPS. Coming back from another app asks the screen for the current state again.
+async function joinAudience({ room, onMessage, onStatus }) {
+  const sb = await rt();
+  const cid = randCode(16);
+  for (const k of ['a', 'a-' + cid, 'up']) await clearTopic(sb, topic(room, k));
+  let heard = false, closed = false, helloT = 0;
+  const me = sb.channel(topic(room, 'a-' + cid)), all = sb.channel(topic(room, 'a')), up = sb.channel(topic(room, 'up'));
+  const got = (d) => { if (!heard) { heard = true; onStatus?.('open'); } clearTimeout(helloT); onMessage(d); };
+  me.on('broadcast', { event: 'm' }, ({ payload }) => got(payload));
+  all.on('broadcast', { event: 'all' }, ({ payload }) => got(payload));
+  const post = (event, payload) => up.send({ type: 'broadcast', event, payload }).then((r) => r === 'ok').catch(() => false);
+  function hello() {
+    if (closed) return;
+    post('ah', { cid });
+    clearTimeout(helloT);
+    helloT = setTimeout(() => { if (!closed) { if (!heard) onStatus?.('no-screen'); hello(); } }, heard ? 15000 : 5000);
+  }
+  await new Promise((res, rej) => {
+    let first = true;
+    const t = setTimeout(() => { if (first) rej(new Error('realtime')); }, 20000);
+    me.subscribe((st) => { if (st === 'SUBSCRIBED') { if (first) { first = false; clearTimeout(t); res(); } hello(); } });
+    all.subscribe();
+  });
+  const check = () => { if (!closed && document.visibilityState !== 'hidden') hello(); };
+  document.addEventListener('visibilitychange', check);
+  addEventListener('pageshow', check); addEventListener('online', check);
+  return {
+    send: (d) => { post('aw', { cid, d }); return true; },
+    get open() { return heard; },
+    check,
+    close() {
+      closed = true; clearTimeout(helloT);
+      document.removeEventListener('visibilitychange', check); removeEventListener('pageshow', check); removeEventListener('online', check);
+      sb.removeChannel(me); sb.removeChannel(all); sb.removeChannel(up);
     },
   };
 }

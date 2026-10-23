@@ -284,6 +284,7 @@ function onConn(c) {
     c._rx = Date.now();
     if (d && d.t === 'ping') { c._hb = true; return c.open && c.send({ t: 'pong' }); }
     if (remotes.has(c)) return onCmd(d);
+    if (audience.has(c) && d && d.t === 'hello') return c.send({ t: 'vote', open: voteOpen(), q: PROMPT });
     if (!audience.has(c) || !d || d.t !== 'word') return;
     if (!voteOpen()) return c.send({ t: 'word', ok: false, why: 'closed' });
     if (c._n >= 3 || Date.now() - (c._t || 0) < 1500) return c.send({ t: 'word', ok: false, why: 'limit', left: Math.max(0, 3 - c._n) });
