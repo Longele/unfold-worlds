@@ -1,16 +1,16 @@
 // Presentation engine: one click = one point. Driven by the paired phone (net.js, peer-to-peer over the internet),
 // a presenter remote (PageDown/PageUp/arrows/B), a mouse (left = next, right = previous, wheel) or the
 // keyboard. The system cursor is never shown; a discreet custom one appears only when useful.
-import { loadProject } from './project.js';
+import { loadProject } from './project.js?v=202610231404';
 // the world comes from the database (see project.js); everything below is the same engine
 const PROJECT = await loadProject();
 const SCENES = PROJECT.scenes;
-import { setBg, pulse, setTheme, dawn } from './bg.js';
+import { setBg, pulse, setTheme, dawn } from './bg.js?v=202610231404';
 // a world can bring its own colours (content.theme): the CSS and the light both follow
 if (PROJECT.theme) { document.body.dataset.theme = PROJECT.theme; setTheme(PROJECT.theme); }
-import * as A from './audio.js';
-import { host, randCode, cleanRoom } from './net.js';
-import { CAST_NS } from './cast-config.js';
+import * as A from './audio.js?v=202610231404';
+import { host, randCode, cleanRoom } from './net.js?v=202610231404';
+import { CAST_NS } from './cast-config.js?v=202610231404';
 
 const $ = (id) => document.getElementById(id);
 const stage = $('stage'), prog = $('prog'), black = $('black'), toast = $('toast'), spotEl = $('spot');
