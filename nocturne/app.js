@@ -105,7 +105,20 @@ function onMidi(ev) {
 }
 
 // ------------------------------------------------------------------ lesson
-const ODE = [64, 64, 65, 67, 67, 65, 64, 62, 60, 60, 62, 64, 64, 62, 62];
+// the songs: [midi, beats] for the right hand, [chord, beats] per bar for a quiet left hand (all public domain)
+const C3 = [48, 52, 55], G2 = [43, 50, 55], F2 = [41, 48, 53];
+const SONGS = {
+  lune: { q: 0.52, mel: [[60, 1], [60, 1], [60, 1], [62, 1], [64, 2], [62, 2], [60, 1], [64, 1], [62, 1], [62, 1], [60, 4]],
+    lh: [[C3, 4], [C3, 2], [G2, 2], [C3, 2], [G2, 2], [C3, 4]] },
+  jacques: { q: 0.46, mel: [[60, 1], [62, 1], [64, 1], [60, 1], [60, 1], [62, 1], [64, 1], [60, 1], [64, 1], [65, 1], [67, 2], [64, 1], [65, 1], [67, 2]],
+    lh: [[C3, 4], [C3, 4], [C3, 4], [C3, 4]] },
+  ode: { q: 0.5, mel: [[64, 1], [64, 1], [65, 1], [67, 1], [67, 1], [65, 1], [64, 1], [62, 1], [60, 1], [60, 1], [62, 1], [64, 1], [64, 1.5], [62, 0.5], [62, 2],
+    [64, 1], [64, 1], [65, 1], [67, 1], [67, 1], [65, 1], [64, 1], [62, 1], [60, 1], [60, 1], [62, 1], [64, 1], [62, 1.5], [60, 0.5], [60, 2]],
+    lh: [[C3, 4], [G2, 4], [C3, 4], [G2, 4], [C3, 4], [G2, 4], [C3, 4], [G2, 2], [C3, 2]] },
+  twinkle: { q: 0.5, mel: [[60, 1], [60, 1], [67, 1], [67, 1], [69, 1], [69, 1], [67, 2], [65, 1], [65, 1], [64, 1], [64, 1], [62, 1], [62, 1], [60, 2]],
+    lh: [[C3, 4], [F2, 2], [C3, 2], [F2, 2], [C3, 2], [G2, 2], [C3, 2]] },
+};
+const notesOf = (song) => SONGS[song].mel.map(([m]) => m);
 const STEPS = [
   { v: 'welcome' },
   { v: 'pattern', during: [[4200, 'twos'], [7400, 'threes'], [10500, 'off']] },
@@ -114,8 +127,13 @@ const STEPS = [
   { v: 'allc', wait: { all: () => cs() }, praise: true },
   { v: 'names', labels: true, wait: { seq: [60, 62, 64, 65, 67, 69, 71, 72] }, praise: true },
   { v: 'hand', badges: { 60: 1, 62: 2, 64: 3, 65: 4, 67: 5 }, wait: { seq: [60, 62, 64, 65, 67] }, praise: true },
-  { v: 'melody', wait: { seq: ODE } },
-  { v: 'beethoven', after: reward },
+  { v: 'lune', badges: { 60: 1, 62: 2, 64: 3 }, wait: { seq: notesOf('lune') } },
+  { v: 'lune_done', after: () => playSong('lune') },
+  { v: 'jacques', badges: { 60: 1, 62: 2, 64: 3, 65: 4, 67: 5 }, wait: { seq: notesOf('jacques') }, praise: true },
+  { v: 'ode', wait: { seq: notesOf('ode').slice(0, 15) } },
+  { v: 'beethoven', after: () => playSong('ode') },
+  { v: 'twinkle', wait: { seq: notesOf('twinkle') } },
+  { v: 'twinkle_done', after: () => playSong('twinkle') },
   { v: 'black', wait: { seq: [61] }, praise: true },
   { v: 'chord', wait: { chords: [[60, 64, 67]] } },
   { v: 'chordyes' },
@@ -200,22 +218,20 @@ const lesson = {
   stop() { this.run++; this.clear(); this.step = null; },
 };
 
-// the reward: the piano plays Ode to Joy back, with a quiet left hand
-async function reward() {
-  const q = 0.5, ev = [];
-  const mel = [[64, 1], [64, 1], [65, 1], [67, 1], [67, 1], [65, 1], [64, 1], [62, 1], [60, 1], [60, 1], [62, 1], [64, 1]];
+// the reward: the piano plays the song back, with a quiet left hand
+async function playSong(name) {
+  const { q, mel, lh } = SONGS[name], ev = [];
   let t = 0;
-  const phrase = (end) => { for (const [m, d] of [...mel, ...end]) { ev.push([t, m, d * q * 0.92, 0.62]); t += d * q; } };
-  phrase([[64, 1.5], [62, 0.5], [62, 2]]); phrase([[62, 1.5], [60, 0.5], [60, 2]]);
-  const lh = [[48, 52, 55], [43, 50, 55], [48, 52, 55], [43, 50, 55], [48, 52, 55], [43, 50, 55], [48, 52, 55], [43, 50, 55, 48]];
-  lh.forEach((c, b) => { const last = b === lh.length - 1; (last ? [[c.slice(0, 3), 0, 2], [[48, 52, 55], 2, 2]] : [[c, 0, 4]]).forEach(([notes, off, d]) => notes.forEach((m) => ev.push([b * 4 * q + off * q, m, d * q * 0.95, 0.36]))); });
+  for (const [m, d] of mel) { ev.push([t, m, d * q * 0.92, 0.62]); t += d * q; }
+  let tl = 0;
+  for (const [c, d] of lh) { for (const m of c) ev.push([tl, m, d * q * 0.95, 0.34]); tl += d * q; }
   const run = lesson.run, t0 = sound.ctx.currentTime + 0.25;
   for (const [at, m, d, v] of ev) {
     sound.noteOn(m, v, t0 + at); sound.noteOff(m, t0 + at + d);
     setTimeout(() => { if (lesson.run === run) piano.press(m, v); }, (at + 0.25) * 1000);
     setTimeout(() => piano.release(m), (at + 0.25 + d) * 1000);
   }
-  await sleep((t + 1.6) * 1000);
+  await sleep((Math.max(t, tl) + 1.4) * 1000);
 }
 
 // ------------------------------------------------------------------ screens
