@@ -459,7 +459,6 @@ addEventListener('keydown', (e) => {
   else if (k === 'f' || k === 'F') { fsEl() ? leaveFull() : goFull(); }
   else if (k === 'm' || k === 'M') { A.setMuted(!A.isMuted()); say(A.isMuted() ? 'son coupé' : 'son actif'); sync(); }
   else if (k === 's' || k === 'S') { window.open('speaker.html', 'grandir-speaker', 'width=1200,height=760'); }
-  else if (k === 'r' || k === 'R') { showPair(); $('pairmini').classList.toggle('on'); }
   else if (k === 'Home') { e.preventDefault(); started && go(0); }
   else if (k === 'End') { e.preventDefault(); started && go(SCENES.length - 1); }
   else if (/^\d$/.test(k)) { digits += k; say(`aller à ${digits}`); clearTimeout(input.d); input.d = setTimeout(() => (digits = ''), 2500); }
