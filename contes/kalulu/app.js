@@ -1,6 +1,6 @@
 // Kalulu: the book around the stage. Language, the read-along caption, page navigation, pause, the end card.
-import { Stage, Audio, sleep } from './engine.js?v=202610231941';
-import { makeStory, SPEAKER } from './story.js?v=202610231941';
+import { Stage, Audio, sleep } from './engine.js?v=202610231949';
+import { makeStory, SPEAKER } from './story.js?v=202610231949';
 
 const $ = (id) => document.getElementById(id);
 const T = {
@@ -57,7 +57,7 @@ async function go(i) {
   $('end').classList.remove('on');
   document.body.classList.toggle('night', !!P.night);
   cap.className = 'cap';
-  stage.root.classList.add('turning'); audio.sfx('sfx/page.mp3', 0.6);
+  stage.root.classList.add('turning'); stage.turnPage(); audio.sfx('sfx/page.mp3', 0.6);
   await stage.setBg(P.bg, 700);
   if (r !== run) return;
   stage.clearActors(); stage.clearProps(); stage.sky.className = 'sky';
@@ -80,6 +80,36 @@ $('stage').addEventListener('pointerdown', (e) => {
   if (!api.fireflyTaps) return;
   const p = stage.pt(e);
   for (const f of stage.fx.fireflies) if (Math.hypot(f.x - p.x, f.y - p.y) < 140) { f.b = 1; audio.sfx('sfx/chime.mp3', 0.5, 0.8 + Math.random() * 0.6); }
+});
+
+// ------------------------------------------------------------------ keep the screen awake
+let wakeLock = null, wakeVid = null;
+async function stayAwake() {
+  try { if ('wakeLock' in navigator) { if (wakeLock && !wakeLock.released) return; wakeLock = await navigator.wakeLock.request('screen'); return; } } catch {}
+  try {
+    if (!wakeVid) { wakeVid = document.createElement('video'); Object.assign(wakeVid, { muted: true, loop: true, playsInline: true }); wakeVid.setAttribute('playsinline', ''); wakeVid.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none'; for (const [src, type] of [['../../lib/wake.webm', 'video/webm'], ['../../lib/wake.mp4', 'video/mp4']]) { const so = document.createElement('source'); so.src = src; so.type = type; wakeVid.append(so); } document.body.append(wakeVid); }
+    await wakeVid.play();
+  } catch {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && document.body.classList.contains('in')) stayAwake(); });
+addEventListener('pointerdown', () => { if (document.body.classList.contains('in')) stayAwake(); }, { capture: true });
+
+// ------------------------------------------------------------------ the characters answer a touch, any time
+let lastPoke = 0;
+$('stage').addEventListener('pointerdown', (e) => {
+  if (!document.body.classList.contains('in') || performance.now() - lastPoke < 1400) return;
+  const p = stage.pt(e);
+  for (const [n, a] of Object.entries(stage.actors)) {
+    const w = a.rig.w * a.s, h = a.rig.feet * a.s;
+    if (p.x > a.x - w / 2 && p.x < a.x + w / 2 && p.y > a.y - h && p.y < a.y) {
+      lastPoke = performance.now();
+      if (a.tween) break; // never interrupt a move the story is waiting for
+      if (n === 'kalulu') { const y = a.y; a.to({ y: y - 1 }, 500, { hop: 1 }).then(() => (a.y = y)); audio.sfx('sfx/tap.mp3', 0.9, 1.4); stage.fx.burst(p.x, p.y, 'spark', 10); }
+      else if (n === 'elephant' && a.mode === 'idle') { a.mode = 'trumpet'; audio.sfx('sfx/trumpet.mp3', 0.45, 1.1); setTimeout(() => { if (a.mode === 'trumpet') a.mode = 'idle'; }, 1100); }
+      else if (n === 'hippo' && a.mode === 'idle') { a.mode = 'yawn'; audio.sfx('sfx/yawn.mp3', 0.5, 1.15); setTimeout(() => { if (a.mode === 'yawn') a.mode = 'idle'; }, 1500); }
+      break;
+    }
+  }
 });
 
 // ------------------------------------------------------------------ chrome
@@ -131,12 +161,13 @@ function rotateGate() {
 }
 $('go').onclick = async () => {
   audio.unlock(); audio.setMusic(store.get('kalulu-music') !== '0'); $('b-music').classList.toggle('on', audio.musicOn); $('b-cap').classList.toggle('on', capOn);
-  full(); wake();
+  full(); wake(); stayAwake();
   document.body.classList.add('in');
   audio.stopLoop('music', 1.5);
   await loadTimings(lang);
   if (small() && portrait()) await rotateGate();
   go(0);
+  for (const id of Object.keys(timings[lang])) audio.load(`voice/${lang}/${id}.mp3`);
 };
 
 // the cover: the night-to-dawn theme plays softly once the reader touches anything

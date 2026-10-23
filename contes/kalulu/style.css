@@ -42,7 +42,7 @@ body.night #light { background: radial-gradient(ellipse at 62% 22%, rgba(220, 23
 #vig { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(20, 8, 0, .55)); }
 
 /* interactions */
-#hot { position: absolute; inset: 0; }
+#hot { position: absolute; inset: 0; pointer-events: none; } #hot > * { pointer-events: auto; } #hot .hint { pointer-events: none; }
 .zone { position: absolute; background: transparent; cursor: pointer; }
 .zone.full { inset: 0; width: auto; height: auto; }
 .hint { position: absolute; pointer-events: none; transition: opacity .4s; }
@@ -136,3 +136,9 @@ body.in.idle .cap { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 14px);
   body.in.idle .langs { opacity: 0; pointer-events: none; }
   .langs { transition: opacity .6s; }
 }
+
+/* page turn: a warm sheet with a soft shadow sweeps right to left */
+#turn { position: absolute; inset: 0; pointer-events: none; transform: translateX(110%); background: linear-gradient(90deg, rgba(40, 18, 6, 0) 0, rgba(40, 18, 6, .35) 3%, #f3e2c6 7%, #ead3ad 60%, #e2c597 100%); box-shadow: -40px 0 80px rgba(30, 12, 2, .35); z-index: 3; }
+#turn.go { animation: turnpage 1.25s cubic-bezier(.55, 0, .35, 1) forwards; }
+@keyframes turnpage { 0% { transform: translateX(110%); } 45% { transform: translateX(0); } 55% { transform: translateX(0); } 100% { transform: translateX(-115%); } }
+.puppet { cursor: pointer; }

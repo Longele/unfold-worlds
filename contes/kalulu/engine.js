@@ -114,6 +114,7 @@ export class Puppet {
     const t = now / 1000 + this.t0, P = this.parts, R = (el, deg, extra = '') => { if (el) el.style.transform = `rotate(${deg.toFixed(2)}deg)${extra}`; };
     const talk = this.talk, m = this.mouth;
     let bob = Math.sin(t * 1.6) * 3, lean = 0, sx = 1, sy = 1 + Math.sin(t * 1.6) * 0.008;
+    if (tw && !tw.hop && tw.to.x !== undefined && tw.t < 1 && Math.abs(tw.to.x - tw.from.x) > 50) { bob += -Math.abs(Math.sin(t * 6)) * 9; lean += Math.sin(t * 6) * 1.6; } // walking
     if (this.mode === 'pull') { lean = -6 + Math.sin(t * 9) * 1.5; bob += Math.sin(t * 13) * 2; }
     if (this.mode === 'laugh') { bob += -Math.abs(Math.sin(t * 9)) * 10; sy *= 1 + Math.abs(Math.sin(t * 9)) * 0.03; }
     if (this.mode === 'sleep') { bob = Math.sin(t * 0.9) * 2; }
@@ -223,11 +224,12 @@ export class Stage {
     const sc = Math.min(s, Math.max(innerWidth / 1600, innerHeight / 900));
     this.scale = sc;
     const extra = Math.max(0, H * sc - innerHeight);
-    const dy = extra * 0.4; // show more of the bottom
+    const dy = -extra * 0.42; // keep the ground in view: the sky gives way first
     this.root.style.transform = `translate(-50%, -50%) translateY(${dy.toFixed(1)}px) scale(${sc})`;
   }
   // stage coordinates from a pointer event
   pt(e) { const r = this.root.getBoundingClientRect(); return { x: (e.clientX - r.left) / this.scale, y: (e.clientY - r.top) / this.scale }; }
+  turnPage() { const el = this.root.querySelector('#turn'); if (!el) return; el.classList.remove('go'); void el.offsetWidth; el.classList.add('go'); }
   setBg(name, ms = 900) {
     return new Promise((res) => {
       const img = new Image(); img.src = `art/${name}.webp`;
@@ -255,23 +257,27 @@ export function hint(stage, x, y, r = 120) {
   h.style.cssText = `left:${x - r}px;top:${y - r}px;width:${r * 2}px;height:${r * 2}px`;
   h.innerHTML = '<i></i><b></b>'; stage.hot.append(h); return h;
 }
-export function tapZone(stage, z, onTap) {
+// repeat the invitation if nothing happens for a while (twice at most)
+function nudge(fn) { let n = 0; const id = setInterval(() => { if (++n > 2) return clearInterval(id); fn?.(); }, 13000); return () => clearInterval(id); }
+export function tapZone(stage, z, onTap, remind) {
   return new Promise((res) => {
+    const stop = nudge(remind);
     const el = document.createElement('button'); el.className = 'zone';
     el.style.cssText = `left:${z.x}px;top:${z.y}px;width:${z.w}px;height:${z.h}px`;
     const h = hint(stage, z.x + z.w / 2, z.y + z.h / 2, Math.min(150, Math.max(z.w, z.h) / 2));
-    el.addEventListener('pointerdown', (e) => { e.preventDefault(); h.remove(); el.remove(); onTap?.(stage.pt(e)); res(); }, { once: true });
+    el.addEventListener('pointerdown', (e) => { e.preventDefault(); stop(); h.remove(); el.remove(); onTap?.(stage.pt(e)); res(); }, { once: true });
     stage.hot.append(el);
   });
 }
 // drag from (x0) to (x1) along a line at y; onMove(k 0..1)
-export function dragAlong(stage, x0, x1, y, onMove) {
+export function dragAlong(stage, x0, x1, y, onMove, remind) {
   return new Promise((res) => {
+    const stop = nudge(remind);
     const el = document.createElement('div'); el.className = 'zone drag'; el.style.cssText = `left:${x0 - 80}px;top:${y - 140}px;width:${x1 - x0 + 160}px;height:280px`;
     const h = hint(stage, x0 + 40, y, 90); h.classList.add('slide'); h.style.setProperty('--dx', `${x1 - x0 - 80}px`);
     let k = 0, down = false;
     const move = (e) => { if (!down) return; const p = stage.pt(e); const nk = Math.max(k, Math.min(1, (p.x - x0) / (x1 - x0))); if (nk > k) { k = nk; onMove(k); } if (k >= 0.97) { done(); } };
-    const done = () => { el.remove(); h.remove(); removeEventListener('pointermove', move); res(); };
+    const done = () => { stop(); el.remove(); h.remove(); removeEventListener('pointermove', move); res(); };
     el.addEventListener('pointerdown', (e) => { e.preventDefault(); down = true; h.style.opacity = 0; move(e); });
     addEventListener('pointerup', () => (down = false));
     addEventListener('pointermove', move);
@@ -291,8 +297,9 @@ export function rapid(stage, n, onTap) {
   });
 }
 // swipe across a segment (a, b): resolves when the finger path crosses it
-export function swipeAcross(stage, a, b) {
+export function swipeAcross(stage, a, b, remind) {
   return new Promise((res) => {
+    const stop = nudge(remind);
     const el = document.createElement('div'); el.className = 'zone full';
     const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
     const h = hint(stage, mx, my - 120, 80); h.classList.add('swipe');
@@ -302,7 +309,7 @@ export function swipeAcross(stage, a, b) {
     el.addEventListener('pointerdown', (e) => { e.preventDefault(); prev = stage.pt(e); });
     el.addEventListener('pointermove', (e) => {
       if (!prev) return; const p = stage.pt(e);
-      if (side(p) !== side(prev) && side(prev) !== 0 && within(p)) { el.remove(); h.remove(); res(p); return; }
+      if (side(p) !== side(prev) && side(prev) !== 0 && within(p)) { stop(); el.remove(); h.remove(); res(p); return; }
       prev = p;
     });
     el.addEventListener('pointerup', () => (prev = null));

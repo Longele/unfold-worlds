@@ -1,6 +1,6 @@
 // Kalulu and the great tug of war: the eight pages. Each page sets its stage, then runs as a little script:
 // voices, puppet moves, sounds, and the moments where the child's hand moves the story on.
-import { W, H, sleep, tapZone, dragAlong, rapid, swipeAcross, choose, hint } from './engine.js?v=202610231941';
+import { W, H, sleep, tapZone, dragAlong, rapid, swipeAcross, choose, hint } from './engine.js?v=202610231949';
 
 const SPEAKER = { k: 'kalulu', e: 'elephant', h: 'hippo' };
 const GROUND = 930;
@@ -43,7 +43,7 @@ export function makeStory(api) {
         A('kalulu').mode = 'idle';
         await say('p1b'); c();
         say('p1c');
-        await tapZone(stage, { x: 650, y: 60, w: 900, h: 380 }); c();
+        await tapZone(stage, { x: 650, y: 60, w: 900, h: 380 }, null, () => say('p1c')); c();
         stage.sky.className = 'sky'; sfx('sunrise', 1); stage.fx.burst(1120, 330, 'spark', 40);
         await sleep(600); birds(); A('kalulu').mode = 'alert';
         await A('kalulu').to({ x: 1260 }, 900, { hop: 2 }); c();
@@ -70,7 +70,7 @@ export function makeStory(api) {
         await say('p2d'); c();
         A('elephant').mode = 'idle';
         say('p2e');
-        await tapZone(stage, { x: 950, y: 380, w: 720, h: 560 }); c();
+        await tapZone(stage, { x: 950, y: 380, w: 720, h: 560 }, null, () => say('p2e')); c();
         A('elephant').mode = 'trumpet'; sfx('trumpet', 1); shake(14, 900); stage.fx.burst(1320, GROUND, 'dust', 18);
         A('kalulu').to({ x: 470, lift: 0 }, 400, { hop: 1 });
         await sleep(1800); A('elephant').mode = 'idle';
@@ -92,7 +92,7 @@ export function makeStory(api) {
         await say('p3c'); c();
         A('kalulu').mode = 'idle';
         say('p3d');
-        await tapZone(stage, { x: 900, y: 650, w: 760, h: 380 }); c();
+        await tapZone(stage, { x: 900, y: 650, w: 760, h: 380 }, null, () => say('p3d')); c();
         sfx('bubbles', 1); stage.fx.burst(1260, 880, 'bubbles', 30);
         await sleep(500); A('hippo').mode = 'yawn'; sfx('yawn', 1);
         await sleep(2200); A('hippo').mode = 'idle';
@@ -112,7 +112,7 @@ export function makeStory(api) {
         const v = stage.prop('liana', { x: 420, y: 845, s: 1, cls: 'ink reveal', layer: 'actors' });
         v.style.setProperty('--k', '0%');
         let swish = 0;
-        await dragAlong(stage, 420, 1590, 900, (k) => { v.style.setProperty('--k', `${(k * 100).toFixed(1)}%`); if (performance.now() - swish > 380) { swish = performance.now(); sfx('pull', 0.6); } }); c();
+        await dragAlong(stage, 420, 1590, 900, (k) => { v.style.setProperty('--k', `${(k * 100).toFixed(1)}%`); if (performance.now() - swish > 380) { swish = performance.now(); sfx('pull', 0.6); } }, () => say('p4b')); c();
         v.style.setProperty('--k', '100%'); sfx('chime', 1); stage.fx.burst(1590, 900, 'spark', 30);
         A('kalulu').mode = 'laugh'; await sleep(900); A('kalulu').mode = 'idle';
         await say('p4c'); c();
@@ -210,7 +210,7 @@ export function makeStory(api) {
       async run(c) {
         await say('p7a'); c();
         say('p7b');
-        await swipeAcross(stage, { x: 690, y: 700 }, { x: 720, y: 960 }); c();
+        await swipeAcross(stage, { x: 690, y: 700 }, { x: 720, y: 960 }, () => say('p7b')); c();
         stage.onFrame = null; audio.stopLoop('stretch', 0.2);
         sfx('snap', 1); stage.fx.burst(720, 760, 'spark', 30);
         api.vineL.classList.add('fallL'); api.vineR.classList.add('fallR');
