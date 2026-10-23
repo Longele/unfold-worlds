@@ -1,0 +1,212 @@
+{
+ "rigs": {
+  "kalulu": {
+   "w": 722,
+   "h": 623,
+   "parts": [
+    {
+     "name": "body",
+     "parent": null,
+     "pivot": null
+    },
+    {
+     "name": "tail",
+     "parent": "body",
+     "pivot": [
+      93,
+      286
+     ]
+    },
+    {
+     "name": "hind",
+     "parent": "body",
+     "pivot": [
+      203,
+      435
+     ]
+    },
+    {
+     "name": "front",
+     "parent": "body",
+     "pivot": [
+      463,
+      435
+     ]
+    },
+    {
+     "name": "head",
+     "parent": "body",
+     "pivot": [
+      528,
+      290
+     ]
+    },
+    {
+     "name": "ears",
+     "parent": "head",
+     "pivot": [
+      556,
+      182
+     ]
+    }
+   ],
+   "feet": 616
+  },
+  "elephant": {
+   "w": 906,
+   "h": 640,
+   "parts": [
+    {
+     "name": "body",
+     "parent": null,
+     "pivot": null
+    },
+    {
+     "name": "tail",
+     "parent": "body",
+     "pivot": [
+      64,
+      244
+     ]
+    },
+    {
+     "name": "ear",
+     "parent": "body",
+     "pivot": [
+      630,
+      97
+     ]
+    },
+    {
+     "name": "trunk",
+     "parent": "body",
+     "pivot": [
+      802,
+      354
+     ]
+    }
+   ],
+   "feet": 634
+  },
+  "hippo": {
+   "w": 867,
+   "h": 568,
+   "parts": [
+    {
+     "name": "body",
+     "parent": null,
+     "pivot": null
+    },
+    {
+     "name": "tail",
+     "parent": "body",
+     "pivot": [
+      48,
+      206
+     ]
+    },
+    {
+     "name": "head",
+     "parent": "body",
+     "pivot": [
+      526,
+      274
+     ]
+    },
+    {
+     "name": "jaw",
+     "parent": "head",
+     "pivot": [
+      616,
+      219
+     ]
+    }
+   ],
+   "feet": 561
+  }
+ },
+ "props": {
+  "props-1": [
+   {
+    "name": "liana",
+    "w": 1171,
+    "h": 161,
+    "area": 259436
+   },
+   {
+    "name": "coil",
+    "w": 525,
+    "h": 495,
+    "area": 396747
+   },
+   {
+    "name": "bird1",
+    "w": 128,
+    "h": 154,
+    "area": 28771
+   },
+   {
+    "name": "bird2",
+    "w": 143,
+    "h": 105,
+    "area": 27926
+   },
+   {
+    "name": "bird3",
+    "w": 133,
+    "h": 114,
+    "area": 24588
+   },
+   {
+    "name": "butterfly",
+    "w": 229,
+    "h": 171,
+    "area": 93828
+   }
+  ],
+  "props-2": [
+   {
+    "name": "grass",
+    "w": 1198,
+    "h": 222,
+    "area": 585781
+   },
+   {
+    "name": "bush",
+    "w": 591,
+    "h": 378,
+    "area": 524478
+   },
+   {
+    "name": "reeds",
+    "w": 184,
+    "h": 383,
+    "area": 108920
+   },
+   {
+    "name": "bush-s1",
+    "w": 190,
+    "h": 143,
+    "area": 75611
+   },
+   {
+    "name": "flowers",
+    "w": 162,
+    "h": 209,
+    "area": 34217
+   },
+   {
+    "name": "bush-s2",
+    "w": 223,
+    "h": 172,
+    "area": 107452
+   },
+   {
+    "name": "rocks",
+    "w": 191,
+    "h": 109,
+    "area": 51346
+   }
+  ]
+ }
+}
