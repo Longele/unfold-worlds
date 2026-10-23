@@ -12,7 +12,7 @@ const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 export class Audio {
   constructor() {
     try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch { this.ctx = null; }
-    const c = this.ctx; this.buf = new Map(); this.loops = new Map(); this.cur = null;
+    const c = this.ctx; this.buf = new Map(); this.loops = new Map(); this.cur = null; this.gen = 0;
     if (!c) return;
     this.out = c.createDynamicsCompressor(); this.out.connect(c.destination);
     const bus = (v) => { const g = c.createGain(); g.gain.value = v; g.connect(this.out); return g; };
@@ -53,8 +53,10 @@ export class Audio {
   }
   // a voice line: resolves when it ends; ducks the beds while it plays
   async say(url, onTime) {
-    this.stopVoice();
+    while (this.cur) await this.cur.ended; // a line never cuts the one still being spoken
+    const gen = this.gen;
     const b = await this.load(url); if (!b || !this.ctx) { await sleep(1200); return; }
+    if (gen !== this.gen) return; // the page changed while it loaded
     const c = this.ctx, s = c.createBufferSource(); s.buffer = b; s.connect(this.voice);
     for (const bus of [this.amb, this.music]) bus.gain.setTargetAtTime(bus === this.amb ? 0.35 : 0.2, c.currentTime, 0.25);
     const t0 = c.currentTime + 0.05;
@@ -62,11 +64,13 @@ export class Audio {
       let raf = 0;
       const tick = () => { if (this.cur?.s !== s) return; onTime?.(c.currentTime - t0); raf = requestAnimationFrame(tick); };
       const done = () => { cancelAnimationFrame(raf); if (this.cur?.s === s) { this.cur = null; this.amb.gain.setTargetAtTime(0.7, c.currentTime, 0.6); this.music.gain.setTargetAtTime(this.musicOn ? 0.45 : 0, c.currentTime, 0.6); } onTime?.(1e9); res(); };
-      this.cur = { s, done };
-      s.onended = done; s.start(t0); tick();
+      let endRes; const ended = new Promise((r) => (endRes = r));
+      this.cur = { s, done: () => { done(); endRes(); }, ended };
+      s.onended = this.cur.done; s.start(t0); tick();
     });
   }
-  stopVoice() { const v = this.cur; if (!v) return; this.cur = null; try { v.s.onended = null; v.s.stop(); } catch {} v.done(); }
+  // page change: cut what is speaking and drop what was waiting
+  stopVoice() { this.gen = (this.gen || 0) + 1; const v = this.cur; if (!v) return; this.cur = null; try { v.s.onended = null; v.s.stop(); } catch {} v.done(); }
   get speaking() { return !!this.cur; }
   setMusic(on) { this.musicOn = on; if (this.ctx) this.music.gain.setTargetAtTime(on ? 0.45 : 0, this.ctx.currentTime, 0.4); }
   pause(on) { if (!this.ctx) return; on ? this.ctx.suspend().catch(() => {}) : this.ctx.resume().catch(() => {}); }
@@ -218,7 +222,9 @@ export class Stage {
     const s = Math.max(innerWidth / W, innerHeight / H);
     const sc = Math.min(s, Math.max(innerWidth / 1600, innerHeight / 900));
     this.scale = sc;
-    this.root.style.transform = `translate(-50%, -50%) scale(${sc})`;
+    const extra = Math.max(0, H * sc - innerHeight);
+    const dy = extra * 0.4; // show more of the bottom
+    this.root.style.transform = `translate(-50%, -50%) translateY(${dy.toFixed(1)}px) scale(${sc})`;
   }
   // stage coordinates from a pointer event
   pt(e) { const r = this.root.getBoundingClientRect(); return { x: (e.clientX - r.left) / this.scale, y: (e.clientY - r.top) / this.scale }; }

@@ -1,6 +1,6 @@
 // Kalulu: the book around the stage. Language, the read-along caption, page navigation, pause, the end card.
-import { Stage, Audio, sleep } from './engine.js?v=202610231933';
-import { makeStory, SPEAKER } from './story.js?v=202610231933';
+import { Stage, Audio, sleep } from './engine.js?v=202610231941';
+import { makeStory, SPEAKER } from './story.js?v=202610231941';
 
 const $ = (id) => document.getElementById(id);
 const T = {
@@ -83,6 +83,24 @@ $('stage').addEventListener('pointerdown', (e) => {
 });
 
 // ------------------------------------------------------------------ chrome
+let idleT = 0;
+function wake() { document.body.classList.remove('idle'); clearTimeout(idleT); idleT = setTimeout(() => document.body.classList.add('idle'), 3500); }
+addEventListener('pointerdown', wake, { capture: true });
+// phones: back from another app or from portrait, the browser leaves fullscreen; the next touch restores it
+const small = () => Math.min(screen.width, screen.height) < 700 && matchMedia('(pointer: coarse)').matches;
+function full() {
+  if (!small() || document.fullscreenElement || document.webkitFullscreenElement) return;
+  try { const el = document.documentElement, r = (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el, { navigationUI: 'hide' }); r?.then?.(() => screen.orientation?.lock?.('landscape')?.catch?.(() => {}), () => {}); } catch {}
+}
+addEventListener('pointerdown', () => { if (document.body.classList.contains('in')) full(); }, { capture: true });
+// turned upright in the middle of the story: pause and ask to turn back
+addEventListener('resize', () => {
+  if (!document.body.classList.contains('in') || !small()) return;
+  if (portrait()) { if (!paused) { pause(true); turnedAway = true; } $('rotate').classList.add('on'); }
+  else if (turnedAway) { $('rotate').classList.remove('on'); turnedAway = false; }
+});
+let turnedAway = false;
+$('rot-stay').onclick = () => $('rotate').classList.remove('on');
 function texts() {
   document.documentElement.lang = lang;
   for (const el of document.querySelectorAll('[data-t]')) el.textContent = t(el.dataset.t);
@@ -96,7 +114,7 @@ async function setLang(l) {
 for (const b of document.querySelectorAll('[data-lang]')) b.addEventListener('click', () => setLang(b.dataset.lang));
 function pause(on) { paused = on; stage.paused = on; audio.pause(on); $('pause').classList.toggle('on', on); }
 $('b-pause').onclick = () => pause(true);
-$('pause').onclick = () => pause(false);
+$('pause').onclick = () => { full(); pause(false); };
 $('b-prev').onclick = () => go(page - 1);
 $('b-next').onclick = () => go(page + 1);
 $('b-cap').onclick = () => { capOn = !capOn; store.set('kalulu-cap', capOn ? '1' : '0'); cap.classList.toggle('hidden', !capOn); $('b-cap').classList.toggle('on', capOn); };
@@ -113,12 +131,11 @@ function rotateGate() {
 }
 $('go').onclick = async () => {
   audio.unlock(); audio.setMusic(store.get('kalulu-music') !== '0'); $('b-music').classList.toggle('on', audio.musicOn); $('b-cap').classList.toggle('on', capOn);
-  const small = Math.min(screen.width, screen.height) < 700 && matchMedia('(pointer: coarse)').matches;
-  if (small) { try { const r = document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); r?.then?.(() => screen.orientation?.lock?.('landscape')?.catch?.(() => {}), () => {}); } catch {} }
+  full(); wake();
   document.body.classList.add('in');
   audio.stopLoop('music', 1.5);
   await loadTimings(lang);
-  if (small && portrait()) await rotateGate();
+  if (small() && portrait()) await rotateGate();
   go(0);
 };
 
