@@ -51,5 +51,5 @@ export async function loadProject() {
   const brand = c.brand || row.title.toUpperCase();
   const bm = document.querySelector('.brandmark'); if (bm) bm.textContent = brand;
   const sub = document.querySelector('.setup .sub'); if (sub) sub.textContent = [row.title, row.author].filter(Boolean).join(' · ');
-  return { id: row.id, title: row.title, author: row.author, brand, parts: c.parts || {}, budgets: c.budgets || {}, scenes };
+  return { id: row.id, title: row.title, author: row.author, brand, parts: c.parts || {}, budgets: c.budgets || {}, theme: c.theme || null, scenes };
 }

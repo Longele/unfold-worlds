@@ -5,7 +5,9 @@ import { loadProject } from './project.js';
 // the world comes from the database (see project.js); everything below is the same engine
 const PROJECT = await loadProject();
 const SCENES = PROJECT.scenes;
-import { setBg, pulse } from './bg.js';
+import { setBg, pulse, setTheme } from './bg.js';
+// a world can bring its own colours (content.theme): the CSS and the light both follow
+if (PROJECT.theme) { document.body.dataset.theme = PROJECT.theme; setTheme(PROJECT.theme); }
 import * as A from './audio.js';
 import { host, randCode, cleanRoom } from './net.js';
 import { CAST_NS } from './cast-config.js';

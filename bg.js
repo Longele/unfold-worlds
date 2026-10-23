@@ -6,7 +6,7 @@ const gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPre
 
 const FRAG = `precision highp float;
 uniform vec2 uRes; uniform float uT, uE, uAmt, uSpin, uFlare;
-uniform vec3 uC1, uC2; uniform vec2 uF, uFlow;
+uniform vec3 uC1, uC2, uBase; uniform vec2 uF, uFlow; uniform float uLight;
 float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f);
   return mix(mix(h(i), h(i+vec2(1.,0.)), f.x), mix(h(i+vec2(0.,1.)), h(i+1.), f.x), f.y); }
@@ -34,25 +34,35 @@ void main(){
   c += mix(uC1, vec3(1.), .35) * fl * uFlare * .9;
   // sparse breathing stars
   vec2 g = floor(gl_FragCoord.xy / 2.); float st = h(g);
-  c += step(.9975, st) * vec3(.55) * (.35 + .65 * sin(uT*1.3 + st*80.)) * (1. - glow*.6);
+  c += step(.9975, st) * vec3(.55) * (.35 + .65 * sin(uT*1.3 + st*80.)) * (1. - glow*.6) * (1. - uLight);
   c *= smoothstep(1.35, .2, length(p * vec2(.78, 1.)));
   c = 1. - exp(-c * 1.35);
-  gl_FragColor = vec4(c + vec3(.022, .028, .042), 1.);
+  // light theme: the colour is the ground, the silk is sunlight moving on it, the edges a deeper shade
+  float vg = smoothstep(1.55, .1, length(p * vec2(.78, 1.)));
+  vec3 lit = uBase * mix(.8, 1.02, vg) * (1. - c * .1) + c * vec3(.26, .2, .15); // soft: the silk must never wash out the text
+  gl_FragColor = vec4(mix(c + vec3(.022, .028, .042), lit, uLight), 1.);
 }`;
 const VERT = 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0., 1.); }';
 
+let THEME = null; // { base, c1, c2 } for a world whose ground is a colour
 const S = { c1: [255, 122, 26], c2: [40, 50, 110], fx: 0.5, fy: 0.5, amt: 1, spin: 0, flowx: 0, flowy: 0, e: 0, flare: 0 };
 const T = { ...S, c1: [...S.c1], c2: [...S.c2] };
 const MODES = { drift: [0.15, 0.05, 0], rise: [0, 1, 0], fall: [0, -1, 0], orbit: [0, 0, 1.4] };
 
 export function setBg(o) {
-  if (o.hue) T.c1 = o.hue.slice();
-  if (o.hue2) T.c2 = o.hue2.slice(); else if (o.hue) T.c2 = [o.hue[0] * 0.18 + 30, o.hue[1] * 0.16 + 36, o.hue[2] * 0.2 + 90];
+  if (THEME) { T.c1 = THEME.c1.slice(); T.c2 = THEME.c2.slice(); }
+  else if (o.hue) T.c1 = o.hue.slice();
+  if (THEME) {} else if (o.hue2) T.c2 = o.hue2.slice(); else if (o.hue) T.c2 = [o.hue[0] * 0.18 + 30, o.hue[1] * 0.16 + 36, o.hue[2] * 0.2 + 90];
   if (o.fx !== undefined) T.fx = o.fx;
   if (o.fy !== undefined) T.fy = o.fy;
   T.amt = o.amt ?? (0.75 + (o.pull || 0) * 0.5);
   const m = MODES[o.mode] || MODES.drift;
   T.flowx = m[0] * (o.speed || 1); T.flowy = m[1] * (o.speed || 1); T.spin = m[2];
+}
+const THEMES = { flame: { base: [255, 122, 51], c1: [255, 244, 228], c2: [255, 164, 107] } };
+export function setTheme(name) {
+  THEME = THEMES[name] || null;
+  if (THEME) { S.c1 = THEME.c1.slice(); S.c2 = THEME.c2.slice(); T.c1 = THEME.c1.slice(); T.c2 = THEME.c2.slice(); }
 }
 export function pulse(k = 1) { S.e = Math.min(1.4, S.e + 0.9 * k); S.flare = Math.min(1.2, S.flare + 1 * k); }
 
@@ -74,7 +84,7 @@ if (gl) {
   gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
   const loc = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-  for (const u of ['uRes', 'uT', 'uE', 'uAmt', 'uSpin', 'uFlare', 'uC1', 'uC2', 'uF', 'uFlow']) U[u] = gl.getUniformLocation(prog, u);
+  for (const u of ['uRes', 'uT', 'uE', 'uAmt', 'uSpin', 'uFlare', 'uC1', 'uC2', 'uF', 'uFlow', 'uBase', 'uLight']) U[u] = gl.getUniformLocation(prog, u);
 }
 addEventListener('resize', resize); resize();
 matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`).addEventListener?.('change', resize); // moved to another screen
@@ -94,6 +104,7 @@ function frame(now) {
     gl.uniform1f(U.uSpin, S.spin); gl.uniform1f(U.uFlare, S.flare);
     gl.uniform3f(U.uC1, S.c1[0] / 255, S.c1[1] / 255, S.c1[2] / 255); gl.uniform3f(U.uC2, S.c2[0] / 255, S.c2[1] / 255, S.c2[2] / 255);
     gl.uniform2f(U.uF, S.fx, S.fy); gl.uniform2f(U.uFlow, flowX, flowY);
+    const b = THEME ? THEME.base : [7, 9, 13]; gl.uniform3f(U.uBase, b[0] / 255, b[1] / 255, b[2] / 255); gl.uniform1f(U.uLight, THEME ? 1 : 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
   requestAnimationFrame(frame);
