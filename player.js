@@ -215,7 +215,8 @@ const castToken = qs.get('cast');
 // room + paired phones are remembered per world, so two projects never share a remote
 const ROOM_KEY = `uw-room-${PROJECT.id}`, TOK_KEY = `uw-tokens-${PROJECT.id}`; // opened on a TV / Chromecast by the phone itself: that phone is pre-authorised
 function pinCode() { return String(1000 + (crypto.getRandomValues(new Uint16Array(1))[0] % 9000)); }
-const net = { ok: false, room: cleanRoom(qs.get('room')) || cleanRoom(store.get(ROOM_KEY)) || randCode(4), pin: pinCode(), vote: false, force: null };
+const net = { ok: false, room: cleanRoom(qs.get('room')) || cleanRoom(store.get(ROOM_KEY)) || randCode(4), pin: pinCode(), vote: false, force: null, sid: (() => { const k = `uw-sid-${PROJECT.id}`; let v = null; try { v = sessionStorage.getItem(k) || randCode(6); sessionStorage.setItem(k, v); } catch { v = randCode(6); } return v; })() };
+// sid: this showing of the world, kept across a reload of the same tab; a phone's "already answered" lasts one showing
 if (!castToken) store.set(ROOM_KEY, net.room);
 const tokens = new Set(JSON.parse(store.get(TOK_KEY) || '[]'));
 if (castToken) tokens.add(castToken);
@@ -261,7 +262,7 @@ function pushVote() {
   const open = voteOpen();
   if (open === net.vote) return;
   net.vote = open; voteBadge();
-  net.link?.broadcast({ t: 'vote', open, q: PROMPT }); // one message for the whole room
+  net.link?.broadcast({ t: 'vote', open, q: PROMPT, sid: net.sid }); // one message for the whole room
 }
 function onConn(c) {
   const m = c.metadata || {};
@@ -279,14 +280,14 @@ function onConn(c) {
       c.send({ t: 'meta', scenes: META, audience: audienceURL(), brand: PROJECT.brand, parts: PROJECT.parts, play: playURL() });
       setPaired(); sendState(c);
     } else if (m.role === 'audience') {
-      audience.add(c); c._n = 0; c.send({ t: 'vote', open: voteOpen(), q: PROMPT });
+      audience.add(c); c._n = 0; c.send({ t: 'vote', open: voteOpen(), q: PROMPT, sid: net.sid });
     } else c.close();
   });
   c.on('data', (d) => {
     c._rx = Date.now();
     if (d && d.t === 'ping') { c._hb = true; return c.open && c.send({ t: 'pong' }); }
     if (remotes.has(c)) return onCmd(d);
-    if (audience.has(c) && d && d.t === 'hello') return c.send({ t: 'vote', open: voteOpen(), q: PROMPT });
+    if (audience.has(c) && d && d.t === 'hello') return c.send({ t: 'vote', open: voteOpen(), q: PROMPT, sid: net.sid });
     if (!audience.has(c) || !d || d.t !== 'word') return;
     if (!voteOpen()) return c.send({ t: 'word', ok: false, why: 'closed' });
     if (c._n >= 3 || Date.now() - (c._t || 0) < 1500) return c.send({ t: 'word', ok: false, why: 'limit', left: Math.max(0, 3 - c._n) });

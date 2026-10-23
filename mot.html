@@ -39,7 +39,10 @@ const f = document.getElementById('f'), w = document.getElementById('w'), b = do
 const room = cleanRoom(location.hash.slice(1));
 const IDLE = 'votre mot apparaît à l’écran, anonymement';
 let open = false, done = false, pending = false, link = null;
-try { done = localStorage.getItem('uw-mot-' + room) === 'done'; } catch {}
+// "already answered" belongs to one showing of the presentation (sid from the screen), not to the room forever
+let sid = '';
+try { localStorage.removeItem('uw-mot-' + room); } catch {}
+const doneKey = () => `uw-mot-${room}-${sid}`;
 function setOpen(o) {
   open = o;
   if (done) { b.disabled = w.disabled = true; msg.textContent = 'merci, vous avez donné vos mots'; return; }
@@ -47,9 +50,12 @@ function setOpen(o) {
   msg.textContent = open ? IDLE : 'le vote ouvre dans un instant…';
   if (open) { navigator.vibrate && navigator.vibrate(15); if (pending && w.value.trim()) { pending = false; f.requestSubmit(); } }
 }
-function finish() { done = true; w.disabled = b.disabled = true; document.body.classList.add('sent'); try { localStorage.setItem('uw-mot-' + room, 'done'); } catch {} }
+function finish() { done = true; w.disabled = b.disabled = true; document.body.classList.add('sent'); try { if (sid) localStorage.setItem(doneKey(), 'done'); } catch {} }
 function onMessage(m) {
-  if (m.t === 'vote') { if (m.q) document.querySelector('h1').textContent = m.q; setOpen(m.open); }
+  if (m.t === 'vote') {
+    if (m.sid && m.sid !== sid) { sid = m.sid; let was = false; try { was = localStorage.getItem(doneKey()) === 'done'; } catch {} done = was; if (!was) { w.disabled = false; document.body.classList.remove('sent'); } }
+    if (m.q) document.querySelector('h1').textContent = m.q; setOpen(m.open);
+  }
   if (m.t === 'word') {
     if (m.ok) {
       msg.textContent = m.left > 0 ? `merci, c’est à l’écran · encore ${m.left} mot${m.left > 1 ? 's' : ''} possible${m.left > 1 ? 's' : ''}` : 'merci, regardez l’écran';
