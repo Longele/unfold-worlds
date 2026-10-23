@@ -5,10 +5,10 @@ import { CAPTIONS } from './captions.js';
 
 const $ = (id) => document.getElementById(id);
 const T = {
-  en: { tag: 'Piano, simply.', learn: 'Learn the basics', learnS: 'five minutes, guided by voice', free: 'Just play', freeS: 'there are no wrong notes', tuning: 'tuning the piano', ready: 'best with headphones',
+  en: { tag: 'Piano, simply.', learn: 'Learn the basics', learnS: 'ten minutes, guided by voice', free: 'Just play', freeS: 'there are no wrong notes', tuning: 'tuning the piano', ready: 'best with headphones',
     replay: 'Replay', next: 'Next', exit: 'Free play', notes: 'Notes', pedal: 'Pedal', rain: 'Rain', lesson: 'Lesson', midi: 'MIDI', midiOn: 'MIDI keyboard connected', midiNo: 'No MIDI keyboard found',
     labels: { none: 'Notes off', names: 'Note names', keys: 'Computer keys' }, turn: 'Turn your phone sideways', turnS: 'for the whole keyboard', stay: 'Continue upright', done: 'The piano is yours', credit: 'Piano: Salamander Grand Piano by Alexander Holm, CC BY 3.0' },
-  fr: { tag: 'Le piano, simplement.', learn: 'Apprendre les bases', learnS: 'cinq minutes, guidé par la voix', free: 'Jouer librement', freeS: 'il n’y a pas de fausse note', tuning: 'accordage du piano', ready: 'meilleur avec un casque',
+  fr: { tag: 'Le piano, simplement.', learn: 'Apprendre les bases', learnS: 'dix minutes, guidé par la voix', free: 'Jouer librement', freeS: 'il n’y a pas de fausse note', tuning: 'accordage du piano', ready: 'meilleur avec un casque',
     replay: 'Réécouter', next: 'Suivant', exit: 'Jeu libre', notes: 'Notes', pedal: 'Pédale', rain: 'Pluie', lesson: 'Leçon', midi: 'MIDI', midiOn: 'Clavier MIDI connecté', midiNo: 'Aucun clavier MIDI trouvé',
     labels: { none: 'Notes masquées', names: 'Noms des notes', keys: 'Touches du clavier' }, turn: 'Tournez votre téléphone', turnS: 'pour avoir tout le clavier', stay: 'Continuer en portrait', done: 'Le piano est à vous', credit: 'Piano : Salamander Grand Piano par Alexander Holm, CC BY 3.0' },
 };
