@@ -8,6 +8,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 export const isBlack = (m) => [1, 3, 6, 8, 10].includes(((m % 12) + 12) % 12);
 const W = 1, GAP = 0.055, LW = 6, HW = 0.82, WB = 0.56, LB = 3.9, HB = 0.6;
+const GOLD = new THREE.Color(1, 0.6, 0.22);
 const BLACK_SHIFT = { 1: -0.1, 3: 0.1, 6: -0.12, 8: 0, 10: 0.12 };
 // colour of a note: a warm-to-cool ribbon walked in fifths, so neighbours in harmony sit close in colour
 const STOPS = [[0.09, 0.95, 0.62], [0.03, 0.85, 0.62], [0.95, 0.7, 0.66], [0.8, 0.55, 0.68], [0.55, 0.6, 0.62], [0.12, 0.9, 0.6]];
@@ -69,7 +70,7 @@ export class Piano3D {
     this.keys = new Map(); this.pickables = [];
     this.root = new THREE.Group(); s.add(this.root);
     this.dot = softDot();
-    this.initSparks(); this.initDust();
+    this.initSparks(); this.initDust(); this.initGuides();
 
 
     this.view = { cur: null, to: null }; this.par = new THREE.Vector2(); this.parT = new THREE.Vector2();
@@ -108,12 +109,12 @@ export class Piano3D {
       const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.dot, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, toneMapped: false, opacity: 0 }));
       halo.scale.set(black ? 2.2 : 2.8, black ? 2.2 : 2.8, 1); halo.position.copy(top).add(new THREE.Vector3(0, 0.35, black ? 0.3 : -0.4)); halo.renderOrder = 2;
       this.root.add(halo);
-      this.keys.set(m, { m, g, mesh, mat, black, x, a: 0, at: 0, glow: 0, glowT: 0, tgt: 0, col: noteColor(m), label: null, badge: null, halo, top });
+      this.keys.set(m, { m, g, mesh, mat, black, x, a: 0, v: 0, base: mat.color.clone(), at: 0, glow: 0, glowT: 0, tgt: 0, col: noteColor(m), label: null, badge: null, halo, top });
     }
     // the case: keybed, cheeks, key slip, fallboard with the name
     const span = this.width + 1.4, L = this.mat.lacquer, body = [];
     const add = (geo, mat, x, y, z, rx = 0) => { const o = new THREE.Mesh(geo, mat); o.position.set(x, y, z); o.rotation.x = rx; o.castShadow = o.receiveShadow = true; this.root.add(o); body.push(o); return o; };
-    add(new RoundedBoxGeometry(span, 0.6, LW + 1.6, 2, 0.08), L, 0, -HW / 2 - 0.32, 0.1);
+    add(new RoundedBoxGeometry(span, 0.6, LW + 1.6, 2, 0.08), L, 0, -HW / 2 - 0.85, 0.1); // deep enough for a key to dip ~1 cm
     for (const sx of [-1, 1]) add(new RoundedBoxGeometry(0.62, 1.9, LW + 1.6, 3, 0.16), L, sx * (this.width / 2 + 0.36), 0.2, 0.1);
     add(new RoundedBoxGeometry(span, 0.62, 0.34, 2, 0.1), L, 0, -0.2, LW / 2 + 0.32);
     add(new THREE.BoxGeometry(this.width, 0.08, 0.16), this.mat.felt, 0, HW / 2 - 0.02, -LW / 2 - 0.02);
@@ -171,6 +172,58 @@ export class Piano3D {
     const hit = this.ray.intersectObjects(this.pickables, false)[0];
     if (!hit) return null;
     return { m: hit.object.userData.midi, depth: hit.point.z };
+  }
+
+  // ------------------------------------------------------------------ guiding light
+  // the key to play gets a column of warm light and a floating orb; a correct note sends a ring across it
+  initGuides() {
+    const c = document.createElement('canvas'); c.width = 64; c.height = 256;
+    const g = c.getContext('2d'), img = g.createImageData(64, 256);
+    for (let y = 0; y < 256; y++) for (let x = 0; x < 64; x++) {
+      const v = 1 - y / 255, hx = (x - 31.5) / 32, a = Math.pow(1 - v, 1.4) * Math.exp(-hx * hx / 0.09) * (0.35 + 0.65 * Math.exp(-hx * hx / 0.012)), o = (y * 64 + x) * 4;
+      img.data[o] = 255; img.data[o + 1] = 200 + 40 * (1 - v); img.data[o + 2] = 120 + 80 * (1 - v); img.data[o + 3] = Math.round(255 * Math.min(1, a * 1.4));
+    }
+    g.putImageData(img, 0, 0);
+    const beamTex = new THREE.CanvasTexture(c); beamTex.colorSpace = THREE.SRGBColorSpace;
+    const pc = document.createElement('canvas'); pc.width = 64; pc.height = 256;
+    const pg = pc.getContext('2d'), pimg = pg.createImageData(64, 256);
+    for (let y = 0; y < 256; y++) for (let x = 0; x < 64; x++) {
+      const dx = Math.max(0, Math.abs(x - 31.5) / 32 - 0.55) / 0.45, dy = Math.max(0, Math.abs(y - 127.5) / 128 - 0.8) / 0.2, d = Math.min(1, Math.hypot(dx, dy)), o = (y * 64 + x) * 4;
+      pimg.data[o] = pimg.data[o + 1] = pimg.data[o + 2] = 255; pimg.data[o + 3] = Math.round(255 * Math.pow(1 - d, 1.6));
+    }
+    pg.putImageData(pimg, 0, 0);
+    const poolTex = new THREE.CanvasTexture(pc);
+    this.beams = Array.from({ length: 4 }, () => {
+      const beam = new THREE.Mesh(new THREE.PlaneGeometry(1, 6), new THREE.MeshBasicMaterial({ map: beamTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, opacity: 0, side: THREE.DoubleSide }));
+      const orb = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.dot, color: 0xffc27a, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, toneMapped: false, opacity: 0 }));
+      const pool = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: poolTex, color: 0xffb35a, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, opacity: 0 }));
+      pool.rotation.x = -Math.PI / 2; pool.renderOrder = 3;
+      beam.renderOrder = orb.renderOrder = 3; this.scene.add(beam, orb);
+      return { beam, orb, pool, key: null, o: 0 };
+    });
+    const rc = document.createElement('canvas'); rc.width = rc.height = 128;
+    const rg = rc.getContext('2d'); rg.strokeStyle = '#fff'; rg.lineWidth = 6; rg.shadowColor = '#fff'; rg.shadowBlur = 10; rg.beginPath(); rg.arc(64, 64, 52, 0, Math.PI * 2); rg.stroke();
+    const ringTex = new THREE.CanvasTexture(rc);
+    this.rings = Array.from({ length: 10 }, () => {
+      const r = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: ringTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, opacity: 0 }));
+      r.rotation.x = -Math.PI / 2; r.renderOrder = 3; this.scene.add(r); return { r, t: 1 };
+    });
+    this.ringI = 0;
+  }
+  ripple(m, color = 0xffd08a) {
+    const k = this.keys.get(m); if (!k) return;
+    const ring = this.rings[this.ringI = (this.ringI + 1) % this.rings.length];
+    ring.t = 0; ring.r.material.color.set(color); ring.r.position.set(k.x, k.top.y + 0.25, k.top.z);
+  }
+  guide(ms) {
+    this.beams.forEach((b, i) => {
+      b.key = ms && ms[i] != null ? this.keys.get(ms[i]) || null : null;
+      if (!b.key) return;
+      const k = b.key, L = k.black ? LB : LW, H = k.black ? HB : HW;
+      k.mesh.add(b.pool);
+      b.pool.position.set(0, H / 2 + 0.012, k.black ? 0.2 : 0.35);
+      b.pool.scale.set(k.black ? 0.62 : 1.0, L * 0.92, 1);
+    });
   }
 
   // ------------------------------------------------------------------ light particles
@@ -260,13 +313,18 @@ export class Piano3D {
 
     // keys
     for (const key of this.keys.values()) {
-      key.a += (key.at - key.a) * Math.min(1, dt * (key.at ? 38 : 16));
-      key.g.rotation.x = key.a * (key.black ? 0.05 : 0.042);
+      // a key is a lever on felt: it drops fast, then springs back with a tiny bounce
+      const kk = key.at ? 2600 : 900, damp = key.at ? 90 : 34;
+      for (let n = Math.ceil(dt / 0.004), h = dt / n; n > 0; n--) { key.v += ((key.at - key.a) * kk - key.v * damp) * h; key.a = Math.min(1.05, Math.max(-0.12, key.a + key.v * h)); } // small steps: stable at any frame rate
+      key.g.rotation.x = key.a * (key.black ? 0.078 : 0.07);
+      // a key the lesson is waiting for turns to warm gold, breathing; a pressed key darkens a little as it drops
+      const tint = key.tgt && !key.black ? key.tgt * (0.62 + 0.18 * Math.sin(t * 3.2 + key.x * 0.3)) : 0;
+      key.mat.color.copy(key.base).multiplyScalar(1 - 0.13 * Math.max(0, key.a)).lerp(GOLD, tint);
       key.glow += (key.glowT - key.glow) * Math.min(1, dt * (key.glowT > key.glow ? 30 : 2.2));
       const breath = key.tgt ? key.tgt * (0.35 + 0.25 * Math.sin(t * 3.2 + key.x * 0.3)) : 0;
       const e = key.mat.emissive;
       const hm = key.halo.material;
-      if (breath > key.glow * 0.6) { e.setRGB(1, 0.62, 0.22).multiplyScalar(breath * (key.black ? 1.2 : 0.5)); hm.color.setRGB(1, 0.62, 0.25); hm.opacity = breath * 0.55; }
+      if (breath > key.glow * 0.6) { e.setRGB(1, 0.55, 0.15).multiplyScalar(breath * (key.black ? 1.6 : 0.3)); hm.color.setRGB(1, 0.62, 0.25); hm.opacity = breath * 0.9; }
       else { e.copy(key.col).multiplyScalar(key.glow * (key.black ? 1.5 : 0.6)); hm.color.copy(key.col); hm.opacity = Math.min(1, key.glow * 0.75); }
     }
     this.flash.intensity *= Math.pow(0.02, dt);
@@ -282,6 +340,24 @@ export class Piano3D {
     }
     const ga = this.sparks.geometry.attributes;
     ga.position.needsUpdate = ga.alpha.needsUpdate = ga.color.needsUpdate = ga.size.needsUpdate = true;
+    for (const b of this.beams) {
+      b.o += ((b.key ? 1 : 0) - b.o) * Math.min(1, dt * 5);
+      const k = b.key || b.last; if (b.key) b.last = b.key;
+      if (!k) continue;
+      const pulse = 0.75 + 0.25 * Math.sin(t * 3.4);
+      b.beam.position.set(k.x, k.top.y + 3.05, k.top.z - (k.black ? 0 : 0.3));
+      b.beam.scale.set(k.black ? 1.6 : 2.2, 1, 1);
+      b.beam.rotation.y = Math.atan2(this.cam.position.x - k.x, this.cam.position.z - k.top.z);
+      b.beam.material.opacity = b.o * pulse;
+      b.orb.position.set(k.x, k.top.y + 1.5 + Math.sin(t * 2.6) * 0.18, k.top.z);
+      b.orb.scale.setScalar(1.3 + 0.3 * pulse); b.orb.material.opacity = b.o * pulse;
+      b.pool.material.opacity = b.o * (0.55 + 0.35 * pulse);
+    }
+    for (const ring of this.rings) {
+      if (ring.t >= 1) { ring.r.material.opacity = 0; continue; }
+      ring.t = Math.min(1, ring.t + dt / 0.7);
+      ring.r.scale.setScalar(0.6 + ring.t * 2.6); ring.r.material.opacity = Math.pow(1 - ring.t, 1.5);
+    }
     this.dust.rotation.y = t * 0.006; this.dust.position.y = Math.sin(t * 0.1) * 0.3;
     for (const key of this.keys.values()) if (key.badge) key.badge.position.y = key.top.y + 1.25 + Math.sin(t * 2.4 + key.x) * 0.07;
 

@@ -7,10 +7,10 @@ const $ = (id) => document.getElementById(id);
 const T = {
   en: { tag: 'Piano, simply.', learn: 'Learn the basics', learnS: 'five minutes, guided by voice', free: 'Just play', freeS: 'there are no wrong notes', tuning: 'tuning the piano', ready: 'best with headphones',
     replay: 'Replay', next: 'Next', exit: 'Free play', notes: 'Notes', pedal: 'Pedal', rain: 'Rain', lesson: 'Lesson', midi: 'MIDI', midiOn: 'MIDI keyboard connected', midiNo: 'No MIDI keyboard found',
-    labels: { none: 'Notes off', names: 'Note names', keys: 'Computer keys' }, turn: 'Turn your phone for more keys', done: 'The piano is yours', credit: 'Piano: Salamander Grand Piano by Alexander Holm, CC BY 3.0' },
+    labels: { none: 'Notes off', names: 'Note names', keys: 'Computer keys' }, turn: 'Turn your phone sideways', turnS: 'for the whole keyboard', stay: 'Continue upright', done: 'The piano is yours', credit: 'Piano: Salamander Grand Piano by Alexander Holm, CC BY 3.0' },
   fr: { tag: 'Le piano, simplement.', learn: 'Apprendre les bases', learnS: 'cinq minutes, guidé par la voix', free: 'Jouer librement', freeS: 'il n’y a pas de fausse note', tuning: 'accordage du piano', ready: 'meilleur avec un casque',
     replay: 'Réécouter', next: 'Suivant', exit: 'Jeu libre', notes: 'Notes', pedal: 'Pédale', rain: 'Pluie', lesson: 'Leçon', midi: 'MIDI', midiOn: 'Clavier MIDI connecté', midiNo: 'Aucun clavier MIDI trouvé',
-    labels: { none: 'Notes masquées', names: 'Noms des notes', keys: 'Touches du clavier' }, turn: 'Tournez le téléphone pour plus de touches', done: 'Le piano est à vous', credit: 'Piano : Salamander Grand Piano par Alexander Holm, CC BY 3.0' },
+    labels: { none: 'Notes masquées', names: 'Noms des notes', keys: 'Touches du clavier' }, turn: 'Tournez votre téléphone', turnS: 'pour avoir tout le clavier', stay: 'Continuer en portrait', done: 'Le piano est à vous', credit: 'Piano : Salamander Grand Piano par Alexander Holm, CC BY 3.0' },
 };
 const NAMES = { en: ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'], fr: ['Do', 'Do♯', 'Ré', 'Ré♯', 'Mi', 'Fa', 'Fa♯', 'Sol', 'Sol♯', 'La', 'La♯', 'Si'] };
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
@@ -59,6 +59,7 @@ canvas.addEventListener('pointerdown', (e) => {
   const k = piano.keys.get(h.m), front = k ? k.g.position.z + (k.black ? 3.9 : 6) : 3;
   const vel = Math.max(0.35, Math.min(0.95, 0.95 - (front - h.depth) * 0.08)); // nearer the front edge, the fuller the note
   ptr.set(e.pointerId, h.m); noteOn(h.m, vel);
+  if (e.pointerType === 'touch') navigator.vibrate?.(8);
 });
 canvas.addEventListener('pointermove', (e) => {
   if (!ptr.has(e.pointerId)) return;
@@ -136,7 +137,7 @@ const lesson = {
     $('prog').style.setProperty('--p', `${(i / (STEPS.length - 1)) * 100}%`);
     if (st.labels && labelMode === 'none') { labelMode = 'names'; applyLabels(); }
     if (st.badges) for (const [m, n] of Object.entries(st.badges)) piano.setBadge(+m, n);
-    this.w = st.wait ? { ...st.wait, n: 0, idx: 0, got: new Set(), ch: 0 } : null;
+    this.w = st.wait ? { ...st.wait, n: 0, idx: 0, got: new Set(), ch: 0, miss: 0 } : null;
     this.voiceDone = false; this.early = false;
     for (const [at, what] of st.during || []) this.timers.push(setTimeout(() => this.show(what), at));
     if (st.hintAfter) this.timers.push(setTimeout(() => { if (this.w) piano.hint(st.hint()); }, st.hintAfter));
@@ -156,30 +157,38 @@ const lesson = {
   },
   // which keys glow: the next one of a sequence, the notes of the chord, the C's not found yet
   refresh() {
-    const w = this.w; if (!w) return;
-    if (w.seq) piano.setTargets(this.voiceDone || w.idx > 0 ? [w.seq[w.idx]] : []);
-    else if (w.chords) piano.setTargets(this.voiceDone ? w.chords[w.ch] : []);
-    else if (w.all) piano.setTargets(this.voiceDone ? w.all().filter((m) => !w.got.has(m)) : []);
+    const w = this.w; if (!w) { piano.guide(null); dots(0, 0); return; }
+    let tg = [];
+    if (w.seq) tg = this.voiceDone || w.idx > 0 ? [w.seq[w.idx]] : [];
+    else if (w.chords) tg = this.voiceDone ? w.chords[w.ch] : [];
+    else if (w.all) tg = this.voiceDone ? w.all().filter((m) => !w.got.has(m)) : [];
+    piano.setTargets(tg, true); piano.guide(tg);
+    // how far along: one dot per note, chord or C to find
+    if (w.seq) dots(w.seq.length, w.idx); else if (w.chords) dots(w.chords.length, w.ch); else if (w.all) dots(w.all().length, w.got.size); else if (w.any) dots(w.any, w.n); else dots(0, 0);
   },
   onNote(m) {
     const w = this.w; if (!w || !started || mode !== 'lesson') return;
-    let ok = false;
-    if (w.any) ok = ++w.n >= w.any;
-    else if (w.pc != null) ok = m % 12 === w.pc;
-    else if (w.all) { if (m % 12 === 0) w.got.add(m); ok = w.all().every((c) => w.got.has(c)); }
-    else if (w.seq) { if (m === w.seq[w.idx]) w.idx++; ok = w.idx >= w.seq.length; }
+    let ok = false, good = false;
+    if (w.any) { ok = ++w.n >= w.any; good = true; }
+    else if (w.pc != null) { ok = good = m % 12 === w.pc; }
+    else if (w.all) { if (m % 12 === 0 && !w.got.has(m)) { w.got.add(m); good = true; } ok = w.all().every((c) => w.got.has(c)); }
+    else if (w.seq) { if (m === w.seq[w.idx]) { w.idx++; good = true; } ok = w.idx >= w.seq.length; }
     else if (w.chords) {
       // all three within two seconds: real chords on a keyboard, one after another with a mouse
       const now = performance.now(), c = w.chords[w.ch];
-      if (c.every((n) => held.has(n) || now - (pressedAt.get(n) || -1e9) < 2000)) { w.ch++; c.forEach((n) => pressedAt.delete(n)); }
+      if (c.includes(m)) piano.ripple(m, 0xffe2b0);
+      if (c.every((n) => held.has(n) || now - (pressedAt.get(n) || -1e9) < 2000)) { w.ch++; c.forEach((n) => { pressedAt.delete(n); piano.ripple(n, 0x9dffc8); }); sound.chime(91); }
       ok = w.ch >= w.chords.length;
     }
+    // right note: a ring of light on it; a wrong one twice in a row: the guide pulses where to go
+    if (good) { piano.ripple(m, 0x9dffc8); w.miss = 0; }
+    else if (!w.chords && (w.seq || w.pc != null || w.all)) { if (++w.miss >= 2) { w.miss = 0; const tg = w.seq ? [w.seq[w.idx]] : w.pc != null ? cs() : w.all().filter((c) => !w.got.has(c)); piano.hint(tg); } }
     if (!ok) { this.refresh(); return; }
-    if (!this.voiceDone) { this.early = true; this.w = null; piano.setTargets([]); return; } // done before the voice finished: move on when it does
+    if (!this.voiceDone) { this.early = true; this.w = null; piano.setTargets([]); piano.guide(null); return; } // done before the voice finished: move on when it does
     this.success(this.run);
   },
   async success(run) {
-    const st = this.step; this.w = null; piano.setTargets([]);
+    const st = this.step; this.w = null; piano.setTargets([]); piano.guide(null); $('dots').classList.add('done');
     await sleep(450);
     if (run !== this.run) return;
     sound.chime(84 + (this.i % 3) * 4);
@@ -187,7 +196,7 @@ const lesson = {
     await sleep(600);
     if (run === this.run) this.go(this.i + 1);
   },
-  clear() { this.timers.forEach(clearTimeout); this.timers = []; piano.setTargets([]); piano.clearBadges(); this.w = null; sound.stopVoice(); },
+  clear() { this.timers.forEach(clearTimeout); this.timers = []; piano.setTargets([]); piano.guide(null); piano.clearBadges(); this.w = null; sound.stopVoice(); dots(0, 0); },
   stop() { this.run++; this.clear(); this.step = null; },
 };
 
@@ -215,17 +224,38 @@ function caption(txt) {
   const c = $('cap'); c.classList.remove('on');
   setTimeout(() => { c.textContent = txt || ''; if (txt) c.classList.add('on'); }, 260);
 }
+function dots(n, k) {
+  const d = $('dots');
+  if (!n) { d.classList.remove('on'); return; }
+  d.classList.remove('done');
+  if (d.children.length !== n) d.innerHTML = '<i></i>'.repeat(n);
+  [...d.children].forEach((el, i) => el.classList.toggle('on', i < k));
+  d.classList.add('on');
+}
 function toast(txt) { const t = $('toast'); t.textContent = txt; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); }
 
+// on a phone: fullscreen + landscape where the browser allows it (Android), otherwise ask kindly
+function rotateGate() {
+  const o = $('rotate'); o.classList.add('on');
+  return new Promise((res) => {
+    const done = () => { removeEventListener('resize', chk); o.classList.remove('on'); res(); };
+    const chk = () => { if (!portrait()) setTimeout(done, 300); };
+    addEventListener('resize', chk); $('rot-stay').onclick = done;
+  });
+}
 async function begin(which) {
   sound.unlock();
   if (!sound.buf.size) return;
+  const small = Math.min(screen.width, screen.height) < 700 && matchMedia('(pointer: coarse)').matches;
+  if (small) {
+    try { const r = document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); if (r) await r; await screen.orientation?.lock?.('landscape'); } catch {}
+  }
   started = true;
   document.body.classList.add('in');
   piano.setView('play');
   sound.rain(store.get('nocturne-rain') !== '0'); $('b-rain').classList.toggle('on', sound.rainOn);
   await sound.loadLines(lang, IDS);
-  if (portrait()) setTimeout(() => toast(T[lang].turn), 1500);
+  if (small && portrait()) await rotateGate();
   if (which === 'lesson') toLesson(); else toFree(false);
 }
 function toLesson() {
@@ -248,7 +278,7 @@ function texts() {
   $('b-replay').lastChild.textContent = t.replay; $('b-next').lastChild.textContent = t.next; $('b-exit').lastChild.textContent = t.exit;
   $('b-notes').lastChild.textContent = t.notes; $('b-pedal').lastChild.textContent = t.pedal; $('b-rain').lastChild.textContent = t.rain;
   $('b-lesson').lastChild.textContent = t.lesson; $('b-midi').lastChild.textContent = t.midi;
-  $('credit').textContent = t.credit;
+  $('credit').textContent = t.credit; $('rot-t').textContent = t.turn; $('rot-s').textContent = t.turnS; $('rot-stay').textContent = t.stay;
   for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
 }
 async function setLang(l) {

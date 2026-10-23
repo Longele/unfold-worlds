@@ -78,3 +78,21 @@ body.in footer { opacity: 0; }
   #cap { top: max(11vh, 70px); }
 }
 @media (min-width: 2200px) { #intro, nav, #cap, header, #toast { zoom: 1.5; } }
+
+/* progress of the current exercise: one dot per note */
+#dots { position: fixed; left: 50%; top: calc(max(9vh, 64px) + clamp(80px, 8vw, 110px)); transform: translateX(-50%); display: flex; gap: 8px; z-index: 3; pointer-events: none; opacity: 0; transition: opacity .5s; }
+#dots.on { opacity: 1; }
+#dots i { width: 8px; height: 8px; border-radius: 50%; border: 1px solid rgba(255, 208, 138, .5); transition: background .25s, box-shadow .25s, transform .25s; }
+#dots i.on { background: #9dffc8; border-color: #9dffc8; box-shadow: 0 0 10px #9dffc8; transform: scale(1.15); }
+#dots.done i { background: #9dffc8; border-color: #9dffc8; }
+/* turn your phone */
+#rotate { position: fixed; inset: 0; z-index: 20; display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; padding: 24px;
+  background: rgba(5, 6, 8, .92); backdrop-filter: blur(8px); opacity: 0; pointer-events: none; transition: opacity .6s; }
+#rotate.on { opacity: 1; pointer-events: auto; }
+#rotate .ph { width: 46px; height: 80px; border: 2px solid var(--fg); border-radius: 10px; position: relative; margin-bottom: 22px; animation: turn 2.6s var(--ease) infinite; }
+#rotate .ph i { position: absolute; left: 50%; bottom: 6px; width: 12px; height: 2px; margin-left: -6px; background: var(--fg); border-radius: 2px; }
+#rotate .rt { margin: 0; font-size: 30px; font-weight: 300; }
+#rotate .rs { margin: 0 0 26px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+#rotate button { font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); padding: 10px 16px; border: 1px solid var(--faint); border-radius: 999px; }
+@keyframes turn { 0%, 20% { transform: rotate(0); } 50%, 75% { transform: rotate(-90deg); } 100% { transform: rotate(0); } }
+@media (max-width: 640px) { #dots { top: calc(max(11vh, 70px) + 96px); } #dots i { width: 7px; height: 7px; } }
