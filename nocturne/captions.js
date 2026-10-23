@@ -1,0 +1,43 @@
+// generated from nocturne-src/narration-*.json (the spoken lines, without the directing tags)
+export const CAPTIONS = {
+ "en": {
+  "welcome": "Hi. Make yourself comfortable... there's no rush here. In a few minutes, you'll play your first melody.",
+  "pattern": "Look at the keys. White ones... and black ones, sitting in little groups. A group of two... and a group of three. That pattern repeats, all the way across.",
+  "touch": "Go ahead. Touch any key you like... and just listen.",
+  "findc": "Now find a group of two black keys. The white key just to their left... that's C.",
+  "allc": "That's it. Every C looks exactly the same. Can you find the others?",
+  "names": "From C, the white keys climb. C, D, E, F, G, A, B... and then C again. Seven names, that's all. Play them, one by one.",
+  "hand": "Rest your right thumb on C. Then one finger per key... index, middle, ring... and your little finger on G. This is home. Play the five notes.",
+  "melody": "Now, let's make music. Just follow the light.",
+  "beethoven": "You just played Beethoven. Ode to Joy... not bad for a few minutes. Listen.",
+  "black": "The black keys live in between. They're the sharps and flats... just a half step away. Try the one right after C. That's C sharp.",
+  "chord": "Now, three notes together. C... skip one... E... skip one... G. Press them at the same time, and hold.",
+  "chordyes": "Hear that? That's a chord. C major.",
+  "chords": "Same shape, just moved. F, A, C... then G, B, D... and home again, to C. Follow the light.",
+  "outro": "That's the heart of it. Keys, names, a melody, chords. Everything else... is just play. The piano is yours.",
+  "free": "Play anything you like. There are no wrong notes here.",
+  "praise1": "Beautiful.",
+  "praise2": "Lovely.",
+  "praise3": "That's it."
+ },
+ "fr": {
+  "welcome": "Bienvenue. Installez-vous confortablement... rien ne presse. Dans quelques minutes, vous jouerez votre première mélodie.",
+  "pattern": "Regardez les touches. Des blanches... et des noires, rangées en petits groupes. Un groupe de deux... puis un groupe de trois. Ce motif se répète, tout le long du clavier.",
+  "touch": "Allez-y. Touchez la touche que vous voulez... et écoutez, simplement.",
+  "findc": "Maintenant, trouvez un groupe de deux touches noires. La touche blanche juste à leur gauche... c'est le Do.",
+  "allc": "Voilà. Tous les Do se ressemblent. Trouvez les autres.",
+  "names": "À partir du Do, les touches blanches montent. Do, Ré, Mi, Fa, Sol, La, Si... et de nouveau Do. Sept noms, c'est tout. Jouez-les, une par une.",
+  "hand": "Posez le pouce droit sur le Do. Puis un doigt par touche... l'index, le majeur, l'annulaire... et l'auriculaire sur le Sol. C'est votre position de départ. Jouez les cinq notes.",
+  "melody": "Maintenant, faisons de la musique. Suivez simplement la lumière.",
+  "beethoven": "Vous venez de jouer Beethoven. L'Hymne à la joie... pas mal, pour quelques minutes. Écoutez.",
+  "black": "Les touches noires se glissent entre les blanches. Ce sont les dièses et les bémols... à un demi-ton à peine. Essayez celle juste après le Do. C'est le Do dièse.",
+  "chord": "Maintenant, trois notes ensemble. Do... on en saute une... Mi... on en saute une... Sol. Appuyez en même temps, et tenez.",
+  "chordyes": "Vous entendez ? C'est un accord. Do majeur.",
+  "chords": "Même forme, juste déplacée. Fa, La, Do... puis Sol, Si, Ré... et retour au Do. Suivez la lumière.",
+  "outro": "Voilà l'essentiel. Les touches, les noms, une mélodie, des accords. Tout le reste... c'est du jeu. Le piano est à vous.",
+  "free": "Jouez ce que vous voulez. Ici, il n'y a pas de fausse note.",
+  "praise1": "Très beau.",
+  "praise2": "Joli.",
+  "praise3": "C'est ça."
+ }
+};

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nocturne · Unfold Worlds</title>
+<meta name="description" content="Le piano, simplement. Une première leçon guidée par la voix, puis le piano est à vous.">
+<meta name="theme-color" content="#050608">
+<meta property="og:title" content="Nocturne">
+<meta property="og:description" content="Piano, simply. A first lesson guided by voice, then the piano is yours.">
+<meta property="og:image" content="https://unfoldworlds.com/covers/nocturne.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect x=%223%22 y=%222%22 width=%224%22 height=%2212%22 rx=%221%22 fill=%22%23ece5d8%22/%3E%3Crect x=%229%22 y=%222%22 width=%224%22 height=%2212%22 rx=%221%22 fill=%22%23ece5d8%22/%3E%3Crect x=%226%22 y=%222%22 width=%224%22 height=%227%22 rx=%221%22 fill=%22%23ffb066%22/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/cormorant-garamond-latin-300-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{ "imports": { "three": "./lib/three/three.module.js", "three/addons/": "./lib/three/addons/" } }</script>
+</head>
+<body data-mode="intro">
+<canvas id="gl"></canvas>
+<div id="veil"></div>
+
+<header>
+  <a class="brand" href="../" aria-label="Unfold Worlds">NOCTURNE</a>
+  <div class="langs"><button data-lang="en">EN</button><button data-lang="fr">FR</button></div>
+</header>
+
+<main id="intro">
+  <h1>Nocturne</h1>
+  <p class="tag" id="tag"></p>
+  <div class="load"><i id="load"></i></div>
+  <div class="choices">
+    <button id="go-learn" class="choice primary"><span class="t" id="t-learn"></span><span class="s" id="s-learn"></span></button>
+    <button id="go-free" class="choice"><span class="t" id="t-free"></span><span class="s" id="s-free"></span></button>
+  </div>
+  <p class="hp"><svg viewBox="0 0 24 24"><path d="M4 15v-3a8 8 0 0116 0v3"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/></svg><span id="hp"></span></p>
+</main>
+
+<div id="cap" aria-live="polite"></div>
+<div id="prog"><i></i></div>
+
+<nav id="lessonbar">
+  <button id="b-replay"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 108-8H8"/><path d="M10 1L7 4l3 3"/></svg><span></span></button>
+  <button id="b-next"><svg viewBox="0 0 24 24"><path d="M6 5l7 7-7 7M13 5l7 7-7 7"/></svg><span></span></button>
+  <button id="b-exit"><svg viewBox="0 0 24 24"><path d="M5 19V9l7-5 7 5v10"/><path d="M9 19v-6h6v6"/></svg><span></span></button>
+</nav>
+
+<nav id="freebar">
+  <button id="b-notes"><svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span></span></button>
+  <button id="b-pedal"><svg viewBox="0 0 24 24"><path d="M7 20h10l-1.5-8h-7z"/><path d="M12 12V4"/></svg><span></span></button>
+  <button id="b-rain"><svg viewBox="0 0 24 24"><path d="M7 15a4 4 0 01-.5-8A6 6 0 0118 8a3.5 3.5 0 01-.5 7z"/><path d="M8 18l-1 2M12 18l-1 2M16 18l-1 2"/></svg><span></span></button>
+  <button id="b-midi"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 6v7M11 6v7M15 6v7M19 6v7"/></svg><span></span></button>
+  <button id="b-lesson"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 100 18 9 9 0 000-18z"/><path d="M10 8.5v7l5.5-3.5z"/></svg><span></span></button>
+</nav>
+
+<div id="toast"></div>
+<footer id="credit"></footer>
+<script type="module" src="app.js"></script>
+</body>
+</html>
