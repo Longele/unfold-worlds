@@ -324,6 +324,7 @@ function voteBadge() {
 }
 // end of the show: the room goes dark, fullscreen ends, the phones are told
 function bye() {
+  wakeOff = true; try { wakeLock?.release(); wakeVid?.pause(); } catch {}
   black.classList.add('on'); A.play('membrane', 0.2, 0.7);
   for (const c of remotes) c.open && c.send({ t: 'bye' });
   setTimeout(() => { if (fsEl()) leaveFull(); try { window.close(); } catch {} }, 900);
@@ -355,6 +356,39 @@ function goFull() {
 }
 function leaveFull() { try { const r = (document.exitFullscreen || document.webkitExitFullscreen)?.call(document); r?.catch?.(() => {}); } catch {} }
 
+// ---------------- keep the screen awake ----------------
+// Driven from a phone, the laptop sees no mouse or keyboard for long stretches and would dim, lock or
+// sleep mid-talk. The Screen Wake Lock API prevents that while this page is visible; browsers without
+// it get a silent looping video, which also keeps the display on. Re-acquired whenever the page comes
+// back (the system drops the lock when the tab is hidden).
+let wakeLock = null, wakeVid = null, wakeOff = false;
+async function stayAwake() {
+  if (wakeOff) return;
+  try {
+    if ('wakeLock' in navigator) {
+      if (wakeLock && !wakeLock.released) return;
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { if (document.visibilityState === 'visible') setTimeout(stayAwake, 1000); });
+      return;
+    }
+  } catch { /* refused (no gesture yet, low battery…): fall back below and retry on the next gesture */ }
+  try {
+    if (!wakeVid) {
+      wakeVid = document.createElement('video');
+      Object.assign(wakeVid, { muted: true, loop: true, playsInline: true });
+      wakeVid.setAttribute('playsinline', ''); wakeVid.setAttribute('aria-hidden', 'true');
+      wakeVid.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:0;top:0';
+      for (const [src, type] of [['lib/wake.webm', 'video/webm'], ['lib/wake.mp4', 'video/mp4']]) { const s = document.createElement('source'); s.src = src; s.type = type; wakeVid.append(s); }
+      document.body.append(wakeVid);
+    }
+    await wakeVid.play();
+  } catch {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') stayAwake(); });
+addEventListener('pointerdown', stayAwake, { capture: true });
+addEventListener('keydown', stayAwake, { capture: true });
+stayAwake();
+
 // ---------------- opening ----------------
 // first click/key on the screen turns on sound + fullscreen (browsers require a gesture); it does not start the show
 function arm() {
@@ -367,6 +401,7 @@ function arm() {
 }
 function begin() {
   if (started) return;
+  stayAwake();
   started = true; t0 = Date.now(); document.body.classList.add('started');
   A.unlock().catch(() => {});
   if (!fsEl()) goFull();
