@@ -219,3 +219,24 @@ body.tv .setup .hint { display: none; }
 .whole-sum b { font-weight: 300; font-size: 104px; line-height: 1; font-variant-numeric: lining-nums; }
 .whole-sum .mono { font-size: 22px; letter-spacing: .3em; }
 .whole-sum i { width: 10px; height: 10px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 14px var(--acc); margin: 0 26px; align-self: center; }
+
+/* presenter cursor: replaces the system pointer, shown only when it is useful */
+#cur { position: fixed; inset: 0; z-index: 2147483647; pointer-events: none; opacity: 0; transition: opacity .5s ease; }
+#cur.on { opacity: 1; transition-duration: .15s; }
+#cur i { position: absolute; left: 0; top: 0; border-radius: 50%; will-change: transform; }
+#cur .c-dot { width: 8px; height: 8px; margin: -4px 0 0 -4px; background: #ffb066;
+  box-shadow: 0 0 10px 2px rgba(255, 140, 40, .75), 0 0 28px 6px rgba(255, 122, 26, .3); }
+#cur .c-ring { width: 38px; height: 38px; margin: -19px 0 0 -19px; }
+#cur .c-ring::before { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(255, 190, 120, .55);
+  background: radial-gradient(circle, rgba(255, 122, 26, .0) 55%, rgba(255, 122, 26, .08));
+  transition: transform .35s cubic-bezier(.2, .8, .2, 1), border-color .3s, background .3s; }
+#cur.hot .c-ring::before { transform: scale(1.55); border-color: rgba(255, 200, 140, .9); background: rgba(255, 140, 40, .1); }
+#cur.down .c-ring::before { transform: scale(.7); }
+#cur.hot.down .c-ring::before { transform: scale(1.2); }
+/* the custom cursor is the only one: keep the system pointer off even on buttons */
+#esc, #esc *, #esc button, .fsgo, #begin .fsgo, #begin .fsgo * { cursor: none !important; }
+/* over warm surfaces (the orange button) the cursor flips to a dark core with a cream rim so it stays readable */
+#cur .c-dot { transition: background .25s, box-shadow .25s; }
+#cur.hot .c-dot { background: #1a0d04; box-shadow: 0 0 0 2px rgba(255, 244, 230, .9), 0 0 18px 4px rgba(255, 140, 40, .45); }
+#cur.hot .c-ring::before { box-shadow: 0 0 0 1px rgba(26, 13, 4, .35), inset 0 0 0 1px rgba(26, 13, 4, .25); }
+#cur.hot .c-ring::before { border-color: rgba(26, 13, 4, .6); background: rgba(255, 244, 230, .12); }

@@ -1,6 +1,6 @@
 // Presentation engine: one click = one point. Driven by the paired phone (net.js, peer-to-peer over the internet),
 // a presenter remote (PageDown/PageUp/arrows/B), a mouse (left = next, right = previous, wheel) or the
-// keyboard. The cursor is never shown; nothing on screen betrays the controls.
+// keyboard. The system cursor is never shown; a discreet custom one appears only when useful.
 import { loadProject } from './project.js';
 // the world comes from the database (see project.js); everything below is the same engine
 const PROJECT = await loadProject();
@@ -568,3 +568,37 @@ if (onTV) castReceiver();
 else if (!isReceiver) connectNet();
 setBg({ hue: [255, 122, 26], fx: 0.5, fy: 0.42, mode: 'drift', pull: 0.4, speed: 0.4 });
 sync();
+
+// ---------------- presenter cursor ----------------
+// The system cursor stays hidden everywhere. In its place: a warm dot with a trailing ring, shown on the
+// opening screen and in the presenter menu, and during the talk only while the mouse is actually moving
+// (it fades out after a moment, so the audience never sees a pointer parked on a slide).
+(() => {
+  if (matchMedia('(pointer: coarse)').matches && !matchMedia('(any-pointer: fine)').matches) return;
+  const cur = document.createElement('div'); cur.id = 'cur'; cur.setAttribute('aria-hidden', 'true');
+  cur.innerHTML = '<i class="c-ring"></i><i class="c-dot"></i>';
+  document.body.append(cur);
+  const ring = cur.firstChild, dot = cur.lastChild;
+  let x = -100, y = -100, rx = x, ry = y, inside = false, lastMove = 0, raf = 0;
+  const calm = () => document.body.classList.contains('started') && !document.getElementById('esc')?.classList.contains('on');
+  function frame() {
+    rx += (x - rx) * 0.2; ry += (y - ry) * 0.2;
+    dot.style.transform = `translate3d(${x}px,${y}px,0)`;
+    ring.style.transform = `translate3d(${rx}px,${ry}px,0)`;
+    const on = inside && (!calm() || performance.now() - lastMove < 1600);
+    cur.classList.toggle('on', on);
+    raf = (on || Math.abs(x - rx) + Math.abs(y - ry) > 0.5) ? requestAnimationFrame(frame) : 0;
+  }
+  const wake = () => { if (!raf) raf = requestAnimationFrame(frame); };
+  addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'touch') return;
+    if (!inside) { rx = e.clientX; ry = e.clientY; }
+    x = e.clientX; y = e.clientY; inside = true; lastMove = performance.now();
+    cur.classList.toggle('hot', !!e.target.closest?.('button, a, [data-a], .fsgo'));
+    wake();
+  }, { passive: true });
+  addEventListener('pointerdown', (e) => { if (e.pointerType !== 'touch') { cur.classList.add('down'); lastMove = performance.now(); wake(); } });
+  addEventListener('pointerup', () => cur.classList.remove('down'));
+  document.documentElement.addEventListener('pointerleave', () => { inside = false; wake(); });
+  setInterval(() => { if (inside) wake(); }, 400); // menu opened or closed from the phone: re-evaluate
+})();
