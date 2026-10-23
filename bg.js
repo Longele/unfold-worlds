@@ -39,7 +39,12 @@ void main(){
   c = 1. - exp(-c * 1.35);
   // light theme: the colour is the ground, the silk is sunlight moving on it, the edges a deeper shade
   float vg = smoothstep(1.55, .1, length(p * vec2(.78, 1.)));
-  vec3 lit = uBase * mix(.8, 1.02, vg) * (1. - c * .1) + c * vec3(.26, .2, .15); // soft: the silk must never wash out the text
+  // the ground is lit satin: the same silk field shades it (folds) and lights it (sheen), never enough to
+  // wash out the text; the rim falls to deep ember; each click sends a warm-white flare across
+  float satin = .8 + .34 * smoothstep(.28, .86, f) + .1 * glow;
+  vec3 ember = uBase * vec3(.55, .32, .2);
+  vec3 lit = mix(ember, uBase * satin, vg) + c * vec3(.22, .17, .12);
+  lit += vec3(1., .94, .84) * fl * uFlare * .5 + vec3(1., .9, .75) * band * uE * glow * .08;
   gl_FragColor = vec4(mix(c + vec3(.022, .028, .042), lit, uLight), 1.);
 }`;
 const VERT = 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0., 1.); }';
@@ -50,9 +55,8 @@ const T = { ...S, c1: [...S.c1], c2: [...S.c2] };
 const MODES = { drift: [0.15, 0.05, 0], rise: [0, 1, 0], fall: [0, -1, 0], orbit: [0, 0, 1.4] };
 
 export function setBg(o) {
-  if (THEME) { T.c1 = THEME.c1.slice(); T.c2 = THEME.c2.slice(); }
-  else if (o.hue) T.c1 = o.hue.slice();
-  if (THEME) {} else if (o.hue2) T.c2 = o.hue2.slice(); else if (o.hue) T.c2 = [o.hue[0] * 0.18 + 30, o.hue[1] * 0.16 + 36, o.hue[2] * 0.2 + 90];
+  if (o.hue) T.c1 = o.hue.slice();
+  if (o.hue2) T.c2 = o.hue2.slice(); else if (o.hue) T.c2 = [o.hue[0] * 0.18 + 30, o.hue[1] * 0.16 + 36, o.hue[2] * 0.2 + 90];
   if (o.fx !== undefined) T.fx = o.fx;
   if (o.fy !== undefined) T.fy = o.fy;
   T.amt = o.amt ?? (0.75 + (o.pull || 0) * 0.5);
@@ -60,10 +64,10 @@ export function setBg(o) {
   T.flowx = m[0] * (o.speed || 1); T.flowy = m[1] * (o.speed || 1); T.spin = m[2];
 }
 const THEMES = { flame: { base: [255, 122, 51], c1: [255, 244, 228], c2: [255, 164, 107] } };
-export function setTheme(name) {
-  THEME = THEMES[name] || null;
-  if (THEME) { S.c1 = THEME.c1.slice(); S.c2 = THEME.c2.slice(); T.c1 = THEME.c1.slice(); T.c2 = THEME.c2.slice(); }
-}
+// a coloured world opens in the night (the intro keeps the deep, glowing look) and dawns into its colour
+let light = 0, lightT = 0;
+export function setTheme(name) { THEME = THEMES[name] || null; light = lightT = 0; }
+export function dawn(on = true) { lightT = THEME && on ? 1 : 0; }
 export function pulse(k = 1) { S.e = Math.min(1.4, S.e + 0.9 * k); S.flare = Math.min(1.2, S.flare + 1 * k); }
 
 let prog, U = {};
@@ -97,14 +101,17 @@ function frame(now) {
   const k = Math.min(1, dt * 1.2);
   for (const key of ['fx', 'fy', 'amt', 'spin', 'flowx', 'flowy']) S[key] += (T[key] - S[key]) * k;
   for (let i = 0; i < 3; i++) { S.c1[i] += (T.c1[i] - S.c1[i]) * k; S.c2[i] += (T.c2[i] - S.c2[i]) * k; }
+  light += (lightT - light) * Math.min(1, dt * 0.9); // about three seconds of sunrise
   S.e = Math.max(0, S.e - dt * 0.8); S.flare = Math.max(0, S.flare - dt * 1.6);
   flowX -= S.flowx * dt * 0.05; flowY -= S.flowy * dt * 0.05; // sampling backwards = ribbons drift forwards
   if (gl) {
     gl.uniform2f(U.uRes, W, H); gl.uniform1f(U.uT, now / 1000); gl.uniform1f(U.uE, S.e); gl.uniform1f(U.uAmt, S.amt);
     gl.uniform1f(U.uSpin, S.spin); gl.uniform1f(U.uFlare, S.flare);
-    gl.uniform3f(U.uC1, S.c1[0] / 255, S.c1[1] / 255, S.c1[2] / 255); gl.uniform3f(U.uC2, S.c2[0] / 255, S.c2[1] / 255, S.c2[2] / 255);
+    const mx = (a, b2) => a.map((v, i) => (v + ((THEME ? b2[i] : v) - v) * light) / 255);
+    const c1 = mx(S.c1, THEME?.c1 || S.c1), c2 = mx(S.c2, THEME?.c2 || S.c2);
+    gl.uniform3f(U.uC1, c1[0], c1[1], c1[2]); gl.uniform3f(U.uC2, c2[0], c2[1], c2[2]);
     gl.uniform2f(U.uF, S.fx, S.fy); gl.uniform2f(U.uFlow, flowX, flowY);
-    const b = THEME ? THEME.base : [7, 9, 13]; gl.uniform3f(U.uBase, b[0] / 255, b[1] / 255, b[2] / 255); gl.uniform1f(U.uLight, THEME ? 1 : 0);
+    const b = THEME ? THEME.base : [7, 9, 13]; gl.uniform3f(U.uBase, b[0] / 255, b[1] / 255, b[2] / 255); gl.uniform1f(U.uLight, THEME ? light : 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
   requestAnimationFrame(frame);

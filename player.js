@@ -5,7 +5,7 @@ import { loadProject } from './project.js';
 // the world comes from the database (see project.js); everything below is the same engine
 const PROJECT = await loadProject();
 const SCENES = PROJECT.scenes;
-import { setBg, pulse, setTheme } from './bg.js';
+import { setBg, pulse, setTheme, dawn } from './bg.js';
 // a world can bring its own colours (content.theme): the CSS and the light both follow
 if (PROJECT.theme) { document.body.dataset.theme = PROJECT.theme; setTheme(PROJECT.theme); }
 import * as A from './audio.js';
@@ -416,6 +416,9 @@ function arm() {
   $('begin').classList.add('armed'); A.play('ui_open', 0.3); A.bell(4, 220, 0.1); // audible proof that sound is on
   setTimeout(sync, 400);
 }
+// a world with a colour of its own: the night of the intro gives way to it
+// the light starts rising as the pairing card dissolves; the ink switches when the title arrives
+function sunrise(ink = true) { if (!PROJECT.theme) return; dawn(); if (ink) document.body.classList.add('dawn'); }
 function begin() {
   if (started) return;
   stayAwake();
@@ -427,9 +430,10 @@ function begin() {
   const s = m && m[2] ? Math.min(SCENES[i].steps - 1, +m[2] - 1) : 0;
   const b = $('begin');
   b.classList.add('dark'); // the pairing card dissolves first, the room sits in the dark a beat…
+  sunrise(false);
   setBg({ hue: [255, 122, 26], fx: 0.5, fy: 0.5, mode: 'drift', pull: 0, speed: 0.3, amt: 0.15 });
   setTimeout(() => b.classList.add('gone'), 700);
-  setTimeout(() => { A.play('awaken', 0.5); pulse(1.6); render(i, s, 1); }, i === 0 && s === 0 ? 2300 : 900); // …then the light opens on the title
+  setTimeout(() => { A.play('awaken', 0.5); pulse(1.6); sunrise(); render(i, s, 1); }, i === 0 && s === 0 ? 2300 : 900); // …then the light opens on the title
   sync();
 }
 
@@ -544,7 +548,7 @@ if (isReceiver) {
   const mirror = (m) => {
     if (m.t === 'word') return addWord(m.w);
     if (m.t !== 'state') return;
-    if (m.started && !started) { started = true; t0 = Date.now(); document.body.classList.add('started'); }
+    if (m.started && !started) { started = true; t0 = Date.now(); document.body.classList.add('started'); sunrise(); }
     if (m.started && (!cur || m.idx !== idx || m.step !== step)) render(m.idx, m.step, m.idx > idx || (m.idx === idx && m.step > step) ? 1 : -1);
     black.classList.toggle('on', !!m.black);
     if (m.spot !== spot.on) setSpot(m.spot);

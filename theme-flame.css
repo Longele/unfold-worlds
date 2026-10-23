@@ -1,7 +1,7 @@
 /* "flame": a world whose ground is its colour. Orange #ff7a33 as the background, dark ink for the text,
    highlighted words in warm white lifted by a soft shadow so they stay readable on the orange.
    Applied only when a world's content says theme: 'flame' (body[data-theme="flame"]). */
-body[data-theme='flame'], body[data-theme='flame'][data-part] {
+body[data-theme='flame'].dawn, body[data-theme='flame'].dawn[data-part] {
   --night: #ff7a33;
   --fg: #1f0c04;
   --fg-dim: rgba(31, 12, 4, 0.74);
@@ -12,48 +12,55 @@ body[data-theme='flame'], body[data-theme='flame'][data-part] {
   --ink: #1f0c04;
   --lift: 0 2px 0 rgba(90, 22, 4, 0.5), 0 0 3px rgba(90, 22, 4, 0.45), 0 0 22px rgba(110, 28, 0, 0.45);
 }
-body[data-theme='flame'] #vig { background: radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(140, 38, 0, 0.35) 100%); }
-body[data-theme='flame'] #grain { opacity: 0.05; }
+body[data-theme='flame'].dawn #vig { background: radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(140, 38, 0, 0.35) 100%); }
+body[data-theme='flame'].dawn #grain { opacity: 0.05; }
 
 /* highlighted words and accents: warm white with a lift */
-body[data-theme='flame'] :is(.words .acc.lit .w > span, .verse .hl.lit, .verse.focus .hl.lit, .hl.lit, .quote .hl.acc.lit, .quote .acc.lit .w > span,
+body[data-theme='flame'].dawn :is(.words .acc.lit .w > span, .verse .hl.lit, .verse.focus .hl.lit, .hl.lit, .quote .hl.acc.lit, .quote .acc.lit .w > span,
   .words.focus .hl.lit .w > span, .verse .hl.lit .w > span, .mot-q em, .cw.top, .kicker b, .chap-num, .comp-n, .dom-n, .dom-k, .act-tag b,
   .fam .orb span, .node .c, .verse sup, .refhead span, .dom-tips li b, .fam ol.fields li b, .orb-ref, .whole-sum i, .dom-l, .pair-txt .k, .mot-qr .mot-n) {
   text-shadow: var(--lift);
 }
-body[data-theme='flame'] .cw.top { text-shadow: var(--lift), 0 0 40px rgba(255, 245, 230, 0.5); }
-body[data-theme='flame'] .verse.focus .w > span { color: rgba(31, 12, 4, 0.5); }
+body[data-theme='flame'].dawn .cw.top { text-shadow: var(--lift), 0 0 40px rgba(255, 245, 230, 0.5); }
+body[data-theme='flame'].dawn .verse.focus .w > span { color: rgba(31, 12, 4, 0.5); }
 
 /* the programme columns and the five components keep their own tones, re-inked for a light ground */
-body[data-theme='flame'] .pcol:nth-child(1) .bar { background: #fffaf3; }
-body[data-theme='flame'] .pcol:nth-child(2) .bar { background: #5a1606; }
-body[data-theme='flame'] .pcol:nth-child(3) .bar { background: #c2260a; }
-body[data-theme='flame'] .pcol:nth-child(1) .min { color: #fffaf3; text-shadow: var(--lift); }
-body[data-theme='flame'] .pcol:nth-child(2) .min { color: #5a1606; }
-body[data-theme='flame'] .pcol:nth-child(3) .min { color: #c2260a; }
-body[data-theme='flame'] :is(.o1, .o2, .o3, .o4, .o5) { border-color: rgba(31, 12, 4, 0.45); background: rgba(255, 250, 243, 0.16); color: var(--fg); }
-body[data-theme='flame'] .o1 { background: rgba(255, 250, 243, 0.34); }
-body[data-theme='flame'] .fam .orb { box-shadow: 0 0 80px rgba(255, 245, 230, 0.35) inset; }
-body[data-theme='flame'] .stair { background: linear-gradient(180deg, rgba(255, 250, 243, 0.14), transparent); }
-body[data-theme='flame'] .stair.lit { background: linear-gradient(180deg, rgba(255, 250, 243, 0.42), rgba(255, 250, 243, 0)); }
-body[data-theme='flame'] .node .c { background: rgba(255, 250, 243, 0.2); }
+body[data-theme='flame'].dawn .pcol:nth-child(1) .bar { background: #fffaf3; }
+body[data-theme='flame'].dawn .pcol:nth-child(2) .bar { background: #5a1606; }
+body[data-theme='flame'].dawn .pcol:nth-child(3) .bar { background: #c2260a; }
+body[data-theme='flame'].dawn .pcol:nth-child(1) .min { color: #fffaf3; text-shadow: var(--lift); }
+body[data-theme='flame'].dawn .pcol:nth-child(2) .min { color: #5a1606; }
+body[data-theme='flame'].dawn .pcol:nth-child(3) .min { color: #c2260a; }
+body[data-theme='flame'].dawn :is(.o1, .o2, .o3, .o4, .o5) { border-color: rgba(31, 12, 4, 0.45); background: rgba(255, 250, 243, 0.16); color: var(--fg); }
+body[data-theme='flame'].dawn .o1 { background: rgba(255, 250, 243, 0.34); }
+body[data-theme='flame'].dawn .fam .orb { box-shadow: 0 0 80px rgba(255, 245, 230, 0.35) inset; }
+body[data-theme='flame'].dawn .stair { background: linear-gradient(180deg, rgba(255, 250, 243, 0.14), transparent); }
+body[data-theme='flame'].dawn .stair.lit { background: linear-gradient(180deg, rgba(255, 250, 243, 0.42), rgba(255, 250, 243, 0)); }
+body[data-theme='flame'].dawn .node .c { background: rgba(255, 250, 243, 0.2); }
 
 /* lines drawn in the scenes (gold or cream strokes in the scene markup) become ink */
-body[data-theme='flame'] [stroke='rgba(255,195,90,.45)'] { stroke: rgba(31, 12, 4, 0.38); }
-body[data-theme='flame'] [stroke='#ece6da'] { stroke: rgba(31, 12, 4, 0.6); }
-body[data-theme='flame'] [fill='#ece6da'] { fill: rgba(31, 12, 4, 0.7); }
-body[data-theme='flame'] .act-svg .beam { filter: drop-shadow(0 0 10px #fff4e0) drop-shadow(0 0 24px rgba(255, 250, 240, 0.7)); }
-body[data-theme='flame'] .whole .draw { filter: drop-shadow(0 0 14px rgba(255, 250, 240, 0.6)); }
+body[data-theme='flame'].dawn [stroke='rgba(255,195,90,.45)'] { stroke: rgba(31, 12, 4, 0.38); }
+body[data-theme='flame'].dawn [stroke='#ece6da'] { stroke: rgba(31, 12, 4, 0.6); }
+body[data-theme='flame'].dawn [fill='#ece6da'] { fill: rgba(31, 12, 4, 0.7); }
+body[data-theme='flame'].dawn .act-svg .beam { filter: drop-shadow(0 0 10px #fff4e0) drop-shadow(0 0 24px rgba(255, 250, 240, 0.7)); }
+body[data-theme='flame'].dawn .whole .draw { filter: drop-shadow(0 0 14px rgba(255, 250, 240, 0.6)); }
 
 /* the opening screen and the presenter's panels stay dark glass: they sit on top of the orange */
-body[data-theme='flame'] #begin::before { background: radial-gradient(ellipse at 50% 40%, rgba(255, 122, 51, 0.1), rgba(160, 44, 4, 0.55)); }
-body[data-theme='flame'] :is(.mot-qr, #pairmini) { background: rgba(255, 250, 243, 0.22); border-color: rgba(31, 12, 4, 0.2); }
-body[data-theme='flame'] .esc-in { color: #ece6da; --fg: #ece6da; --fg-dim: rgba(236, 230, 218, 0.62); --line: rgba(236, 230, 218, 0.2); }
-body[data-theme='flame'] .fsgo { color: #fffaf3; background: linear-gradient(140deg, #2a0f05, #5a1606); box-shadow: 0 20px 60px rgba(90, 22, 6, 0.35); }
-body[data-theme='flame'] .status.ok { color: #1f5a2a; } body[data-theme='flame'] .setup .hint .h-b { color: #1f5a2a; }
+body[data-theme='flame'].dawn #begin::before { background: radial-gradient(ellipse at 50% 40%, rgba(255, 122, 51, 0.1), rgba(160, 44, 4, 0.55)); }
+body[data-theme='flame'].dawn :is(.mot-qr, #pairmini) { background: rgba(255, 250, 243, 0.22); border-color: rgba(31, 12, 4, 0.2); }
+body[data-theme='flame'].dawn .esc-in { color: #ece6da; --fg: #ece6da; --fg-dim: rgba(236, 230, 218, 0.62); --line: rgba(236, 230, 218, 0.2); }
+body[data-theme='flame'].dawn .fsgo { color: #fffaf3; background: linear-gradient(140deg, #2a0f05, #5a1606); box-shadow: 0 20px 60px rgba(90, 22, 6, 0.35); }
+body[data-theme='flame'].dawn .status.ok { color: #1f5a2a; } body[data-theme='flame'].dawn .setup .hint .h-b { color: #1f5a2a; }
 
 /* the pointer of the presenter: dark on orange */
-body[data-theme='flame'] #cur .c-dot { background: #1f0c04; box-shadow: 0 0 0 2px rgba(255, 250, 243, 0.85), 0 0 18px 4px rgba(120, 30, 0, 0.35); }
-body[data-theme='flame'] #cur .c-ring::before { border-color: rgba(31, 12, 4, 0.55); background: rgba(255, 250, 243, 0.1); }
+body[data-theme='flame'].dawn #cur .c-dot { background: #1f0c04; box-shadow: 0 0 0 2px rgba(255, 250, 243, 0.85), 0 0 18px 4px rgba(120, 30, 0, 0.35); }
+body[data-theme='flame'].dawn #cur .c-ring::before { border-color: rgba(31, 12, 4, 0.55); background: rgba(255, 250, 243, 0.1); }
 /* the laser spotlight: a warm-white halo instead of a dark tunnel */
-body[data-theme='flame'] #spot { background: radial-gradient(circle at var(--sx, 50%) var(--sy, 50%), rgba(255, 250, 240, 0.28) 0, rgba(255, 245, 230, 0.12) 7vmin, rgba(0, 0, 0, 0) 10.5vmin, rgba(110, 28, 0, 0.62) 19vmin); }
+body[data-theme='flame'].dawn #spot { background: radial-gradient(circle at var(--sx, 50%) var(--sy, 50%), rgba(255, 250, 240, 0.28) 0, rgba(255, 245, 230, 0.12) 7vmin, rgba(0, 0, 0, 0) 10.5vmin, rgba(110, 28, 0, 0.62) 19vmin); }
+
+/* ---------------------------------------------------------------- premium on a light ground */
+/* ink with body, lightly engraved: dark letters catch a warm highlight under their stroke */
+body[data-theme='flame'].dawn .scene :is(h1, h2, h3, h4, p, li, blockquote, .big, .t, .tt, .d) { font-weight: 400; }
+body[data-theme='flame'].dawn #stage { text-shadow: 0 1px 0 rgba(255, 214, 178, 0.3), 0 10px 30px rgba(120, 30, 0, 0.12); }
+/* paper: a finer, slightly stronger grain gives the orange the depth of print */
+body[data-theme='flame'].dawn #grain { opacity: 0.085; mix-blend-mode: soft-light; }
