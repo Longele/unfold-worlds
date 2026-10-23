@@ -12,7 +12,6 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect x=%223%22 y=%222%22 width=%224%22 height=%2212%22 rx=%221%22 fill=%22%23ece5d8%22/%3E%3Crect x=%229%22 y=%222%22 width=%224%22 height=%2212%22 rx=%221%22 fill=%22%23ece5d8%22/%3E%3Crect x=%226%22 y=%222%22 width=%224%22 height=%227%22 rx=%221%22 fill=%22%23ffb066%22/%3E%3C/svg%3E">
 <link rel="preload" href="fonts/cormorant-garamond-latin-300-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
-<script type="importmap">{ "imports": { "three": "./lib/three/three.module.js", "three/addons/": "./lib/three/addons/" } }</script>
 </head>
 <body data-mode="intro">
 <canvas id="gl"></canvas>
@@ -40,6 +39,8 @@
 <div id="prog"><i></i></div>
 
 <nav id="lessonbar">
+  <button id="b-prev"><svg viewBox="0 0 24 24"><path d="M18 5l-7 7 7 7M11 5l-7 7 7 7"/></svg><span></span></button>
+  <button id="b-pause" class="b-pause"><svg viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></svg><span></span></button>
   <button id="b-replay"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 108-8H8"/><path d="M10 1L7 4l3 3"/></svg><span></span></button>
   <button id="b-next"><svg viewBox="0 0 24 24"><path d="M6 5l7 7-7 7M13 5l7 7-7 7"/></svg><span></span></button>
   <button id="b-exit"><svg viewBox="0 0 24 24"><path d="M5 19V9l7-5 7 5v10"/><path d="M9 19v-6h6v6"/></svg><span></span></button>
@@ -55,6 +56,16 @@
 </nav>
 
 <section id="songs"><div class="sh"><h2 id="songs-h"></h2><button id="songs-x" aria-label="×"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><ul id="songs-l"></ul></section>
+<nav id="songbar">
+  <button id="b-s-restart"><svg viewBox="0 0 24 24"><path d="M6 5v14"/><path d="M19 5l-9 7 9 7z"/></svg><span></span></button>
+  <button id="b-s-back"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 108-8H8"/><path d="M10 1L7 4l3 3"/></svg><span></span></button>
+  <button id="b-s-pause" class="b-pause"><svg viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></svg><span></span></button>
+  <button id="b-s-show"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span></span></button>
+  <button id="b-s-speed"><svg viewBox="0 0 24 24"><path d="M12 20a8 8 0 118-8"/><path d="M12 12l4-3"/></svg><span></span></button>
+  <button id="b-s-lh"><svg viewBox="0 0 24 24"><path d="M8 13V5.5a1.5 1.5 0 013 0V12M11 11V4.5a1.5 1.5 0 013 0V11M14 11V6a1.5 1.5 0 013 0v7c0 4-2.5 7-6 7s-5-2-6.5-4.5L3 12.3a1.4 1.4 0 012.2-1.6L8 13"/></svg><span></span></button>
+  <button id="b-s-stop"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg><span></span></button>
+</nav>
+<div id="pause"><div class="pz"><svg viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></svg></div><p class="pt" id="pause-t"></p><p class="ps" id="pause-s"></p></div>
 <div id="toast"></div>
 <footer id="credit"></footer>
 <script type="module" src="app.js"></script>

@@ -43,7 +43,9 @@ body.loaded .load { opacity: 0; }
 .choice:hover { transform: translateY(-2px); border-color: rgba(255, 176, 102, .5); }
 .choice.primary { background: linear-gradient(140deg, var(--acc), var(--acc2)); color: var(--ink); border-color: transparent; box-shadow: 0 20px 60px rgba(255, 140, 40, .25); }
 .choice.primary .s { color: rgba(26, 13, 4, .6); }
-body:not(.loaded) .choice { opacity: .35; pointer-events: none; }
+/* never blocked: a tap while the piano is still loading just waits for it (the bar shows progress) */
+body.waiting .choice { opacity: .5; }
+body.waiting .load { opacity: 1 !important; }
 .hp { display: flex; align-items: center; gap: 10px; margin: 28px 0 0; font-family: var(--mono); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); animation: rise 2.6s .9s var(--ease) both; }
 .hp svg, nav svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); filter: blur(6px); } }
@@ -63,7 +65,7 @@ nav { position: fixed; left: 50%; bottom: max(22px, env(safe-area-inset-bottom))
 nav button { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); transition: color .3s, background .3s; white-space: nowrap; }
 nav button:hover { color: var(--fg); }
 nav button.on { color: var(--ink); background: var(--acc); }
-body[data-mode="lesson"] #lessonbar, body[data-mode="free"] #freebar { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; transition-delay: 1s; }
+body[data-mode="lesson"] #lessonbar, body[data-mode="free"] #freebar, body[data-mode="song"] #songbar { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; transition-delay: 1s; }
 
 #toast { position: fixed; left: 50%; bottom: calc(max(22px, env(safe-area-inset-bottom)) + 70px); transform: translateX(-50%); z-index: 6; padding: 9px 16px; border-radius: 999px;
   font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; background: rgba(239, 230, 214, .92); color: var(--ink); opacity: 0; transition: opacity .4s; pointer-events: none; }
@@ -114,3 +116,21 @@ body.in footer { opacity: 0; }
 #songs li button.pl { color: var(--ink); background: var(--acc); border-color: transparent; }
 @media (max-width: 640px) { #songs .nm { font-size: 18px; } #songs li { gap: 6px; } #songs li button { padding: 8px 9px; } }
 @media (max-height: 460px) { #songs { max-height: calc(100vh - 110px); bottom: 70px; } #songs li { padding: 6px; } }
+
+/* songs: two shelves, composers under the classical titles */
+#songs li.cat { display: block; padding: 16px 6px 6px; border: 0; font-family: var(--mono); font-size: 10px; letter-spacing: .28em; text-transform: uppercase; color: var(--dim); }
+#songs .nm small { display: block; margin-top: 2px; font-family: var(--mono); font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+/* long pieces: a thin bar instead of dots */
+#dots.long { width: min(360px, 60vw); align-items: center; gap: 12px; }
+#dots.long b { flex: 1; height: 3px; border-radius: 3px; background: rgba(255, 208, 138, .2); overflow: hidden; }
+#dots.long u { display: block; height: 100%; background: #9dffc8; box-shadow: 0 0 10px #9dffc8; transition: width .3s var(--ease); }
+#dots.long em { font-style: normal; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; color: var(--dim); white-space: nowrap; }
+/* pause */
+#pause { position: fixed; inset: 0; z-index: 15; display: grid; place-content: center; justify-items: center; gap: 6px; background: rgba(5, 6, 8, .72); backdrop-filter: blur(6px);
+  opacity: 0; pointer-events: none; transition: opacity .4s; cursor: pointer; }
+#pause.on { opacity: 1; pointer-events: auto; }
+#pause .pz { width: 74px; height: 74px; border-radius: 50%; border: 1px solid var(--faint); display: grid; place-items: center; margin-bottom: 16px; }
+#pause .pz svg { width: 26px; height: 26px; fill: none; stroke: var(--fg); stroke-width: 2; stroke-linecap: round; }
+#pause .pt { margin: 0; font-size: 34px; font-weight: 300; }
+#pause .ps { margin: 0; font-family: var(--mono); font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+@media (max-width: 900px) and (max-height: 500px) { nav button span { display: none; } nav button { padding: 10px 12px; } }

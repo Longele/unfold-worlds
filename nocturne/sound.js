@@ -50,12 +50,18 @@ export class Sound {
     return await new Promise((res, rej) => this.ctx.decodeAudioData(a, res, rej));
   }
 
+  // four at a time (phones choke on 25 parallel decodes) and a missing sample is not fatal: its neighbours stretch
   async load(onProgress) {
-    let done = 0;
-    await Promise.all(SAMPLES.map(async (s) => {
-      this.buf.set(s.midi, await this.fetchBuf(`${this.base}/audio/piano/${s.file}.mp3`));
-      onProgress?.(++done / SAMPLES.length);
-    }));
+    let done = 0, next = 0;
+    const worker = async () => {
+      while (next < SAMPLES.length) {
+        const s = SAMPLES[next++];
+        try { this.buf.set(s.midi, await this.fetchBuf(`${this.base}/audio/piano/${s.file}.mp3`)); } catch {}
+        onProgress?.(++done / SAMPLES.length);
+      }
+    };
+    await Promise.all([worker(), worker(), worker(), worker()]);
+    if (!this.buf.size) throw new Error('no piano samples');
     this.fetchBuf(`${this.base}/audio/rain.mp3`).then((b) => { this.rainBuf = b; if (this.rainOn) this.rain(true); }).catch(() => {});
   }
 
@@ -67,11 +73,24 @@ export class Sound {
     }));
   }
 
-  unlock() { if (this.ctx.state !== 'running') this.ctx.resume().catch(() => {}); }
+  // must run inside a tap: wakes the context, and on iPhone switches the audio session to "playback" so the
+  // silent switch does not mute the piano (a looping silent <audio> does it on Safari versions without audioSession)
+  unlock() {
+    if (this.ctx.state !== 'running') this.ctx.resume().catch(() => {});
+    if (this.unmuted) return;
+    this.unmuted = true;
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch {}
+    try {
+      const a = document.createElement('audio');
+      a.setAttribute('playsinline', ''); a.loop = true; a.volume = 0.01;
+      a.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAAAA';
+      a.play().catch(() => {});
+    } catch {}
+  }
 
   nearest(m) {
-    let best = SAMPLES[0].midi;
-    for (const s of SAMPLES) if (Math.abs(s.midi - m) < Math.abs(best - m)) best = s.midi;
+    let best = null;
+    for (const s of this.buf.keys()) if (best == null || Math.abs(s - m) < Math.abs(best - m)) best = s;
     return best;
   }
 

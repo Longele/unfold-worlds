@@ -2,9 +2,9 @@
 // real ones, glow in the colour of their note, and every note lets a few sparks of light drift upward.
 // No post-processing: the bloom pass renders black on some Intel GPUs, so the glow is additive light
 // (a halo above each key and the sparks), which looks the same everywhere.
-import * as THREE from 'three';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import * as THREE from './lib/three/three.module.js';
+import { RoundedBoxGeometry } from './lib/three/addons/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from './lib/three/addons/environments/RoomEnvironment.js';
 
 export const isBlack = (m) => [1, 3, 6, 8, 10].includes(((m % 12) + 12) % 12);
 const W = 1, GAP = 0.055, LW = 6, HW = 0.82, WB = 0.56, LB = 3.9, HB = 0.6;
@@ -40,10 +40,11 @@ export class Piano3D {
   constructor(canvas) {
     this.canvas = canvas;
     const r = this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-    r.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    const phone = matchMedia('(pointer: coarse)').matches;
+    r.setPixelRatio(Math.min(devicePixelRatio || 1, phone ? 1.5 : 2)); // phones: lighter on the GPU
     r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05;
     r.outputColorSpace = THREE.SRGBColorSpace;
-    r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+    r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFShadowMap;
     const s = this.scene = new THREE.Scene();
     s.background = new THREE.Color(0x050608);
     s.fog = new THREE.FogExp2(0x050608, 0.022);
@@ -56,13 +57,13 @@ export class Piano3D {
     s.add(new THREE.HemisphereLight(0x8a90a8, 0x000000, 0.25));
     const key = this.key = new THREE.SpotLight(0xffd9a8, 520, 60, 0.55, 0.75, 1.6);
     key.position.set(-3, 16, 10); key.target.position.set(0, 0, 0.5);
-    key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004; key.shadow.radius = 4; key.shadow.camera.near = 6; key.shadow.camera.far = 40;
+    key.castShadow = true; key.shadow.mapSize.set(phone ? 1024 : 2048, phone ? 1024 : 2048); key.shadow.bias = -0.0004; key.shadow.radius = 4; key.shadow.camera.near = 6; key.shadow.camera.far = 40;
     s.add(key, key.target);
     const rim = new THREE.DirectionalLight(0x8fb0ff, 0.55); rim.position.set(6, 6, -14); s.add(rim);
     this.flash = new THREE.PointLight(0xffb066, 0, 9, 1.8); this.flash.position.set(0, 2, 2); s.add(this.flash);
 
     this.mat = {
-      ivory: new THREE.MeshPhysicalMaterial({ color: 0xece5d8, roughness: 0.34, clearcoat: 0.55, clearcoatRoughness: 0.22, sheen: 0.2 }),
+      ivory: new THREE.MeshPhysicalMaterial({ color: 0xece5d8, roughness: 0.34, clearcoat: 0.55, clearcoatRoughness: 0.22 }),
       ebony: new THREE.MeshPhysicalMaterial({ color: 0x0a0a0c, roughness: 0.28, clearcoat: 1, clearcoatRoughness: 0.12 }),
       lacquer: new THREE.MeshPhysicalMaterial({ color: 0x050506, roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.05, metalness: 0.1 }),
       felt: new THREE.MeshStandardMaterial({ color: 0x5a1218, roughness: 0.95 }),
@@ -74,7 +75,7 @@ export class Piano3D {
 
 
     this.view = { cur: null, to: null }; this.par = new THREE.Vector2(); this.parT = new THREE.Vector2();
-    this.ray = new THREE.Raycaster(); this.clock = new THREE.Clock();
+    this.ray = new THREE.Raycaster(); this.last = performance.now(); this.t0 = this.last;
     this.labelMode = 'none'; this.nameOf = (m) => ''; this.keyOf = () => '';
     addEventListener('resize', () => this.resize());
     addEventListener('pointermove', (e) => { this.parT.set(e.clientX / innerWidth - 0.5, e.clientY / innerHeight - 0.5); }, { passive: true });
@@ -163,7 +164,7 @@ export class Piano3D {
   }
   release(m) { const k = this.keys.get(m); if (!k) return; k.at = 0; k.glowT = 0; }
   // keys the lesson wants: a slow golden breath
-  setTargets(ms = [], strong = false) { for (const k of this.keys.values()) k.tgt = ms.includes(k.m) ? (strong ? 1 : 0.6) : 0; }
+  setTargets(ms = [], strong = false, ghost = []) { for (const k of this.keys.values()) k.tgt = ms.includes(k.m) ? (strong ? 1 : 0.6) : ghost.includes(k.m) ? 0.22 : 0; }
   hint(ms) { for (const m of ms) { const k = this.keys.get(m); if (k) { k.glow = Math.max(k.glow, 0.9); this.spark(k, 0.35, 4); } } }
 
   pick(cx, cy) {
@@ -295,7 +296,7 @@ export class Piano3D {
   }
 
   frame() {
-    const dt = Math.min(0.05, this.clock.getDelta()), t = this.clock.elapsedTime;
+    const now = performance.now(), dt = Math.min(0.05, (now - this.last) / 1000), t = (now - this.t0) / 1000; this.last = now;
     // camera
     const f = this.fit();
     let pos = f.pos, look = f.look;
