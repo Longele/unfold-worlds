@@ -219,10 +219,13 @@ export class Stage {
     requestAnimationFrame(loop);
   }
   fit() {
-    // cover the screen, never crop more than a little: the story lives in the central 1600x900
-    const s = Math.max(innerWidth / W, innerHeight / H);
-    const sc = Math.min(s, Math.max(innerWidth / 1600, innerHeight / 900));
+    // the whole scene stays on screen: at most a sliver is cropped (10 %), whatever the phone's shape;
+    // what is left at the edges is filled by the same picture, blurred, so it never looks like bars
+    const cover = Math.max(innerWidth / W, innerHeight / H), contain = Math.min(innerWidth / W, innerHeight / H);
+    const sc = Math.min(cover, contain * 1.1);
     this.scale = sc;
+    document.body.classList.toggle('boxed-x', W * sc < innerWidth - 2);
+    document.body.classList.toggle('boxed-y', H * sc < innerHeight - 2);
     const extra = Math.max(0, H * sc - innerHeight);
     const dy = -extra * 0.42; // keep the ground in view: the sky gives way first
     this.root.style.transform = `translate(-50%, -50%) translateY(${dy.toFixed(1)}px) scale(${sc})`;
@@ -233,7 +236,7 @@ export class Stage {
   setBg(name, ms = 900) {
     return new Promise((res) => {
       const img = new Image(); img.src = `art/${name}.webp`;
-      const go = () => { this.bg2.style.backgroundImage = `url(${img.src})`; this.bg2.style.opacity = 1; setTimeout(() => { this.bg.style.backgroundImage = `url(${img.src})`; this.bg2.style.transition = 'none'; this.bg2.style.opacity = 0; requestAnimationFrame(() => (this.bg2.style.transition = '')); res(); }, ms); };
+      const go = () => { const amb = document.getElementById('ambient'); if (amb) amb.style.backgroundImage = `url(${img.src})`; this.bg2.style.backgroundImage = `url(${img.src})`; this.bg2.style.opacity = 1; setTimeout(() => { this.bg.style.backgroundImage = `url(${img.src})`; this.bg2.style.transition = 'none'; this.bg2.style.opacity = 0; requestAnimationFrame(() => (this.bg2.style.transition = '')); res(); }, ms); };
       img.decode ? img.decode().then(go, go) : (img.onload = go);
     });
   }

@@ -142,3 +142,8 @@ body.in.idle .cap { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 14px);
 #turn.go { animation: turnpage 1.25s cubic-bezier(.55, 0, .35, 1) forwards; }
 @keyframes turnpage { 0% { transform: translateX(110%); } 45% { transform: translateX(0); } 55% { transform: translateX(0); } 100% { transform: translateX(-115%); } }
 .puppet { cursor: pointer; }
+
+/* screens of another shape than 16:9: the picture continues, blurred, around the stage */
+#ambient { position: absolute; inset: -60px; background-size: cover; background-position: 50% 50%; filter: blur(28px) brightness(.62) saturate(1.1); transform: scale(1.08); transition: background-image .8s; }
+body.boxed-x #stage { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 3%, #000 97%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 3%, #000 97%, transparent 100%); }
+body.boxed-y #stage { -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 4%, #000 96%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0, #000 4%, #000 96%, transparent 100%); }
