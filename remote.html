@@ -410,7 +410,7 @@ async function wake() {
   } catch { /* not supported or refused: fall back to a silent looping video, which keeps the screen on */ }
   try { await $('keep').play(); $('awake').classList.add('on'); } catch {}
 }
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { wake(); if (link && !link.open && cred.room) connect(cred.room); } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { wake(); if (!link && cred.room) connect(cred.room); else link?.check(); } });
 addEventListener('pointerdown', wake, { capture: true });
 wake();
 

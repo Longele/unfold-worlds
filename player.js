@@ -279,6 +279,8 @@ function onConn(c) {
     } else c.close();
   });
   c.on('data', (d) => {
+    c._rx = Date.now();
+    if (d && d.t === 'ping') { c._hb = true; return c.open && c.send({ t: 'pong' }); }
     if (remotes.has(c)) return onCmd(d);
     if (!audience.has(c) || !d || d.t !== 'word') return;
     if (!voteOpen()) return c.send({ t: 'word', ok: false, why: 'closed' });
@@ -291,6 +293,15 @@ function onConn(c) {
   });
   c.on('close', () => { remotes.delete(c); audience.delete(c); setPaired(); });
 }
+// a phone frozen by its OS leaves a channel that looks open but carries nothing: drop it after 12 s of
+// silence (live phones ping every 2 s), the phone rebuilds its own link as soon as it wakes
+setInterval(() => {
+  let gone = false;
+  for (const set of [remotes, audience]) for (const c of set) {
+    if (c._hb && Date.now() - (c._rx || 0) > 12000) { set.delete(c); try { c.close(); } catch {} gone = true; }
+  }
+  if (gone) setPaired();
+}, 4000);
 async function connectNet() {
   showPair(); setPaired();
   try {
