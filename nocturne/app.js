@@ -7,9 +7,11 @@ const $ = (id) => document.getElementById(id);
 const T = {
   en: { tag: 'Piano, simply.', learn: 'Learn the basics', learnS: 'ten minutes, guided by voice', free: 'Just play', freeS: 'there are no wrong notes', tuning: 'tuning the piano', ready: 'best with headphones',
     replay: 'Replay', next: 'Next', exit: 'Free play', notes: 'Notes', pedal: 'Pedal', rain: 'Rain', lesson: 'Lesson', midi: 'MIDI', midiOn: 'MIDI keyboard connected', midiNo: 'No MIDI keyboard found',
+    songs: 'Songs', listen: 'Listen', play: 'Play', bravo: 'Well played', titles: { lune: 'Au clair de la lune', mary: 'Mary Had a Little Lamb', jacques: 'Frère Jacques', twinkle: 'Twinkle, Twinkle, Little Star', ode: 'Ode to Joy', jingle: 'Jingle Bells', lullaby: 'Brahms’ Lullaby' },
     labels: { none: 'Notes off', names: 'Note names', keys: 'Computer keys' }, turn: 'Turn your phone sideways', turnS: 'for the whole keyboard', stay: 'Continue upright', done: 'The piano is yours', credit: 'Piano: Salamander Grand Piano by Alexander Holm, CC BY 3.0' },
   fr: { tag: 'Le piano, simplement.', learn: 'Apprendre les bases', learnS: 'dix minutes, guidé par la voix', free: 'Jouer librement', freeS: 'il n’y a pas de fausse note', tuning: 'accordage du piano', ready: 'meilleur avec un casque',
     replay: 'Réécouter', next: 'Suivant', exit: 'Jeu libre', notes: 'Notes', pedal: 'Pédale', rain: 'Pluie', lesson: 'Leçon', midi: 'MIDI', midiOn: 'Clavier MIDI connecté', midiNo: 'Aucun clavier MIDI trouvé',
+    songs: 'Chansons', listen: 'Écouter', play: 'Jouer', bravo: 'Bien joué', titles: { lune: 'Au clair de la lune', mary: 'Mary avait un petit agneau', jacques: 'Frère Jacques', twinkle: 'Ah ! vous dirai-je, maman', ode: 'Hymne à la joie', jingle: 'Vive le vent', lullaby: 'Berceuse de Brahms' },
     labels: { none: 'Notes masquées', names: 'Noms des notes', keys: 'Touches du clavier' }, turn: 'Tournez votre téléphone', turnS: 'pour avoir tout le clavier', stay: 'Continuer en portrait', done: 'Le piano est à vous', credit: 'Piano : Salamander Grand Piano par Alexander Holm, CC BY 3.0' },
 };
 const NAMES = { en: ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'], fr: ['Do', 'Do♯', 'Ré', 'Ré♯', 'Mi', 'Fa', 'Fa♯', 'Sol', 'Sol♯', 'La', 'La♯', 'Si'] };
@@ -41,7 +43,7 @@ function noteOn(m, vel = 0.75) {
   held.set(m, (held.get(m) || 0) + 1);
   sound.noteOn(m, vel); piano.press(m, vel);
   pressedAt.set(m, performance.now());
-  lesson.onNote(m);
+  lesson.onNote(m); songs.onNote(m);
 }
 function noteOff(m) {
   const n = (held.get(m) || 0) - 1;
@@ -107,6 +109,9 @@ function onMidi(ev) {
 // ------------------------------------------------------------------ lesson
 // the songs: [midi, beats] for the right hand, [chord, beats] per bar for a quiet left hand (all public domain)
 const C3 = [48, 52, 55], G2 = [43, 50, 55], F2 = [41, 48, 53];
+const TW_A = [[60, 1], [60, 1], [67, 1], [67, 1], [69, 1], [69, 1], [67, 2], [65, 1], [65, 1], [64, 1], [64, 1], [62, 1], [62, 1], [60, 2]];
+const TW_B = [[67, 1], [67, 1], [65, 1], [65, 1], [64, 1], [64, 1], [62, 2]];
+const TL_A = [[C3, 4], [F2, 2], [C3, 2], [F2, 2], [C3, 2], [G2, 2], [C3, 2]], TL_B = [[C3, 2], [F2, 2], [C3, 2], [G2, 2]];
 const SONGS = {
   lune: { q: 0.52, mel: [[60, 1], [60, 1], [60, 1], [62, 1], [64, 2], [62, 2], [60, 1], [64, 1], [62, 1], [62, 1], [60, 4]],
     lh: [[C3, 4], [C3, 2], [G2, 2], [C3, 2], [G2, 2], [C3, 4]] },
@@ -115,8 +120,16 @@ const SONGS = {
   ode: { q: 0.5, mel: [[64, 1], [64, 1], [65, 1], [67, 1], [67, 1], [65, 1], [64, 1], [62, 1], [60, 1], [60, 1], [62, 1], [64, 1], [64, 1.5], [62, 0.5], [62, 2],
     [64, 1], [64, 1], [65, 1], [67, 1], [67, 1], [65, 1], [64, 1], [62, 1], [60, 1], [60, 1], [62, 1], [64, 1], [62, 1.5], [60, 0.5], [60, 2]],
     lh: [[C3, 4], [G2, 4], [C3, 4], [G2, 4], [C3, 4], [G2, 4], [C3, 4], [G2, 2], [C3, 2]] },
-  twinkle: { q: 0.5, mel: [[60, 1], [60, 1], [67, 1], [67, 1], [69, 1], [69, 1], [67, 2], [65, 1], [65, 1], [64, 1], [64, 1], [62, 1], [62, 1], [60, 2]],
-    lh: [[C3, 4], [F2, 2], [C3, 2], [F2, 2], [C3, 2], [G2, 2], [C3, 2]] },
+  twinkle: { q: 0.5, mel: [...TW_A, ...TW_B, ...TW_B, ...TW_A], lh: [...TL_A, ...TL_B, ...TL_B, ...TL_A] },
+  mary: { q: 0.46, mel: [[64, 1], [62, 1], [60, 1], [62, 1], [64, 1], [64, 1], [64, 2], [62, 1], [62, 1], [62, 2], [64, 1], [67, 1], [67, 2],
+    [64, 1], [62, 1], [60, 1], [62, 1], [64, 1], [64, 1], [64, 1], [64, 1], [62, 1], [62, 1], [64, 1], [62, 1], [60, 4]],
+    lh: [[C3, 4], [C3, 4], [G2, 4], [C3, 4], [C3, 4], [C3, 4], [G2, 4], [C3, 4]] },
+  jingle: { q: 0.4, mel: [[64, 1], [64, 1], [64, 2], [64, 1], [64, 1], [64, 2], [64, 1], [67, 1], [60, 1.5], [62, 0.5], [64, 4],
+    [65, 1], [65, 1], [65, 1.5], [65, 0.5], [65, 1], [64, 1], [64, 1], [64, 0.5], [64, 0.5], [64, 1], [62, 1], [62, 1], [64, 1], [62, 2], [67, 2]],
+    lh: [[C3, 4], [C3, 4], [C3, 4], [C3, 4], [F2, 4], [C3, 4], [C3, 2], [G2, 2], [G2, 4]] },
+  lullaby: { q: 0.42, mel: [[64, 0.5], [64, 0.5], [67, 2], [64, 0.5], [64, 0.5], [67, 2], [64, 0.5], [67, 0.5], [72, 1], [71, 1.5], [69, 0.5], [69, 1], [67, 1],
+    [62, 0.5], [64, 0.5], [65, 1], [62, 1], [62, 0.5], [64, 0.5], [65, 2], [62, 0.5], [65, 0.5], [71, 0.5], [69, 0.5], [67, 1], [71, 1], [72, 3]],
+    lh: [[[], 1], [C3, 3], [C3, 3], [F2, 3], [C3, 3], [G2, 3], [G2, 3], [G2, 3], [C3, 3]] },
 };
 const notesOf = (song) => SONGS[song].mel.map(([m]) => m);
 const STEPS = [
@@ -132,7 +145,7 @@ const STEPS = [
   { v: 'jacques', badges: { 60: 1, 62: 2, 64: 3, 65: 4, 67: 5 }, wait: { seq: notesOf('jacques') }, praise: true },
   { v: 'ode', wait: { seq: notesOf('ode').slice(0, 15) } },
   { v: 'beethoven', after: () => playSong('ode') },
-  { v: 'twinkle', wait: { seq: notesOf('twinkle') } },
+  { v: 'twinkle', wait: { seq: notesOf('twinkle').slice(0, 14) } },
   { v: 'twinkle_done', after: () => playSong('twinkle') },
   { v: 'black', wait: { seq: [61] }, praise: true },
   { v: 'chord', wait: { chords: [[60, 64, 67]] } },
@@ -218,21 +231,82 @@ const lesson = {
   stop() { this.run++; this.clear(); this.step = null; },
 };
 
+// ------------------------------------------------------------------ songs (free play)
+// pick a song, listen to it if you like, then play it: the light shows each next note, nothing is ever wrong
+const SONG_LIST = [['lune', 1], ['mary', 1], ['jacques', 1], ['twinkle', 2], ['ode', 2], ['jingle', 2], ['lullaby', 3]];
+const songs = {
+  cur: null, idx: 0, miss: 0, token: 0,
+  list() {
+    const t = T[lang];
+    $('songs-l').innerHTML = SONG_LIST.map(([id, lv]) => `<li><span class="nm">${t.titles[id]}</span><span class="lv">${'<i></i>'.repeat(lv)}</span>
+      <button data-act="listen" data-id="${id}">${t.listen}</button><button data-act="play" data-id="${id}" class="pl">${t.play}</button></li>`).join('');
+  },
+  open() { this.list(); $('songs').classList.add('on'); },
+  close() { $('songs').classList.remove('on'); },
+  async listen(id) {
+    this.stop(); const tok = ++this.token;
+    caption(T[lang].titles[id]);
+    await playSong(id, () => this.token === tok);
+    if (this.token === tok) caption('');
+  },
+  play(id) {
+    this.stop(); this.token++;
+    this.cur = id; this.seq = notesOf(id); this.idx = 0; this.miss = 0;
+    $('b-songs').classList.add('on'); caption(T[lang].titles[id]);
+    if (labelMode === 'none') { labelMode = 'names'; applyLabels(); $('b-notes').classList.add('on'); }
+    this.show();
+  },
+  show() {
+    const m = this.seq[this.idx];
+    piano.setTargets([m], true); piano.guide([m]); dots(this.seq.length, this.idx);
+  },
+  onNote(m) {
+    if (!this.cur || mode !== 'free') return;
+    if (m !== this.seq[this.idx]) { if (++this.miss >= 2) { this.miss = 0; piano.hint([this.seq[this.idx]]); } return; }
+    this.miss = 0; this.idx++; piano.ripple(m, 0x9dffc8);
+    if (this.idx < this.seq.length) return this.show();
+    const id = this.cur; this.cur = null;
+    piano.setTargets([]); piano.guide(null); $('dots').classList.add('done'); $('b-songs').classList.remove('on');
+    const tok = ++this.token;
+    setTimeout(async () => {
+      if (this.token !== tok) return;
+      sound.chime(88); caption(T[lang].bravo);
+      await sleep(500); await sound.say('praise' + (1 + Math.floor(Math.random() * 3)));
+      await sleep(900); if (this.token === tok) { dots(0, 0); caption(''); }
+    }, 350);
+  },
+  stop() {
+    this.token++; stopSong();
+    if (!this.cur && !$('dots').classList.contains('on')) return;
+    this.cur = null; piano.setTargets([]); piano.guide(null); dots(0, 0); caption(''); $('b-songs').classList.remove('on');
+  },
+};
+$('songs-l').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  songs.close();
+  if (b.dataset.act === 'listen') songs.listen(b.dataset.id); else songs.play(b.dataset.id);
+});
+
 // the reward: the piano plays the song back, with a quiet left hand
-async function playSong(name) {
+async function playSong(name, alive) {
   const { q, mel, lh } = SONGS[name], ev = [];
   let t = 0;
   for (const [m, d] of mel) { ev.push([t, m, d * q * 0.92, 0.62]); t += d * q; }
   let tl = 0;
   for (const [c, d] of lh) { for (const m of c) ev.push([tl, m, d * q * 0.95, 0.34]); tl += d * q; }
   const run = lesson.run, t0 = sound.ctx.currentTime + 0.25;
+  alive ||= () => lesson.run === run;
+  const live = [];
   for (const [at, m, d, v] of ev) {
-    sound.noteOn(m, v, t0 + at); sound.noteOff(m, t0 + at + d);
-    setTimeout(() => { if (lesson.run === run) piano.press(m, v); }, (at + 0.25) * 1000);
+    live.push(sound.noteOn(m, v, t0 + at)); sound.noteOff(m, t0 + at + d);
+    setTimeout(() => { if (alive()) piano.press(m, v); }, (at + 0.25) * 1000);
     setTimeout(() => piano.release(m), (at + 0.25 + d) * 1000);
   }
+  playSong.cur = live;
   await sleep((Math.max(t, tl) + 1.4) * 1000);
 }
+// a playback the listener interrupts: silence what is scheduled
+function stopSong() { for (const v of playSong.cur || []) if (v) sound.damp(v, sound.ctx.currentTime, 0.08); playSong.cur = null; }
 
 // ------------------------------------------------------------------ screens
 let started = false, mode = 'intro';
@@ -275,6 +349,7 @@ async function begin(which) {
   if (which === 'lesson') toLesson(); else toFree(false);
 }
 function toLesson() {
+  songs.stop();
   mode = 'lesson'; document.body.dataset.mode = 'lesson';
   lesson.go(0);
 }
@@ -293,7 +368,7 @@ function texts() {
   $('hp').textContent = sound.buf.size ? t.ready : t.tuning;
   $('b-replay').lastChild.textContent = t.replay; $('b-next').lastChild.textContent = t.next; $('b-exit').lastChild.textContent = t.exit;
   $('b-notes').lastChild.textContent = t.notes; $('b-pedal').lastChild.textContent = t.pedal; $('b-rain').lastChild.textContent = t.rain;
-  $('b-lesson').lastChild.textContent = t.lesson; $('b-midi').lastChild.textContent = t.midi;
+  $('b-lesson').lastChild.textContent = t.lesson; $('b-songs').lastChild.textContent = t.songs; $('songs-h').textContent = t.songs; songs.list(); $('b-midi').lastChild.textContent = t.midi;
   $('credit').textContent = t.credit; $('rot-t').textContent = t.turn; $('rot-s').textContent = t.turnS; $('rot-stay').textContent = t.stay;
   for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
 }
@@ -310,6 +385,8 @@ $('b-replay').addEventListener('click', () => lesson.go(lesson.i));
 $('b-next').addEventListener('click', () => lesson.go(lesson.i + 1));
 $('b-exit').addEventListener('click', () => toFree(false));
 $('b-lesson').addEventListener('click', () => toLesson());
+$('b-songs').addEventListener('click', () => (songs.cur ? songs.stop() : songs.open()));
+$('songs-x').addEventListener('click', () => songs.close());
 $('b-notes').addEventListener('click', () => {
   const modes = matchMedia('(pointer: fine)').matches ? ['none', 'names', 'keys'] : ['none', 'names'];
   labelMode = modes[(modes.indexOf(labelMode) + 1) % modes.length]; applyLabels();
