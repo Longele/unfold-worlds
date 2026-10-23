@@ -234,6 +234,7 @@ function showPair() {
 }
 function setPaired() {
   const n = remotes.size, st = $('pair-status');
+  if (n > 0) $('pairmini').classList.remove('on'); // a phone is in: the code leaves the screen
   st.classList.toggle('ok', n > 0);
   st.querySelector('span').textContent = !net.ok ? 'connexion au service…' : n > 0 ? `téléphone connecté${n > 1 ? ` (${n})` : ''}, prêt` : 'en attente du téléphone…';
 }
@@ -456,6 +457,7 @@ addEventListener('keydown', (e) => {
   else if (k === 'Escape') { e.preventDefault(); toggleMenu(); }
   else if (k === 'q' || k === 'Q') { toggleMenu(); }
   else if (k === 'F5') { e.preventDefault(); input(next); }
+  else if (k === 'r' || k === 'R') { showPair(); $('pairmini').classList.toggle('on', !remotes.size && !$('pairmini').classList.contains('on')); }
   else if (k === 'f' || k === 'F') { fsEl() ? leaveFull() : goFull(); }
   else if (k === 'm' || k === 'M') { A.setMuted(!A.isMuted()); say(A.isMuted() ? 'son coupé' : 'son actif'); sync(); }
   else if (k === 's' || k === 'S') { window.open('speaker.html', 'grandir-speaker', 'width=1200,height=760'); }

@@ -240,5 +240,3 @@ body.tv .setup .hint { display: none; }
 #cur.hot .c-dot { background: #1a0d04; box-shadow: 0 0 0 2px rgba(255, 244, 230, .9), 0 0 18px 4px rgba(255, 140, 40, .45); }
 #cur.hot .c-ring::before { box-shadow: 0 0 0 1px rgba(26, 13, 4, .35), inset 0 0 0 1px rgba(26, 13, 4, .25); }
 #cur.hot .c-ring::before { border-color: rgba(26, 13, 4, .6); background: rgba(255, 244, 230, .12); }
-/* no pairing code during the talk: a paired phone reconnects on its own, and anyone in the room could scan it */
-#pairmini { display: none !important; }
