@@ -75,7 +75,8 @@ f.onsubmit = (e) => {
 if (room.length !== 4) msg.textContent = 'lien incomplet, scannez le QR affiché à l’écran';
 else {
   try {
-    link = await join({ room, meta: () => ({ role: 'audience' }), onMessage, onStatus: (s) => {
+    link = await join({ room, hb: 10000, meta: () => ({ role: 'audience' }), onMessage, onStatus: (s) => {
+      if (s === 'open') { msg.textContent = 'connecté, un instant…'; }
       if (s === 'no-screen') { b.disabled = true; msg.textContent = 'recherche de l’écran…'; }
       if (s === 'lost') { b.disabled = true; msg.textContent = 'reconnexion…'; }
     } });

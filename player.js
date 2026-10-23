@@ -253,12 +253,13 @@ const POINTS = SCENES.map((sc) => {
 });
 const META = SCENES.map(({ id, part, title, notes, min, steps }, i) => ({ id, part, title, notes, min, steps, points: POINTS[i] }));
 
-function voteOpen() { return net.force !== null ? net.force : started && SCENES[idx].id === 'mot'; }
+// the vote opens by itself on the words scene; the presenter's open/close applies to the scene where it was given
+function voteOpen() { return net.force !== null && net.forceAt === idx ? net.force : started && SCENES[idx].id === 'mot'; }
 function pushVote() {
   const open = voteOpen();
   if (open === net.vote) return;
   net.vote = open; voteBadge();
-  for (const c of audience) c.open && c.send({ t: 'vote', open, q: PROMPT });
+  net.link?.broadcast({ t: 'vote', open, q: PROMPT }); // one message for the whole room
 }
 function onConn(c) {
   const m = c.metadata || {};
@@ -306,11 +307,11 @@ setInterval(() => {
 async function connectNet() {
   showPair(); setPaired();
   try {
-    await host({ room: net.room, onConn, onStatus: (st) => { net.ok = st === 'ready'; setPaired(); } });
+    net.link = await host({ room: net.room, onConn, onStatus: (st) => { net.ok = st === 'ready'; setPaired(); } });
     net.ok = true; document.body.classList.add('has-server'); setPaired();
   } catch (e) {
-    if (e.type === 'unavailable-id' && !castToken) { net.room = randCode(4); store.set(ROOM_KEY, net.room); return connectNet(); }
     $('pair-status').querySelector('span').textContent = 'pas d’internet, utilisez la télécommande ou le clavier';
+    setTimeout(connectNet, 5000); // try again quietly: the Wi-Fi may come up a moment later
   }
 }
 function onCmd(m) {
@@ -323,7 +324,7 @@ function onCmd(m) {
   else if (m.cmd === 'spot') setSpot(!!m.on);
   else if (m.cmd === 'move') { spot.tx = Math.max(0.02, Math.min(0.98, spot.tx + m.dx)); spot.ty = Math.max(0.02, Math.min(0.98, spot.ty + m.dy * (16 / 9))); castState(); }
   else if (m.cmd === 'mute') { A.setMuted(!A.isMuted()); sync(); }
-  else if (m.cmd === 'vote') { net.force = m.open === null || m.open === undefined ? null : !!m.open; pushVote(); sync(); }
+  else if (m.cmd === 'vote') { net.force = m.open === null || m.open === undefined ? null : !!m.open; net.forceAt = idx; pushVote(); sync(); }
   else if (m.cmd === 'quit') bye();
   else if (m.cmd === 'exitfs') { if (fsEl()) leaveFull(); say('plein écran quitté'); }
   else if (m.cmd === 'ping') { pulse(0.6); A.play('ui_tick', 0.3); }
@@ -346,7 +347,7 @@ function bye() {
 const bc = 'BroadcastChannel' in window ? new BroadcastChannel('grandir-pres') : null;
 let syncT = 0;
 function stateMsg() {
-  return { t: 'state', scene: started ? SCENES[idx].id : null, idx, step, t0, started, armed, black: black.classList.contains('on'), full: isFull(), spot: spot.on, muted: A.isMuted(), audio: A.ready(), vote: { open: voteOpen(), forced: net.force !== null, total: wordsTotal } };
+  return { t: 'state', scene: started ? SCENES[idx].id : null, idx, step, t0, started, armed, black: black.classList.contains('on'), full: isFull(), spot: spot.on, muted: A.isMuted(), audio: A.ready(), vote: { open: voteOpen(), forced: net.force !== null && net.forceAt === idx, total: wordsTotal } };
 }
 function sendState(c) { if (c.open) c.send(stateMsg()); }
 function sync() {

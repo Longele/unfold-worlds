@@ -396,7 +396,7 @@ pad.addEventListener('pointermove', (e) => {
   const r = pad.getBoundingClientRect();
   pad.style.setProperty('--px', `${e.clientX - r.left}px`); pad.style.setProperty('--py', `${e.clientY - r.top}px`);
   ax += (e.clientX - lx) / r.width * 1.5; ay += (e.clientY - ly) / r.width * 1.5; lx = e.clientX; ly = e.clientY;
-  if (!flushT) flushT = setTimeout(() => { link?.send({ cmd: 'move', dx: ax, dy: ay }); ax = ay = 0; flushT = 0; }, 25);
+  if (!flushT) flushT = setTimeout(() => { link?.send({ cmd: 'move', dx: ax, dy: ay }); ax = ay = 0; flushT = 0; }, 60);
 });
 
 // ---------- never let the phone sleep during the talk ----------
