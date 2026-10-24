@@ -116,10 +116,10 @@ export class Puppet {
     }
     const t = now / 1000 + this.t0, P = this.parts, R = (el, deg, extra = '') => { if (el) el.style.transform = `rotate(${deg.toFixed(2)}deg)${extra}`; };
     const talk = this.talk, m = this.mouth;
-    let bob = Math.sin(t * 1.6) * 3, lean = 0, sx = 1, sy = 1 + Math.sin(t * 1.6) * 0.008;
+    let bob = Math.sin(t * 1.6) * 3, lean = 0, sx = 1, sy = 1;
     if (tw && !tw.hop && tw.to.x !== undefined && tw.t < 1 && Math.abs(tw.to.x - tw.from.x) > 50) { bob += -Math.abs(Math.sin(t * 6)) * 9; lean += Math.sin(t * 6) * 1.6; } // walking
     if (this.mode === 'pull') { lean = -6 + Math.sin(t * 9) * 1.5; bob += Math.sin(t * 13) * 2; }
-    if (this.mode === 'laugh') { bob += -Math.abs(Math.sin(t * 9)) * 10; sy *= 1 + Math.abs(Math.sin(t * 9)) * 0.03; }
+    if (this.mode === 'laugh') { bob += -Math.abs(Math.sin(t * 9)) * 10; }
     if (this.mode === 'sleep') { bob = Math.sin(t * 0.9) * 2; }
     if (this.name === 'kalulu') {
       R(P.ears, Math.sin(t * 2.3) * 4 + (talk ? Math.sin(t * 11) * 5 : 0) + (this.mode === 'alert' ? -8 : 0));
@@ -223,7 +223,7 @@ export class Stage {
       if (!this.paused) {
         this.par.x = lerp(this.par.x, this.par.tx, 0.04); this.par.y = lerp(this.par.y, this.par.ty, 0.04);
         const z = this.still ? 1.04 : 1.04 + Math.sin(now / 9000) * 0.01;
-        this.bg.style.transform = `translate(${(-this.par.x * 18).toFixed(1)}px, ${(-this.par.y * 10).toFixed(1)}px) scale(${z.toFixed(4)})`;
+        if (!this.still || !this.settled) this.bg.style.transform = `translate(${(-this.par.x * 18).toFixed(1)}px, ${(-this.par.y * 10).toFixed(1)}px) scale(${z.toFixed(4)})`;
         this.actorsEl.style.transform = `translate(${(-this.par.x * 34).toFixed(1)}px, ${(-this.par.y * 16).toFixed(1)}px)`;
         this.frontEl.style.transform = `translate(${(-this.par.x * 70).toFixed(1)}px, ${(-this.par.y * 26).toFixed(1)}px)`;
         // camera: lean in a little toward the speaker, ease back when it is the child's turn
@@ -232,7 +232,8 @@ export class Stage {
         const k = Math.min(1, dt / 1400);
         this.cz += (tz - this.cz) * k; this.cx += (tx - this.cx) * k; this.cy += (ty - this.cy) * k;
         const ox = (W / 2 - this.cx) * (this.cz - 1), oy = (H / 2 - this.cy) * (this.cz - 1);
-        this.cam.style.transform = `translate(${ox.toFixed(1)}px, ${oy.toFixed(1)}px) scale(${this.cz.toFixed(4)})`;
+        if (!this.still) this.cam.style.transform = `translate(${ox.toFixed(1)}px, ${oy.toFixed(1)}px) scale(${this.cz.toFixed(4)})`;
+        this.settled = true;
         for (const a of Object.values(this.actors)) a.frame(now, dt);
         this.onFrame?.(now, dt);
         this.fx.frame(dt);
@@ -263,7 +264,7 @@ export class Stage {
   turnPage() { const el = this.root.querySelector('#iris'); if (!el) return; el.classList.remove('run'); void el.offsetWidth; el.classList.add('run'); }
   setBg(name, ms = 900) {
     return new Promise((res) => {
-      const img = new Image(); img.src = `art/${name}.webp`;
+      const img = new Image(); img.src = `art/${name}${this.still ? '-m' : ''}.webp`; // phones get a lighter picture
       const go = () => { const amb = document.getElementById('ambient'); if (amb) amb.style.backgroundImage = `url(${img.src})`; this.bg2.style.backgroundImage = `url(${img.src})`; this.bg2.style.opacity = 1; setTimeout(() => { this.bg.style.backgroundImage = `url(${img.src})`; this.bg2.style.transition = 'none'; this.bg2.style.opacity = 0; requestAnimationFrame(() => (this.bg2.style.transition = '')); res(); }, ms); };
       img.decode ? img.decode().then(go, go) : (img.onload = go);
     });

@@ -1,11 +1,15 @@
 // Noah and the ark (Genesis 6 to 9): the seven pages. Each page sets its stage, then runs as a little script:
 // voices, puppet moves, sounds, and the moments where the child's hand moves the story on.
-import { W, H, sleep, tapZone, dragAlong, rapid, swipeAcross, hint } from './engine.js?v=202610240140';
+import { W, H, sleep, tapZone, dragAlong, rapid, swipeAcross, hint } from './engine.js?v=202610240300';
 
 export const SPEAKER = { o: 'noe' };
 const GROUND = 975;
-// the ark on dry land: its box in stage coordinates, and where its doorway is
-const ARK = { x: 200, s: 1.4, bottom: 960 };
+// one scale for everyone: 105 px per metre, from each puppet's real height (its feet line is its height in px)
+const M = 105, HEIGHT = { noe: 1.7, elephant: 3.0, giraffe: 5.0, lion: 1.2, zebra: 1.4, camel: 2.1, sheep: 0.9 };
+const FEET = { noe: 696, elephant: 321, giraffe: 402, lion: 293, zebra: 308, camel: 287, sheep: 247 };
+const S = (id) => { const k = id.split('#')[0]; return (HEIGHT[k] * M) / FEET[k]; };
+// the ark on dry land: its door is taller than an elephant
+const ARK = { x: 180, s: 1.7, bottom: 960 };
 const arkTop = (a) => a.bottom - 428 * a.s;
 const doorX = (a) => a.x + 457 * a.s;
 
@@ -22,7 +26,7 @@ export function makeStory(api) {
     let d = null;
     if (door !== null) {
       d = stage.prop('door', { x: o.x + 385 * o.s, y: arkTop(o) + 238 * o.s, layer: 'actors', cls: 'door' + (door ? ' shut' : '') });
-      d.style.width = 145 * o.s + 'px'; d.style.height = 194 * o.s + 'px'; d.style.transform = '';
+      d.style.width = 145 * o.s + 'px'; d.style.height = 194 * o.s + 'px'; d.style.transform = ''; d.style.backgroundSize = 'cover';
     }
     return { el, d };
   };
@@ -32,17 +36,19 @@ export function makeStory(api) {
   const intoArk = async (id, o = ARK) => {
     const a = A(id);
     await walk(id, doorX(o), 1300);
-    await a.to({ alpha: 0, s: a.s * 0.85 }, 450);
+    await a.to({ alpha: 0 }, 450);
     stage.dismiss(id);
   };
   // a pair of animals arrives from the right and waits to be touched
-  const pair = async (kind, s, line, sound, c) => {
-    A(kind).place({ x: 2150, y: GROUND, s, flip: true });
-    A(kind + '#2').place({ x: 2350, y: GROUND + 8, s: s * 0.94, flip: true });
+  const pair = async (kind, line, sound, c) => {
+    const s = S(kind);
+    A(kind).place({ x: 2300, y: GROUND, s, flip: true });
+    A(kind + '#2').place({ x: 2650, y: GROUND + 8, s: s * 0.96, flip: true });
     sfx('hooves', 0.6);
-    await Promise.all([walk(kind, 1520, 1800), walk(kind + '#2', 1720, 2000)]); c();
+    await Promise.all([walk(kind, 1330, 2000), walk(kind + '#2', 1640, 2300)]); c();
     for (const id of [kind, kind + '#2']) A(id).flip = true;
-    await tapZone(stage, { x: 1380, y: GROUND - 330, w: 480, h: 360 }, null, () => say('p3b')); c();
+    const top = Math.min(GROUND - HEIGHT[kind] * M, GROUND - 200);
+    await tapZone(stage, { x: 1120, y: top, w: 760, h: GROUND - top + 20 }, null, () => say('p3b')); c();
     sfx(sound, 0.8); say(line);
     for (const id of [kind, kind + '#2']) { const a = A(id); const y = a.y; a.to({ y }, 500, { hop: 1 }); }
     await sleep(600);
@@ -78,29 +84,29 @@ export function makeStory(api) {
     {
       bg: 'bg-2-meadow', amb: 'amb-meadow',
       setup() {
-        stage.prop('ark', { x: ARK.x, y: arkTop(ARK), s: ARK.s, layer: 'actors', cls: 'ghost' }); // where it will stand
-        const { el } = ark(ARK, null);
-        el.classList.add('build'); el.style.setProperty('--b', '100%');
-        stage.prop('planks', { x: 1180, y: 905, s: 0.9, layer: 'actors' });
-        A('noe').place({ x: 1680, y: GROUND, s: 0.56, flip: true, mode: 'idle' });
+        // the ark goes up in real steps: keel and ribs, then the planked hull, then the house and its roof
+        const step = (name, h) => stage.prop(name, { x: ARK.x, y: ARK.bottom - h * ARK.s, s: ARK.s, layer: 'actors', cls: 'stage' });
+        stage.page = { steps: [step('ark-stage1', 325), step('ark-stage2', 437), (() => { const e = ark(ARK, null).el; e.classList.add('stage'); return e; })()] };
+        stage.prop('planks', { x: 1560, y: 925, s: 0.5, layer: 'actors' });
+        A('noe').place({ x: 1810, y: GROUND, s: S('noe'), flip: true, mode: 'idle' });
       },
       async run(c) {
         sfx('saw', 0.7);
         await say('p2a'); c();
         say('p2b');
-        const el = stage.props.find((p) => p.classList.contains('ark'));
+        const { steps } = stage.page;
         const n = A('noe');
-        for (let i = 1; i <= 3; i++) {
-          await tapZone(stage, { x: ARK.x + 100, y: 420, w: 1080, h: 540 }, null, () => say('p2b')); c();
-          sfx('hammer', 0.9); setTimeout(() => sfx('beam', 0.7), 350);
+        for (let i = 0; i < 3; i++) {
+          await tapZone(stage, { x: ARK.x + 120, y: 300, w: 1300, h: 660 }, null, () => say('p2b')); c();
+          sfx('hammer', 0.9); setTimeout(() => sfx(i === 0 ? 'saw' : 'beam', 0.7), 350);
           n.mode = 'raise'; setTimeout(() => { if (n.mode === 'raise') n.mode = 'idle'; }, 700);
-          el.style.setProperty('--b', `${100 - i * 34}%`);
-          for (let k = 0; k < 3; k++) stage.fx.burst(ARK.x + 200 + Math.random() * 900, 960 - i * 150, 'dust', 6);
+          steps.forEach((el, k) => el.classList.toggle('on', k === i));
+          for (let k = 0; k < 4; k++) stage.fx.burst(ARK.x + 150 + Math.random() * 1250, 940 - Math.random() * 300, 'dust', 6);
           await sleep(900);
-          if (i === 1) await say('p2c');
-          if (i === 2) await say('p2d');
+          if (i === 0) await say('p2c');
+          if (i === 1) await say('p2d');
         }
-        el.style.setProperty('--b', '0%'); sfx('chime', 0.6);
+        sfx('chime', 0.6);
         await sleep(500); c();
         await say('p2e'); c();
         n.mode = 'laugh'; setTimeout(() => (n.mode = 'idle'), 1600);
@@ -112,15 +118,15 @@ export function makeStory(api) {
       bg: 'bg-2-meadow', amb: 'amb-meadow',
       setup() {
         ark(ARK, null);
-        A('noe').place({ x: 560, y: GROUND, s: 0.56, mode: 'idle' });
+        A('noe').place({ x: 760, y: GROUND + 10, s: S('noe'), mode: 'idle' });
       },
       async run(c) {
         await say('p3a'); c();
         say('p3b');
-        await pair('elephant', 0.6, 'p3c', 'trumpet', c);
-        await pair('giraffe', 0.62, 'p3d', 'hooves', c);
-        await pair('lion', 0.58, 'p3e', 'roar', c);
-        await pair('sheep', 0.5, 'p3f', 'baa', c);
+        await pair('elephant', 'p3c', 'trumpet', c);
+        await pair('giraffe', 'p3d', 'hooves', c);
+        await pair('lion', 'p3e', 'roar', c);
+        await pair('sheep', 'p3f', 'baa', c);
         A('noe').mode = 'wave';
         await say('p3g'); c();
         A('noe').mode = 'idle';
@@ -132,7 +138,7 @@ export function makeStory(api) {
       setup() {
         const { d } = ark(ARK, false);
         stage.page = { d };
-        A('noe').place({ x: 1150, y: GROUND, s: 0.56, flip: true, mode: 'idle' });
+        A('noe').place({ x: 1350, y: GROUND, s: S('noe'), flip: true, mode: 'idle' });
         stage.sky.className = 'sky storm';
       },
       async run(c) {
@@ -140,7 +146,7 @@ export function makeStory(api) {
         say('p4a');
         await sleep(1200);
         await walk('noe', doorX(ARK), 2200); c();
-        await A('noe').to({ alpha: 0, s: 0.5 }, 500); stage.dismiss('noe');
+        await A('noe').to({ alpha: 0 }, 500); stage.dismiss('noe');
         await sleep(900); c();
         shut(d, true); sfx('door', 1);
         await sleep(1500); c();
@@ -151,7 +157,7 @@ export function makeStory(api) {
         await rapid(stage, 12, (p, k) => { level = 0.2 + k * 1.6; stage.fx.setRain(level); sfx('glass', 0.35, 0.8 + k); if (Math.random() < 0.18) { flash(); sfx('thunder', 0.5); } }); c();
         stage.fx.setRain(1.8);
         // the water rises over the meadow and lifts the ark
-        const w = stage.prop('waves-front', { x: -121, y: 739, layer: 'actors', cls: 'flood' });
+        const w = stage.prop('waves-front', { x: -121, y: 700, layer: 'actors', cls: 'flood' });
         w.style.width = '2162px'; w.style.height = '405px';
         const el = stage.props.find((p) => p.classList.contains('ark'));
         await say('p4c'); c();
@@ -221,7 +227,7 @@ export function makeStory(api) {
     {
       bg: 'bg-6-land', amb: 'amb-land',
       setup() {
-        const o = { x: 80, s: 1.0, bottom: 930 };
+        const o = { x: -330, s: 1.7, bottom: 950 };
         const { d } = ark(o, true);
         stage.page = { d, o };
         stage.prop('bush', { x: 1660, y: 800, s: 0.9 });
@@ -235,22 +241,22 @@ export function makeStory(api) {
         const dx = doorX(o);
         // two rows: the tall ones further back, the small ones in front
         const slots = [
-          ['elephant', 0.5, 1020, 948], ['elephant#2', 0.48, 1200, 952], ['giraffe', 0.52, 1390, 944], ['giraffe#2', 0.5, 1530, 948], ['camel', 0.48, 1690, 950], ['camel#2', 0.46, 1830, 954],
-          ['lion', 0.5, 820, 1008], ['lion#2', 0.48, 990, 1012], ['zebra', 0.5, 1170, 1010], ['zebra#2', 0.48, 1340, 1016], ['sheep', 0.44, 1520, 1022], ['sheep#2', 0.42, 1670, 1026],
-        ];
+          ['elephant', 780, 935], ['elephant#2', 1090, 940], ['giraffe', 1340, 930], ['giraffe#2', 1530, 934], ['camel', 1700, 940], ['camel#2', 1860, 944],
+          ['lion', 720, 1012], ['lion#2', 890, 1016], ['zebra', 1060, 1014], ['zebra#2', 1230, 1020], ['sheep', 1400, 1026], ['sheep#2', 1530, 1030],
+        ].map(([id, x, y]) => [id, S(id), x, y]);
         say('p7b');
         let i = 0;
         for (const [id, s, tx, ty] of slots) {
-          const a = A(id).place({ x: dx, y: GROUND - 20, s: s * 0.8, alpha: 0, flip: false });
+          const a = A(id).place({ x: dx, y: GROUND - 20, s, alpha: 0, flip: false });
           setTimeout(async () => {
-            await a.to({ alpha: 1, s }, 350);
+            await a.to({ alpha: 1 }, 350);
             sfx('hooves', 0.4, 0.9 + Math.random() * 0.3);
             await a.to({ x: tx, y: ty }, 1800 + Math.random() * 400, { hop: 3 });
           }, i++ * 420);
         }
         await sleep(i * 420 + 2400); c();
-        A('noe').place({ x: dx, y: GROUND - 10, s: 0.5, alpha: 0 });
-        await A('noe').to({ alpha: 1, s: 0.56 }, 500);
+        A('noe').place({ x: dx, y: GROUND - 10, s: S('noe'), alpha: 0 });
+        await A('noe').to({ alpha: 1 }, 500);
         await walk('noe', 560, 1600); A('noe').flip = false; c();
         say('p7c');
         // the rainbow, painted by the finger across the sky
