@@ -1,18 +1,21 @@
 // UNISSON phone: one gesture, an instant answer under the finger, and a screen that is one light of the room.
 // It sends a summary of its taps every quarter second (never one message per tap), keeps its clock on the
 // screen's, and plays every cue on the dated instant. If the network drops, the light keeps the score going.
-import { phone, randCode, cleanRoom } from './net.js?v=202610241030';
-import { light, seatOf, hsl, BEAT } from './show.js?v=202610241030';
+import { phone, randCode, cleanRoom } from './net.js?v=202610241130';
+import { light, seatOf, hsl, BEAT, STEP, PADS, PLAYABLE, DROP_IN, ZH } from './show.js?v=202610241130';
+import { Synth } from './music.js?v=202610241130';
 
 const $ = (id) => document.getElementById(id);
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
 const T = {
   fr: { joinT: 'Ce soir, c’est vous l’orchestre', joinS: 'Ton téléphone devient une lumière et un instrument, avec toute la salle.', codeGo: 'Entrer', where: 'Où es-tu dans la salle ?', zg: 'À gauche', zc: 'Au centre', zd: 'À droite',
     safe: 'Lumières douces, jamais de flash rapide. Garde ton téléphone allumé.',
-    lobby: 'Tu es dans l’orchestre. Attends le signal…', eveil: 'Touche ton écran : allume ton étoile', vague: 'Lève ton téléphone, tape en rythme', drop: 'Tape ! Tape ! Tape !', coeur: 'Pose ton doigt sur l’écran, et garde-le', fin: 'Merci. Tu as joué avec toute la salle.', lost: 'Réseau faible : ta lumière continue' },
+    lobby: 'Tu es dans l’orchestre. Attends le signal…', eveil: 'Joue : chaque touche est une note', vague: 'Joue avec la vague', drop: 'Joue ! Toute la salle avec toi', jam: 'C’est toi qui joues. Écoute la salle',
+    sg: 'Tu joues : le rythme', sc: 'Tu joues : les basses', sd: 'Tu joues : la mélodie', pg: ['Boum', 'Clap', 'Caisse', 'Tss'], pc: ['Grave', 'Quinte', 'Accord', 'Aigu'], pd: ['1', '2', '3', '4', '5'], coeur: 'Pose ton doigt sur l’écran, et garde-le', fin: 'Merci. Tu as joué avec toute la salle.', lost: 'Réseau faible : ta lumière continue' },
   en: { joinT: 'Tonight, you are the orchestra', joinS: 'Your phone becomes a light and an instrument, with the whole room.', codeGo: 'Join', where: 'Where are you in the room?', zg: 'On the left', zc: 'In the middle', zd: 'On the right',
     safe: 'Soft lights, never fast flashes. Keep your phone awake.',
-    lobby: 'You are in the orchestra. Wait for the signal…', eveil: 'Touch your screen: light up your star', vague: 'Raise your phone, tap in rhythm', drop: 'Tap! Tap! Tap!', coeur: 'Put your finger on the screen, and hold it', fin: 'Thank you. You played with the whole room.', lost: 'Weak network: your light keeps going' },
+    lobby: 'You are in the orchestra. Wait for the signal…', eveil: 'Play: every touch is a note', vague: 'Play with the wave', drop: 'Play! The whole room with you', jam: 'You are playing. Listen to the room',
+    sg: 'You play: the rhythm', sc: 'You play: the bass', sd: 'You play: the melody', pg: ['Boom', 'Clap', 'Snare', 'Tss'], pc: ['Low', 'Fifth', 'Chord', 'High'], pd: ['1', '2', '3', '4', '5'], coeur: 'Put your finger on the screen, and hold it', fin: 'Thank you. You played with the whole room.', lost: 'Weak network: your light keeps going' },
 };
 const lang = new URLSearchParams(location.search).get('lang') || ((navigator.language || '').startsWith('fr') ? 'fr' : 'en');
 const t = (k) => T[lang][k];
@@ -23,7 +26,7 @@ const params = new URLSearchParams(location.search);
 let room = cleanRoom(params.get('r'));
 const id = store.get('us-id') || randCode(10); store.set('us-id', id);
 let zone = params.get('z'), seat = null, link = null;
-let scene = 'lobby', t0 = Date.now(), heardAt = 0, taps = 0, holding = false;
+let scene = 'lobby', t0 = Date.now(), heardAt = 0, taps = 0, holding = false, snd = 'both', synth = null;
 if (room) $('codeRow').style.display = 'none'; else $('zones').style.display = 'none';
 $('codeGo').onclick = () => { const r = cleanRoom($('codeIn').value); if (r.length === 4) { room = r; $('codeRow').style.display = 'none'; $('zones').style.display = ''; } };
 for (const b of document.querySelectorAll('[data-z]')) b.onclick = () => start(b.dataset.z);
@@ -31,6 +34,8 @@ if (room && zone) $('zones').querySelector(`[data-z="${zone}"]`)?.classList.add(
 
 async function start(z) {
   zone = z; seat = seatOf(id, zone);
+  try { synth = new Synth(() => (link ? link.now() : Date.now()), true); synth.c.resume(); } catch {} // unlocked by this very tap
+  buildPads();
   document.body.classList.add('in');
   awake();
   try { await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); } catch {}
@@ -43,6 +48,7 @@ async function start(z) {
 function onMessage(m) {
   if (m.t !== 's') return;
   heardAt = Date.now();
+  if (m.snd) snd = m.snd;
   if (m.sc !== scene || m.t0 !== t0) { scene = m.sc; t0 = m.t0; hintFor(); }
 }
 function flush() {
@@ -54,10 +60,31 @@ let shown = '';
 function hintFor() { const k = Date.now() - heardAt > 9000 && heardAt ? 'lost' : scene; if (k === shown) return; shown = k; const h = $('hint'); h.classList.remove('on'); void h.offsetWidth; h.textContent = t(k) || ''; h.classList.add('on'); }
 setInterval(() => { hintFor(); $('dot').className = 'dot ' + (heardAt && Date.now() - heardAt < 9000 ? 'ok' : 'off'); }, 1000);
 
+// ---------------------------------------------------------------- the pads: this phone's part of the orchestra
+function buildPads() {
+  const wrap = $('pads'); wrap.className = 'pads z-' + zone;
+  const labels = t('p' + zone), hue = ZH[zone];
+  wrap.innerHTML = PADS[zone].map((_, i) => `<button class="pad" data-i="${i}" style="--h:${hue + (i - 1.5) * 8}"><span>${labels[i]}</span></button>`).join('');
+  $('sect').textContent = t('s' + zone);
+  for (const b of wrap.children) b.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); hit(+b.dataset.i, b, e); });
+}
+function hit(i, el, e) {
+  const now = link ? link.now() : Date.now();
+  const s = Math.ceil((now + 25 - t0) / STEP), ms = t0 + s * STEP; // the next sixteenth on the room's clock
+  if (synth && snd !== 'pa') synth.pad(zone, i, ms, scene, t0, 0.8);
+  link?.post({ t: 'n', id, z: zone, p: i, s });
+  taps++;
+  el.classList.remove('hit'); void el.offsetWidth; el.classList.add('hit');
+  ripples.push({ x: e.clientX, y: e.clientY, t: performance.now() });
+  try { navigator.vibrate?.(10); } catch {}
+}
+const playing = () => PLAYABLE.has(scene) && !(scene === 'drop' && (link ? link.now() : Date.now()) - t0 < DROP_IN);
+setInterval(() => document.body.classList.toggle('play', !!seat && playing()), 120);
+
 // ---------------------------------------------------------------- the finger
 const ripples = [];
 addEventListener('pointerdown', (e) => {
-  if (!seat || e.target.closest('button, input')) return;
+  if (!seat || e.target.closest('button, input') || playing()) return;
   taps++; holding = true;
   ripples.push({ x: e.clientX, y: e.clientY, t: performance.now() });
   try { navigator.vibrate?.(12); } catch {} // Android only; iPhone has no vibration on the web

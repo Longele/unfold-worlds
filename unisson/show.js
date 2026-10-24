@@ -13,9 +13,21 @@ export function seatOf(id, zone) {
   const r1 = ((h >>> 0) % 10007) / 10007, r2 = ((h >>> 8) % 9973) / 9973;
   return { zone, x: clamp(ZX[zone] + (r1 - 0.5) * 0.3, 0.02, 0.98), y: r2, r: r1 };
 }
+// the harmony everyone plays in: D minor, i VI III VII (Dm9, Bbmaj7, Fmaj7, Csus2), and its pentatonic
+export const CHORDS = [[50, 53, 57, 60, 64], [46, 50, 53, 57, 62], [41, 45, 48, 52, 57], [48, 50, 55, 60, 62]];
+export const ROOTS = [38, 34, 41, 36];
+export const SCALE = [62, 65, 67, 69, 72, 74, 77, 79, 81, 84];
+export const STEP = BEAT / 4;
+// which chord is sounding: the awakening rocks between two chords, everything else walks the four, one per bar
+export const chordAt = (scene, e) => (scene === 'eveil' ? Math.floor(Math.max(0, e) / (2 * BAR)) % 2 : Math.floor(Math.max(0, e) / BAR) % 4);
+// each part of the room is a section of the orchestra, each phone a set of pads
+export const PADS = { g: ['kick', 'clap', 'snare', 'hat'], c: ['root', 'fifth', 'stab', 'high'], d: [0, 1, 2, 3, 4] };
+export const PLAYABLE = new Set(['eveil', 'vague', 'drop', 'jam']);
 export const DROP_IN = 4 * BEAT; // the countdown before the drop: 3, 2, 1 (one beat each) and a breath
 // a chosen palette (sky, gold, rose, violet, teal): the room never turns a muddy hue
 export const PAL = [200, 38, 335, 268, 172];
+// one colour per section, the same on the big screen and in every hand: rhythm sky, bass gold, melody rose
+export const ZH = { g: 200, c: 38, d: 335 };
 const pal = (i) => PAL[((i % PAL.length) + PAL.length) % PAL.length];
 
 // returns { h, s, l, a } (a = how lit the screen is, 0..1) and an optional big text for the phone
@@ -48,6 +60,10 @@ export function light(scene, t, t0, seat) {
       const hit = Math.pow(1 - (db % 1), 2.2); // a soft pulse on every beat (1.7 a second at 100 BPM)
       const hue = pal(ZONES.indexOf(seat.zone) + bar);
       return { h: hue, s: 90, l: 55, a: 0.4 + 0.6 * hit };
+    }
+    case 'jam': { // the room plays: each section in its colour, breathing on the beat
+      const pulse = Math.pow(1 - (Math.max(0, b) % 1), 3);
+      return { h: ZH[seat.zone], s: 80, l: 55, a: 0.16 + 0.14 * pulse };
     }
     case 'coeur': { // one heart for the whole room, slowing down
       const rate = 70 - Math.min(40, e / 1500), per = 60000 / rate, f = (e % per) / per;

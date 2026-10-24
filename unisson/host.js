@@ -1,16 +1,18 @@
 // UNISSON big screen: the room as points of light, the QR code and the live count, the music on the venue
 // sound system, and the control bar that fires each moment. A simulated crowd lets it be shown without a room.
-import { screen, randCode, cleanRoom } from './net.js?v=202610241030';
-import { light, seatOf, ZONES, BEAT, BAR, DROP_IN, PAL } from './show.js?v=202610241030';
-import { Music } from './music.js?v=202610241030';
+import { screen, randCode, cleanRoom } from './net.js?v=202610241130';
+import { light, seatOf, ZONES, BEAT, BAR, DROP_IN, PAL, STEP, PADS } from './show.js?v=202610241130';
+import { Music } from './music.js?v=202610241130';
 
 const $ = (id) => document.getElementById(id);
 const T = {
   fr: { phones: 'téléphones', kick: 'Sortez vos téléphones', lobbyT: 'Ce soir, c’est vous l’orchestre', code: 'Code', openS: 'L’écran de la salle. Branchez-le sur la sono, puis ouvrez la salle.', openB: 'Ouvrir la salle',
-    cLobby: 'Accueil', cEveil: 'L’éveil', cVague: 'La vague', cDrop: 'Le drop', cCoeur: 'Le cœur', cFin: 'Fin', sim: '+ 60 simulés', full: 'Plein écran',
+    cLobby: 'Accueil', cEveil: 'L’éveil', cVague: 'La vague', cDrop: 'Le drop', cJam: 'L’orchestre', cCoeur: 'Le cœur', cFin: 'Fin', sim: '+ 60 simulés', full: 'Plein écran',
+    zg: 'Le rythme', zc: 'Les basses', zd: 'La mélodie', player: 'joueur', players: 'joueurs', tJam: 'C’est vous qui jouez', snd: { both: 'Son : sono + téléphones', pa: 'Son : sono', tel: 'Son : téléphones' },
     tEveil: 'L’éveil', tVague: 'La vague', tDrop: '', tCoeur: 'Un seul cœur', tFin: 'Merci' },
   en: { phones: 'phones', kick: 'Take out your phones', lobbyT: 'Tonight, you are the orchestra', code: 'Code', openS: 'The room screen. Plug it into the sound system, then open the room.', openB: 'Open the room',
-    cLobby: 'Welcome', cEveil: 'Awakening', cVague: 'The wave', cDrop: 'The drop', cCoeur: 'The heart', cFin: 'End', sim: '+ 60 simulated', full: 'Full screen',
+    cLobby: 'Welcome', cEveil: 'Awakening', cVague: 'The wave', cDrop: 'The drop', cJam: 'The orchestra', cCoeur: 'The heart', cFin: 'End', sim: '+ 60 simulated', full: 'Full screen',
+    zg: 'The rhythm', zc: 'The bass', zd: 'The melody', player: 'player', players: 'players', tJam: 'You are the band', snd: { both: 'Sound: PA + phones', pa: 'Sound: PA', tel: 'Sound: phones' },
     tEveil: 'Awakening', tVague: 'The wave', tDrop: '', tCoeur: 'One heart', tFin: 'Thank you' },
 };
 const lang = new URLSearchParams(location.search).get('lang') || ((navigator.language || '').startsWith('fr') ? 'fr' : 'en');
@@ -25,7 +27,8 @@ if (window.qrcode) { const q = window.qrcode(0, 'M'); q.addData(joinUrl); q.make
 
 // ---------------------------------------------------------------- the room
 const phones = new Map(); // id -> { seat, last, flare, sim }
-let scene = 'lobby', t0 = Date.now(), link = null, music = null;
+let scene = 'lobby', t0 = Date.now(), link = null, music = null, snd = 'both';
+const played = { g: [], c: [], d: [] }; // who played lately, per section
 function touch(id, z) {
   let p = phones.get(id);
   if (!p) { p = { seat: seatOf(id, ZONES.includes(z) ? z : 'c'), last: 0, flare: 0, born: performance.now() }; phones.set(id, p); }
@@ -35,6 +38,7 @@ function onMessage(m) {
   if (!m || !m.id && m.t !== 'p') return;
   if (m.t === 'p') { link?.send({ t: 'q', k: m.k, h: Date.now() }); return; }
   const p = touch(m.id, m.z);
+  if (m.t === 'n') { if (snd !== 'tel') music?.note(p.seat.zone, m.p | 0, m.s | 0); else music?.crowd(1, live()); p.flare = Math.min(1, p.flare + 0.5); played[p.seat.zone].push({ t: Date.now(), id: m.id }); return; }
   if (m.t === 'b' && m.n > 0) { p.flare = Math.min(1, p.flare + 0.35 + m.n * 0.1); music?.crowd(m.n, live()); }
 }
 const live = () => { let n = 0; const now = Date.now(); for (const p of phones.values()) if (p.sim || now - p.last < 13000) n++; return n; };
@@ -44,31 +48,44 @@ function simulate(k = 60) {
   for (let i = 0; i < k; i++) { const id = 'sim-' + randCode(8), p = touch(id, ZONES[(Math.random() * 3) | 0]); p.sim = true; p.rate = 0.3 + Math.random(); }
 }
 setInterval(() => {
-  const mood = { lobby: 0, eveil: 0.18, vague: 0.5, drop: 1.4, coeur: 0.3, fin: 0 }[scene] || 0;
+  const mood = { lobby: 0, eveil: 0.18, vague: 0.5, drop: 1.4, jam: 0.9, coeur: 0.3, fin: 0 }[scene] || 0;
   let total = 0;
   for (const p of phones.values()) if (p.sim && Math.random() < mood * p.rate * 0.25) { const n = 1 + ((Math.random() * 2) | 0); p.flare = Math.min(1, p.flare + 0.4); total += n; }
   if (total) music?.crowd(total, live());
+  // simulated players play real notes too, on the next sixteenth
+  if (['eveil', 'vague', 'drop', 'jam'].includes(scene)) for (const p of phones.values()) if (p.sim && Math.random() < mood * p.rate * 0.12) {
+    const z = p.seat.zone, s = Math.ceil((Date.now() + 60 - t0) / STEP) + ((Math.random() * 2) | 0);
+    music?.note(z, (Math.random() * PADS[z].length) | 0, s, 0.7); played[z].push({ t: Date.now(), id: p.seat.r });
+  }
 }, 250);
 
 // ---------------------------------------------------------------- cues
 function cue(sc) {
   scene = sc; t0 = Date.now() + 700; // a little lead time so every phone has the cue before it starts
   music?.cue(sc, t0);
-  const msg = { t: 's', sc, t0, n: live() };
+  const msg = { t: 's', sc, t0, n: live(), snd };
   link?.send(msg); setTimeout(() => link?.send(msg), 300);
   document.body.dataset.scene = sc;
   for (const b of document.querySelectorAll('[data-cue]')) b.classList.toggle('on', b.dataset.cue === sc);
-  const ttl = { eveil: 'tEveil', vague: 'tVague', coeur: 'tCoeur', fin: 'tFin' }[sc];
+  const ttl = { eveil: 'tEveil', vague: 'tVague', jam: 'tJam', coeur: 'tCoeur', fin: 'tFin' }[sc];
   const el = $('title'); el.textContent = ttl ? t(ttl) : ''; el.classList.remove('show'); void el.offsetWidth; if (ttl) el.classList.add('show');
 }
-setInterval(() => link?.send({ t: 's', sc: scene, t0, n: live() }), 1500); // late joiners catch up
+setInterval(() => link?.send({ t: 's', sc: scene, t0, n: live(), snd }), 1500); // late joiners catch up
+// the three sections at the foot of the screen, with how many are playing now
+setInterval(() => {
+  const now = Date.now();
+  for (const z of ZONES) { played[z] = played[z].filter((x) => now - x.t < 3000); const who = new Set(played[z].map((x) => x.id)).size, el = document.querySelector(`.sects [data-z="${z}"]`); el.querySelector('i').textContent = `${who} ${t(who === 1 ? 'player' : 'players')}`; el.classList.toggle('hot', played[z].length > 4); }
+}, 400);
+const sndBtn = $('snd'), MODES = ['both', 'pa', 'tel'];
+sndBtn.textContent = t('snd')[snd];
+sndBtn.onclick = () => { snd = MODES[(MODES.indexOf(snd) + 1) % 3]; sndBtn.textContent = t('snd')[snd]; link?.send({ t: 's', sc: scene, t0, n: live(), snd }); };
 setInterval(() => { $('n').textContent = live().toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-US'); }, 400);
 for (const b of document.querySelectorAll('[data-cue]')) b.onclick = () => cue(b.dataset.cue);
 $('sim').onclick = () => simulate(60);
 $('full').onclick = () => { const d = document.documentElement; (d.requestFullscreen || d.webkitRequestFullscreen)?.call(d); };
 addEventListener('keydown', (e) => {
   if (e.key === 'h' || e.key === 'H') document.body.classList.toggle('bare');
-  const k = { 1: 'lobby', 2: 'eveil', 3: 'vague', 4: 'drop', 5: 'coeur', 6: 'fin' }[e.key]; if (k) cue(k);
+  const k = { 1: 'lobby', 2: 'eveil', 3: 'vague', 4: 'drop', 5: 'jam', 6: 'coeur', 7: 'fin' }[e.key]; if (k) cue(k);
 });
 $('go').onclick = async () => {
   music = new Music(); await music.resume(); music.cue(scene, t0);
