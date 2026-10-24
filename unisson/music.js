@@ -3,7 +3,8 @@
 // the shared clock: a note is scheduled on the AudioContext timeline at its Date.now() instant (plus the phone's
 // offset to the screen). The crowd plays real notes, but on the next sixteenth and inside the current chord,
 // so a room of thousands always sounds in time and in tune.
-import { BEAT, STEP, CHORDS, ROOTS, SCALE, chordAt, score, COUNT_IN, partOf } from './show.js?v=202610241515';
+import { BEAT, STEP, CHORDS, ROOTS, SCALE, chordAt, score, COUNT_IN, partOf } from './show.js?v=202610241630';
+import { MOMENTS, DRAW, BATTLE } from './moments.js?v=202610241630';
 
 const N = (m) => 440 * Math.pow(2, (m - 69) / 12);
 
@@ -103,13 +104,14 @@ export class Music extends Synth {
   resume() { return this.c.resume(); }
   sync() { this.base = this.c.currentTime - Date.now() / 1000; } // AudioContext time for a Date.now() instant
   at(ms) { return ms / 1000 + this.base; }
-  cue(scene, t0) { this.scene = scene; this.t0 = t0; this.step = Math.max(0, Math.ceil((Date.now() - t0) / (BEAT / 4))); this.held = null; }
+  cue(scene, t0, mx = null) { this.scene = scene; this.t0 = t0; this.mx = mx; this.sched = new Set(); this.step = Math.max(0, Math.ceil((Date.now() - t0) / (BEAT / 4))); this.held = null; }
   crowd(n, phones) { this.taps += n; this.energy = Math.min(1, this.energy * 0.9 + (n / Math.max(4, phones * 0.6)) * 0.6); }
 
   // ---------------------------------------------------------------- the score, one sixteenth at a time
   tick() {
     if (this.c.state !== 'running') return;
     if (this.scene === 'chant' && this.song) { this.chant(); return; }
+    if (MOMENTS.has(this.scene)) { this.moment(); return; }
     if (Math.abs(this.c.currentTime - Date.now() / 1000 - this.base) > 0.03) this.sync();
     const ahead = Date.now() + 160;
     while (this.t0 + this.step * BEAT / 4 < ahead) { this.play(this.step, this.at(this.t0 + this.step * BEAT / 4)); this.step++; }
@@ -169,6 +171,37 @@ export class Music extends Synth {
         if (s === 0) this.wash([50, 54, 57, 62, 66], t, 9, 0.08, 1400); // D major: the resolution
         break;
     }
+  }
+
+  // ---------------------------------------------------------------- the moments: each sound scheduled once, ahead
+  moment() {
+    if (Math.abs(this.c.currentTime - Date.now() / 1000 - this.base) > 0.03) this.sync();
+    const now = Date.now(), ahead = now + 160, x = this.mx || {}, done = (this.sched ||= new Set());
+    const once = (k, ms, f) => { if (ms < ahead && ms > now - 80 && !done.has(k)) { done.add(k); f(this.at(Math.max(ms, now + 5))); } };
+    switch (this.scene) {
+      case 'tirage': // a roll that slows with the light, then the winner
+        DRAW.steps.forEach((s, i) => once('d' + i, this.t0 + s, (t) => this.tickSound(t, 0.5 + i / DRAW.steps.length)));
+        once('dw', this.t0 + DRAW.end, (t) => { this.boom(t); [74, 78, 81, 86].forEach((m, i) => this.bell(N(m), t + 0.12 + i * 0.11, 1600, 0.16)); });
+        break;
+      case 'compte': { // the last ten seconds ticked, then the celebration
+        for (let s = 10; s >= 1; s--) once('c' + s, x.zero - s * 1000, (t) => this.tickSound(t, s <= 3 ? 1.6 : 1));
+        once('c0', x.zero, (t) => { this.boom(t); this.wash([50, 54, 57, 62, 66, 69], t, 8, 0.09, 2400); [74, 78, 81, 86, 90].forEach((m, i) => this.bell(N(m), t + 0.2 + i * 0.13, 2200, 0.14)); });
+        break;
+      }
+      case 'bataille': { // 3, 2, 1, then a driving beat for thirty seconds, then the winner
+        for (let i = 0; i < 3; i++) once('b' + i, this.t0 + i * 1000, (t) => this.tickSound(t, 1.2));
+        const beat = 60000 / 140, start = this.t0 + BATTLE.lead, stop = start + BATTLE.len;
+        once('bgo', start, (t) => this.boom(t));
+        for (let k = 0; ; k++) {
+          const ms = start + k * beat / 2; if (ms > ahead || ms >= stop) break; if (ms < now - 80) continue;
+          once('k' + k, ms, (t) => { const b = k / 2, E = this.energy; if (k % 2 === 0) this.kick(t, 0.9); this.hat(t, k % 2 ? 0.05 : 0.08); if (k % 4 === 2) this.clap(t, 0.25 + 0.3 * E); if (k % 16 === 0) this.sub(N(38 + [0, 3, 5, 7][(k / 16) % 4]), t, beat * 7 / 1000, 0.35); if (E > 0.5 && k % 2) this.snare(t, 0.05 + 0.06 * E); void b; });
+        }
+        if (x.win) once('bw', now, (t) => { this.boom(t); [74, 78, 81, 86].forEach((m, i) => this.bell(N(m), t + 0.1 + i * 0.1, 1400, 0.16)); });
+        break;
+      }
+    }
+    if (done.size > 2000) done.clear();
+    this.energy *= 0.995;
   }
 
   // ---------------------------------------------------------------- a song, rung by the room
