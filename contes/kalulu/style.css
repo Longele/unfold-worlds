@@ -190,3 +190,5 @@ body.night #light { background: radial-gradient(ellipse 50% 45% at var(--lx, 62%
 #end { background: radial-gradient(ellipse at 50% 50%, rgba(10, 12, 30, .25), rgba(8, 8, 20, .8)) !important; }
 #end p { margin-top: 20px !important; }
 body.ended .cap { opacity: 0 !important; transition: opacity .6s; }
+/* phones: the lamp light stays put (a drifting light reads as the picture moving) */
+@media (pointer: coarse) { #light { animation: none; } #ambient { transition: none; } }

@@ -200,8 +200,8 @@ export class Stage {
     this.fx = new Particles($('#fx', root)); this.hot = $('#hot', root); this.sky = $('#sky', root);
     this.actors = {}; this.props = []; this.par = { x: 0, y: 0, tx: 0, ty: 0 };
     this.cam = $('#cam', root); this.focus = null; this.cz = 1; this.cx = W / 2; this.cy = H / 2;
-    this.scale = 1; this.fit(); addEventListener('resize', () => this.fit());
     this.still = matchMedia('(pointer: coarse)').matches;
+    this.scale = 1; this.fit(); addEventListener('resize', () => this.fit());
     if (!this.still) addEventListener('pointermove', (e) => { this.par.tx = e.clientX / innerWidth - 0.5; this.par.ty = e.clientY / innerHeight - 0.5; }, { passive: true });
     let last = performance.now();
     const loop = (now) => {
@@ -230,6 +230,11 @@ export class Stage {
   fit() {
     // the whole scene stays on screen: at most a sliver is cropped (10 %), whatever the phone's shape;
     // what is left at the edges is filled by the same picture, blurred, so it never looks like bars
+    // phones: the browser bars come and go and change the height a little; the scene must not jump with them,
+    // so it is only refitted when the phone turns (width changes) or the height really changes
+    if (this.still && this.fw === innerWidth && Math.abs(innerHeight - this.fh) < innerHeight * 0.22) return;
+    this.fw = innerWidth; this.fh = innerHeight;
+    this.root.style.top = `${(innerHeight / 2).toFixed(1)}px`; // pinned in pixels, not to the (resizing) window
     const cover = Math.max(innerWidth / W, innerHeight / H), contain = Math.min(innerWidth / W, innerHeight / H);
     const sc = Math.min(cover, contain * 1.1);
     this.scale = sc;
