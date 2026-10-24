@@ -1,6 +1,6 @@
 // Kalulu: the book around the stage. Language, the read-along caption, page navigation, pause, the end card.
-import { Stage, Audio, sleep } from './engine.js?v=202610232305';
-import { makeStory, SPEAKER } from './story.js?v=202610232305';
+import { Stage, Audio, sleep } from './engine.js?v=202610232330';
+import { makeStory, SPEAKER } from './story.js?v=202610232330';
 
 const $ = (id) => document.getElementById(id);
 const T = {
@@ -102,6 +102,13 @@ $('stage').addEventListener('pointerdown', (e) => {
   const p = stage.pt(e);
   for (const f of stage.fx.fireflies) if (Math.hypot(f.x - p.x, f.y - p.y) < 140) { f.b = 1; audio.sfx('sfx/chime.mp3', 0.5, 0.8 + Math.random() * 0.6); }
 });
+
+// ------------------------------------------------------------------ the page never moves under the finger
+// (iOS lets a drag bounce the whole page and a quick double tap zoom it, whatever touch-action says)
+document.addEventListener('touchmove', (e) => { if (e.touches.length > 1 || !e.target.closest('button, a')) e.preventDefault(); }, { passive: false });
+let lastTouch = 0;
+document.addEventListener('touchend', (e) => { const n = performance.now(); if (n - lastTouch < 350 && !e.target.closest('button, a')) e.preventDefault(); lastTouch = n; }, { passive: false });
+for (const g of ['gesturestart', 'gesturechange']) document.addEventListener(g, (e) => e.preventDefault(), { passive: false });
 
 // ------------------------------------------------------------------ keep the screen awake
 let wakeLock = null, wakeVid = null;
