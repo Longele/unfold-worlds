@@ -25,6 +25,8 @@ export class Audio {
     try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch {}
     try { const a = document.createElement('audio'); a.setAttribute('playsinline', ''); a.loop = true; a.volume = 0.01; a.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAAAA'; a.play().catch(() => {}); } catch {}
   }
+  // phones have little memory for decoded sound: drop what the story no longer needs
+  trim(keep) { for (const u of [...this.buf.keys()]) if (!keep(u)) this.buf.delete(u); }
   load(url) {
     if (!this.ctx) return Promise.resolve(null);
     if (!this.buf.has(url)) this.buf.set(url, fetch(url).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(url))).then((a) => new Promise((res, rej) => this.ctx.decodeAudioData(a, res, rej))).catch(() => null));

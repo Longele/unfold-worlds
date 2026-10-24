@@ -1,6 +1,6 @@
 // Noah and the ark (Genesis 6 to 9): the seven pages. Each page sets its stage, then runs as a little script:
 // voices, puppet moves, sounds, and the moments where the child's hand moves the story on.
-import { W, H, sleep, tapZone, dragAlong, rapid, swipeAcross, hint } from './engine.js?v=202610240100';
+import { W, H, sleep, tapZone, dragAlong, rapid, swipeAcross, hint } from './engine.js?v=202610240140';
 
 export const SPEAKER = { o: 'noe' };
 const GROUND = 975;

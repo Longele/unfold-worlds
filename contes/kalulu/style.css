@@ -209,3 +209,8 @@ body.ended .cap { opacity: 0 !important; transition: opacity .6s; }
   #pause { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(26, 13, 6, .85); }
   #iris:not(.run) { display: none; }
 }
+
+/* phones: the blurred surround is drawn small then enlarged (a full-screen blur costs a lot of GPU memory on iOS) */
+@media (pointer: coarse) {
+  #ambient { inset: auto; left: -3%; top: -3%; width: 27%; height: 27%; transform-origin: 0 0; transform: scale(4); filter: blur(7px) brightness(.62) saturate(1.1); }
+}

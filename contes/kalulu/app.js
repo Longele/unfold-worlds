@@ -1,6 +1,6 @@
 // Kalulu: the book around the stage. Language, the read-along caption, page navigation, pause, the end card.
-import { Stage, Audio, sleep } from './engine.js?v=202610240110';
-import { makeStory, SPEAKER } from './story.js?v=202610240110';
+import { Stage, Audio, sleep } from './engine.js?v=202610240140';
+import { makeStory, SPEAKER } from './story.js?v=202610240140';
 
 const $ = (id) => document.getElementById(id);
 const T = {
@@ -54,6 +54,10 @@ async function go(i) {
   audio.stopVoice(); stage.hot.innerHTML = ''; stage.onFrame = null; stage.fx.setFireflies(0);
   page = Math.max(0, Math.min(pages.length - 1, i));
   const P = pages[page];
+  // only this page's and the next page's voices stay decoded (an iPhone tab dies past ~a hundred MB of sound)
+  const near = (u) => [`/p${page + 1}`, `/p${page + 2}`].some((k) => u.includes(k));
+  audio.trim((u) => (u.includes('voice/') ? near(u) || u.endsWith('/fin.mp3') : !u.includes('/amb-') || u.endsWith(`/${P.amb}.mp3`)));
+  for (const id of Object.keys(timings[lang] || {})) if (near(`/${id}`)) audio.load(`voice/${lang}/${id}.mp3`);
   dots.innerHTML = pages.map((_, k) => `<i class="${k < page ? 'done' : k === page ? 'on' : ''}"></i>`).join('');
   $('end').classList.remove('on'); document.body.classList.remove('ended'); ember(false);
   document.body.classList.toggle('night', !!P.night);
@@ -197,7 +201,6 @@ $('go').onclick = async () => {
   for (const n of ['op', 'p1a', 'p1b']) audio.load(`voice/${lang}/${n}.mp3`);
   await opening();
   go(0);
-  for (const id of Object.keys(timings[lang])) audio.load(`voice/${lang}/${id}.mp3`);
 };
 
 // the cover: the night-to-dawn theme plays softly once the reader touches anything
