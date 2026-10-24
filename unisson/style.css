@@ -53,7 +53,22 @@ canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 .sects [data-z="g"] b { color: var(--sky); } .sects [data-z="c"] b { color: var(--gold); } .sects [data-z="d"] b { color: var(--rose); }
 .sects div.hot { transform: translateY(-6px); } .sects div.hot b { text-shadow: 0 0 30px currentColor; }
 
+.lyrics { position: fixed; left: 0; right: 0; top: 40vh; z-index: 2; text-align: center; pointer-events: none; opacity: 0; transition: opacity .8s; }
+.screen[data-scene="chant"] .lyrics { opacity: 1; }
+.lyrics .now { margin: 0; font-weight: 300; font-size: clamp(40px, 5.2vw, 88px); line-height: 1.1; text-shadow: 0 0 40px rgba(0, 0, 0, .9); }
+.lyrics .now span { opacity: .35; transition: opacity .15s, color .15s; } .lyrics .now span.lit { opacity: 1; color: #fff6e6; text-shadow: 0 0 30px rgba(255, 210, 150, .6); }
+.lyrics .next { margin: 14px 0 0; font-style: italic; font-size: clamp(22px, 2.4vw, 38px); opacity: .45; }
+.screen[data-scene="chant"] .sects { opacity: 1; }
+
 /* ---------------------------------------------------------------- the phone */
+.bell { position: fixed; left: 0; right: 0; top: 46%; z-index: 2; transform: translateY(-50%); text-align: center; pointer-events: none; opacity: 0; transition: opacity .5s; }
+.chant .bell { opacity: 1; }
+.bell .names { display: flex; justify-content: center; gap: 14px; font-weight: 300; font-size: 64px; line-height: 1; text-shadow: 0 2px 24px rgba(0, 0, 0, .5); }
+.bell .cue { position: absolute; left: 0; right: 0; top: calc(50% + 50vmin); margin: 0; font-family: var(--mono); font-size: 13px; letter-spacing: .26em; text-transform: uppercase; opacity: .7; }
+.bell .cue.now { font-family: var(--serif); font-size: 42px; letter-spacing: 0; text-transform: none; opacity: 1; color: #fff; text-shadow: 0 0 30px rgba(255, 255, 255, .7); }
+.bell .cue.ready { opacity: 1; color: var(--gold); }
+.chant .hint { display: none; }
+
 .pads { position: fixed; left: 0; right: 0; top: max(64px, calc(env(safe-area-inset-top) + 48px)); bottom: max(120px, calc(env(safe-area-inset-bottom) + 100px)); z-index: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px; opacity: 0; pointer-events: none; transform: scale(.96); transition: opacity .5s, transform .5s var(--ease); }
 .pads.z-d { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); } .pads.z-d .pad:first-child { grid-column: 1 / span 2; }
 .play .pads { opacity: 1; pointer-events: auto; transform: none; }

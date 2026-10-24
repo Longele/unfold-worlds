@@ -3,7 +3,7 @@
 // the shared clock: a note is scheduled on the AudioContext timeline at its Date.now() instant (plus the phone's
 // offset to the screen). The crowd plays real notes, but on the next sixteenth and inside the current chord,
 // so a room of thousands always sounds in time and in tune.
-import { BEAT, STEP, CHORDS, ROOTS, SCALE, chordAt } from './show.js?v=202610241130';
+import { BEAT, STEP, CHORDS, ROOTS, SCALE, chordAt, score, COUNT_IN } from './show.js?v=202610241300';
 
 const N = (m) => 440 * Math.pow(2, (m - 69) / 12);
 
@@ -79,6 +79,13 @@ export class Synth {
   }
   boom(t) { this.kick(t, 1.2); this.burst(t, 'lowpass', 900, 0.5, 0.5, 1.6, 0.9); const c = this.c, o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(60, t); o.frequency.exponentialRampToValueAtTime(30, t + 1.5); o.connect(g); this.env(g, t, 0.005, 0.6, 0.2, 1.4); g.connect(this.out); o.start(t); o.stop(t + 2); }
   heart(t, vol) { this.kick(t, 0.55 * vol); this.kick(t + 0.17, 0.35 * vol); }
+  // a handbell: a struck tone with its bell partials, ringing on
+  bell(fr, t, len, vol) {
+    const c = this.c, g = c.createGain(), ring = Math.min(3.2, len / 1000 + 1.2);
+    for (const [k, a] of [[1, 1], [2.01, 0.42], [3.0, 0.16], [4.17, 0.08], [0.5, 0.12]]) { const o = c.createOscillator(), og = c.createGain(); o.type = 'sine'; o.frequency.value = fr * k; og.gain.value = a; o.connect(og).connect(g); o.start(t); o.stop(t + ring + 0.2); }
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.006); g.gain.exponentialRampToValueAtTime(vol * 0.35, t + 0.25); g.gain.exponentialRampToValueAtTime(0.0001, t + ring);
+    this.send(g, 0.8, 0.7); this.burst(t, 'bandpass', fr * 4, 2, vol * 0.25, 0.03, 0.2);
+  }
   stab(notes, t, vol) {
     const c = this.c, f = c.createBiquadFilter(), g = c.createGain(); f.type = 'lowpass'; f.frequency.setValueAtTime(3500, t); f.frequency.exponentialRampToValueAtTime(900, t + 0.35);
     for (const m of notes.slice(0, 4)) { const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.value = N(m + 12); o.connect(f); o.start(t); o.stop(t + 0.6); }
@@ -102,6 +109,7 @@ export class Music extends Synth {
   // ---------------------------------------------------------------- the score, one sixteenth at a time
   tick() {
     if (this.c.state !== 'running') return;
+    if (this.scene === 'chant' && this.song) { this.chant(); return; }
     if (Math.abs(this.c.currentTime - Date.now() / 1000 - this.base) > 0.03) this.sync();
     const ahead = Date.now() + 160;
     while (this.t0 + this.step * BEAT / 4 < ahead) { this.play(this.step, this.at(this.t0 + this.step * BEAT / 4)); this.step++; }
@@ -163,6 +171,34 @@ export class Music extends Synth {
     }
   }
 
+  // ---------------------------------------------------------------- a song, rung by the room
+  cueSong(id, t0, net = true) {
+    this.scene = 'chant'; this.t0 = t0; this.song = score(id); this.net = net; this.rung = new Map(); this.ghost = new Set(); this.cbeat = 0;
+  }
+  chant() {
+    const sg = this.song, ahead = Date.now() + 160;
+    // count-in, then a soft bed of the song's chords, bar by bar
+    while (this.t0 + this.cbeat * sg.beat < ahead) {
+      const b = this.cbeat, t = this.at(this.t0 + b * sg.beat);
+      if (b < COUNT_IN) this.tickSound(t, b === 0 ? 1.5 : 1);
+      else if ((b - COUNT_IN) % sg.meter === 0) { const ch = sg.chords[Math.floor((b - COUNT_IN) / sg.meter)]; if (ch) { this.wash(ch, t, sg.beat * sg.meter / 1000, 0.035, 1100); this.sub(440 * Math.pow(2, (ch[0] - 12 - 69) / 12), t, sg.beat * sg.meter * 0.9 / 1000, 0.18); } }
+      this.cbeat++;
+    }
+    // the safety net: every note rings softly on time, so the song never breaks; the room rings it loud
+    if (this.net) for (const n of sg.notes) { const ms = this.t0 + n.at; if (ms < ahead && ms > Date.now() - 50 && !this.ghost.has(n.i)) { this.ghost.add(n.i); this.bell(440 * Math.pow(2, (n.m - 69) / 12), this.at(ms), n.len, 0.05); } }
+  }
+  // a phone rang note k: early or on time, it sounds exactly on its beat; late, only if no net already sang it
+  ring(k) {
+    if (this.scene !== 'chant' || !this.song) return false;
+    const n = this.song.notes[k]; if (!n) return false;
+    const ms = this.t0 + n.at, now = Date.now(), c = (this.rung.get(k) || 0) + 1; this.rung.set(k, c);
+    if (c > 3) return true;
+    const fr = 440 * Math.pow(2, (n.m - 69) / 12), vol = c === 1 ? 0.2 : 0.08;
+    if (now < ms - 15) this.bell(fr, this.at(ms), n.len, vol);
+    else if (now < ms + 250 && !this.net) this.bell(fr, this.at(now + 10), n.len, vol);
+    else if (now < ms + 250) this.bell(fr, this.at(now + 10), n.len, vol * 0.35);
+    return true;
+  }
   // a note from a phone: on its sixteenth, or the next one if it arrived late
   note(zone, i, s, vol = 1) {
     if (!['eveil', 'vague', 'drop', 'jam'].includes(this.scene)) return false;
