@@ -1,6 +1,6 @@
 // Kalulu and the great tug of war: the eight pages. Each page sets its stage, then runs as a little script:
 // voices, puppet moves, sounds, and the moments where the child's hand moves the story on.
-import { W, H, sleep, tapZone, dragAlong, rapid, swipeAcross, choose, hint } from './engine.js?v=202610232140';
+import { W, H, sleep, tapZone, dragAlong, rapid, swipeAcross, choose, hint } from './engine.js?v=202610232230';
 
 const SPEAKER = { k: 'kalulu', e: 'elephant', h: 'hippo' };
 const GROUND = 930;

@@ -1,6 +1,6 @@
 // Kalulu: the book around the stage. Language, the read-along caption, page navigation, pause, the end card.
-import { Stage, Audio, sleep } from './engine.js?v=202610232140';
-import { makeStory, SPEAKER } from './story.js?v=202610232140';
+import { Stage, Audio, sleep } from './engine.js?v=202610232230';
+import { makeStory, SPEAKER } from './story.js?v=202610232230';
 
 const $ = (id) => document.getElementById(id);
 const T = {
@@ -55,7 +55,7 @@ async function go(i) {
   page = Math.max(0, Math.min(pages.length - 1, i));
   const P = pages[page];
   dots.innerHTML = pages.map((_, k) => `<i class="${k < page ? 'done' : k === page ? 'on' : ''}"></i>`).join('');
-  $('end').classList.remove('on');
+  $('end').classList.remove('on'); document.body.classList.remove('ended'); ember(false);
   document.body.classList.toggle('night', !!P.night);
   cap.className = 'cap';
   stage.root.classList.add('turning'); stage.turnPage(); stage.focus = null; if (page > 0 || i > 0) audio.sfx('sfx/sunrise.mp3', 0.28, 0.9);
@@ -72,9 +72,28 @@ async function go(i) {
     if (r === run && page < pages.length - 1) { await sleep(900); if (r === run) go(page + 1); }
   } catch (e) { if (e.message !== 'abort') console.error(e); }
 }
+// golden letters that rise one by one out of the dark
+function goldLetters(el, text) { el.innerHTML = [...text].map((c, i) => `<span style="--i:${i}">${c === ' ' ? '&nbsp;' : c}</span>`).join(''); }
+let embers = 0;
+function ember(on) { clearInterval(embers); if (on) embers = setInterval(() => stage.fx.burst(0, 0, 'gold', 3), 260); }
 function endCard() {
-  $('end').classList.add('on'); cap.className = 'cap';
+  goldLetters($('end-t'), t('end'));
+  $('end').classList.add('on'); cap.className = 'cap'; document.body.classList.add('ended'); ember(true);
   audio.loop('music', 'sfx/theme.mp3', 'music', 1, 2);
+  audio.sfx('sfx/chime.mp3', 0.45, 0.8);
+  setTimeout(() => { if ($('end').classList.contains('on')) audio.say(`voice/${lang}/fin.mp3`); }, 1600);
+  setTimeout(() => ember(false), 14000);
+}
+// the opening: the lamp is lit, the title rises in gold, the storyteller invites the child in
+async function opening() {
+  const o = $('open'); goldLetters($('open-t'), t('title'));
+  stage.fx.setFireflies(0); ember(true);
+  o.classList.add('on'); audio.sfx('sfx/sunrise.mp3', 0.35, 0.8);
+  if (audio.musicOn) audio.loop('music', 'sfx/theme.mp3', 'music', 0.8, 3);
+  let skip; const skipped = new Promise((r) => { skip = r; o.onpointerdown = r; });
+  await Promise.race([(async () => { await sleep(1400); await audio.say(`voice/${lang}/op.mp3`); await sleep(700); })(), skipped]);
+  o.onpointerdown = null; ember(false);
+  o.classList.remove('on');
 }
 
 // fireflies answer the finger on the last page
@@ -168,6 +187,8 @@ $('go').onclick = async () => {
   audio.stopLoop('music', 1.5);
   await loadTimings(lang);
   if (small() && portrait()) await rotateGate();
+  for (const n of ['op', 'p1a', 'p1b']) audio.load(`voice/${lang}/${n}.mp3`);
+  await opening();
   go(0);
   for (const id of Object.keys(timings[lang])) audio.load(`voice/${lang}/${id}.mp3`);
 };

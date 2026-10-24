@@ -158,6 +158,7 @@ export class Particles {
       if (kind === 'splash') this.ps.push({ k: 'drop', x: x + (Math.random() - 0.5) * 160, y, vx: Math.cos(ang) * sp * 0.6, vy: -200 - Math.random() * 520, r: 3 + Math.random() * 6, a: 0.9, life: 1.4, g: 900 });
       else if (kind === 'bubbles') this.ps.push({ k: 'bubble', x: x + (Math.random() - 0.5) * 120, y: y + Math.random() * 30, vx: (Math.random() - 0.5) * 20, vy: -60 - Math.random() * 90, r: 4 + Math.random() * 10, a: 0.8, life: 1.6 + Math.random() });
       else if (kind === 'leaves') this.ps.push({ k: 'leaf', x, y, vx: Math.cos(ang) * sp * 0.7, vy: -Math.abs(Math.sin(ang)) * sp - 100, r: 8 + Math.random() * 8, a: 1, life: 1.8, g: 500, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 10 });
+      else if (kind === 'gold') this.ps.push({ k: 'spark', x: Math.random() * W, y: H + 20 - Math.random() * 200, vx: (Math.random() - 0.5) * 30, vy: -60 - Math.random() * 120, r: 1.5 + Math.random() * 3, a: 0.9, life: 4 + Math.random() * 4 });
       else if (kind === 'dust') this.ps.push({ k: 'puff', x: x + (Math.random() - 0.5) * 200, y, vx: (Math.random() - 0.5) * 120, vy: -20 - Math.random() * 60, r: 20 + Math.random() * 30, a: 0.35, life: 1.4 });
       else this.ps.push({ k: 'spark', x, y, vx: Math.cos(ang) * sp * 0.5, vy: Math.sin(ang) * sp * 0.5 - 60, r: 2 + Math.random() * 3, a: 1, life: 0.9 + Math.random() * 0.6 });
     }
@@ -200,20 +201,20 @@ export class Stage {
     this.actors = {}; this.props = []; this.par = { x: 0, y: 0, tx: 0, ty: 0 };
     this.cam = $('#cam', root); this.focus = null; this.cz = 1; this.cx = W / 2; this.cy = H / 2;
     this.scale = 1; this.fit(); addEventListener('resize', () => this.fit());
-    addEventListener('pointermove', (e) => { this.par.tx = e.clientX / innerWidth - 0.5; this.par.ty = e.clientY / innerHeight - 0.5; }, { passive: true });
-    addEventListener('deviceorientation', (e) => { if (e.gamma == null) return; this.par.tx = Math.max(-0.5, Math.min(0.5, e.gamma / 50)); this.par.ty = Math.max(-0.5, Math.min(0.5, (e.beta - 40) / 60)); }, { passive: true });
+    this.still = matchMedia('(pointer: coarse)').matches;
+    if (!this.still) addEventListener('pointermove', (e) => { this.par.tx = e.clientX / innerWidth - 0.5; this.par.ty = e.clientY / innerHeight - 0.5; }, { passive: true });
     let last = performance.now();
     const loop = (now) => {
       const dt = Math.min(50, now - last); last = now;
       if (!this.paused) {
         this.par.x = lerp(this.par.x, this.par.tx, 0.04); this.par.y = lerp(this.par.y, this.par.ty, 0.04);
-        const z = 1.04 + Math.sin(now / 9000) * 0.01;
+        const z = this.still ? 1.04 : 1.04 + Math.sin(now / 9000) * 0.01;
         this.bg.style.transform = `translate(${(-this.par.x * 18).toFixed(1)}px, ${(-this.par.y * 10).toFixed(1)}px) scale(${z.toFixed(4)})`;
         this.actorsEl.style.transform = `translate(${(-this.par.x * 34).toFixed(1)}px, ${(-this.par.y * 16).toFixed(1)}px)`;
         this.frontEl.style.transform = `translate(${(-this.par.x * 70).toFixed(1)}px, ${(-this.par.y * 26).toFixed(1)}px)`;
         // camera: lean in a little toward the speaker, ease back when it is the child's turn
-        const busy = this.hot.childElementCount > 0, f = !busy && this.focus && this.actors[this.focus];
-        const tz = f ? 1.07 : 1.0, tx = f ? f.x : W / 2, ty = f ? f.y - f.rig.feet * f.s * 0.55 : H / 2;
+        const busy = this.still || this.hot.childElementCount > 0, f = !busy && this.focus && this.actors[this.focus];
+        const tz = f ? 1.05 : 1.0, tx = f ? f.x : W / 2, ty = f ? f.y - f.rig.feet * f.s * 0.55 : H / 2;
         const k = Math.min(1, dt / 1400);
         this.cz += (tz - this.cz) * k; this.cx += (tx - this.cx) * k; this.cy += (ty - this.cy) * k;
         const ox = (W / 2 - this.cx) * (this.cz - 1), oy = (H / 2 - this.cy) * (this.cz - 1);
