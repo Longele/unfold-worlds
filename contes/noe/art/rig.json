@@ -1,0 +1,166 @@
+{
+ "rigs": {
+  "noe": {
+   "w": 438,
+   "h": 703,
+   "parts": [
+    {
+     "name": "body",
+     "parent": null,
+     "pivot": null
+    },
+    {
+     "name": "head",
+     "parent": "body",
+     "pivot": [
+      196,
+      267
+     ]
+    },
+    {
+     "name": "arm",
+     "parent": "body",
+     "pivot": [
+      291,
+      312
+     ]
+    }
+   ],
+   "feet": 696
+  },
+  "elephant": {
+   "w": 418,
+   "h": 325,
+   "feet": 321,
+   "parts": [
+    {
+     "name": "body",
+     "parent": null,
+     "pivot": null
+    }
+   ]
+  },
+  "giraffe": {
+   "w": 246,
+   "h": 406,
+   "feet": 402,
+   "parts": [
+    {
+     "name": "body",
+     "parent": null,
+     "pivot": null
+    }
+   ]
+  },
+  "lion": {
+   "w": 404,
+   "h": 297,
+   "feet": 293,
+   "parts": [
+    {
+     "name": "body",
+     "parent": null,
+     "pivot": null
+    }
+   ]
+  },
+  "zebra": {
+   "w": 329,
+   "h": 312,
+   "feet": 308,
+   "parts": [
+    {
+     "name": "body",
+     "parent": null,
+     "pivot": null
+    }
+   ]
+  },
+  "camel": {
+   "w": 349,
+   "h": 291,
+   "feet": 287,
+   "parts": [
+    {
+     "name": "body",
+     "parent": null,
+     "pivot": null
+    }
+   ]
+  },
+  "sheep": {
+   "w": 325,
+   "h": 251,
+   "feet": 247,
+   "parts": [
+    {
+     "name": "body",
+     "parent": null,
+     "pivot": null
+    }
+   ]
+  }
+ },
+ "props": {
+  "ark": [
+   {
+    "name": "door",
+    "w": 238,
+    "h": 461,
+    "area": 417409
+   },
+   {
+    "name": "ark",
+    "w": 915,
+    "h": 428,
+    "area": 1233164
+   }
+  ],
+  "props": [
+   {
+    "name": "dove1",
+    "w": 317,
+    "h": 343,
+    "area": 190687
+   },
+   {
+    "name": "dove2",
+    "w": 406,
+    "h": 308,
+    "area": 185750
+   },
+   {
+    "name": "planks",
+    "w": 452,
+    "h": 134,
+    "area": 215153
+   },
+   {
+    "name": "grass",
+    "w": 466,
+    "h": 244,
+    "area": 202148
+   },
+   {
+    "name": "grass2",
+    "w": 346,
+    "h": 256,
+    "area": 161479
+   },
+   {
+    "name": "bush",
+    "w": 296,
+    "h": 226,
+    "area": 174201
+   }
+  ],
+  "scene": [
+   {
+    "name": "waves-front",
+    "w": 2048,
+    "h": 383,
+    "area": 0
+   }
+  ]
+ }
+}

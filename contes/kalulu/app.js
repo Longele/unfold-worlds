@@ -1,11 +1,11 @@
 // Kalulu: the book around the stage. Language, the read-along caption, page navigation, pause, the end card.
-import { Stage, Audio, sleep } from './engine.js?v=202610240010';
-import { makeStory, SPEAKER } from './story.js?v=202610240010';
+import { Stage, Audio, sleep } from './engine.js?v=202610240110';
+import { makeStory, SPEAKER } from './story.js?v=202610240110';
 
 const $ = (id) => document.getElementById(id);
 const T = {
-  fr: { title: 'Kalulu', sub: 'et le grand tir à la corde', tale: 'Un conte bantou', start: 'Commencer l’histoire', starts: 'environ six minutes, à écouter et à toucher', hp: 'meilleur avec le son', elephant: 'L’Éléphant', hippo: 'L’Hippopotame', end: 'Fin', again: 'Relire l’histoire', home: 'Accueil', soon: 'D’autres contes arrivent bientôt', pause: 'En pause', resume: 'Touchez pour reprendre', turn: 'Tournez votre téléphone', turnS: 'l’histoire se lit en largeur', stay: 'Continuer ainsi', cap: 'Texte', music: 'Musique' },
-  en: { title: 'Kalulu', sub: 'and the great tug of war', tale: 'A Bantu folk tale', start: 'Start the story', starts: 'about six minutes, to listen and to touch', hp: 'best with sound on', elephant: 'The Elephant', hippo: 'The Hippo', end: 'The End', again: 'Read it again', home: 'Home', soon: 'More stories are coming soon', pause: 'Paused', resume: 'Tap to continue', turn: 'Turn your phone', turnS: 'the story is told sideways', stay: 'Continue like this', cap: 'Text', music: 'Music' },
+  fr: { title: 'Kalulu', sub: 'et le grand tir à la corde', tale: 'Un conte bantou', start: 'Commencer l’histoire', starts: 'environ six minutes, à écouter et à toucher', hp: 'meilleur avec le son', elephant: 'L’Éléphant', hippo: 'L’Hippopotame', end: 'Fin', again: 'Relire l’histoire', home: 'Tous les contes', soon: 'D’autres contes arrivent bientôt', pause: 'En pause', resume: 'Touchez pour reprendre', turn: 'Tournez votre téléphone', turnS: 'l’histoire se lit en largeur', stay: 'Continuer ainsi', cap: 'Texte', music: 'Musique' },
+  en: { title: 'Kalulu', sub: 'and the great tug of war', tale: 'A Bantu folk tale', start: 'Start the story', starts: 'about six minutes, to listen and to touch', hp: 'best with sound on', elephant: 'The Elephant', hippo: 'The Hippo', end: 'The End', again: 'Read it again', home: 'All the stories', soon: 'More stories are coming soon', pause: 'Paused', resume: 'Tap to continue', turn: 'Turn your phone', turnS: 'the story is told sideways', stay: 'Continue like this', cap: 'Text', music: 'Music' },
 };
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
 let lang = new URLSearchParams(location.search).get('lang') || store.get('kalulu-lang') || ((navigator.language || '').startsWith('fr') ? 'fr' : 'en');
