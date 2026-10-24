@@ -1,7 +1,7 @@
 // Abysses: a descent from the surface to the bottom of the Challenger Deep (10,935 m).
 // One canvas draws the water, the pictures, the creatures, the marine snow, the dark and the lamp;
 // a <video> plays the big moments seen through the lamp; WebAudio carries the voice and the sea.
-import { Audio, sleep } from './audio.js?v=202610240600';
+import { Audio, sleep } from './audio.js?v=202610240800';
 
 const $ = (id) => document.getElementById(id);
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
@@ -40,21 +40,31 @@ const waterAt = (d) => { for (let i = 1; i < WATER.length; i++) if (d <= WATER[i
 // p: where it lives on the track; x: across the screen; s: size as a share of the screen height; axis 'h' slides
 // sideways (on the plain the camera glides along the floor); glow: drawn over the dark
 const C = [
-  { id: 'turtle', p: 0.022, x: 0.74, s: 0.34, swim: 1, fr: ['Tortue verte', 'Au repos, elle peut rester plusieurs heures sous l’eau sans respirer.'], en: ['Green sea turtle', 'Resting, it can stay under water for hours without a breath.'] },
-  { id: 'manta', p: 0.05, x: 0.28, s: 0.5, swim: 1, fr: ['Raie manta', 'Jusqu’à cinq mètres d’envergure, et elle ne mange que du plancton.'], en: ['Manta ray', 'Up to five metres across, and it eats only plankton.'] },
-  { id: 'sardine', p: 0.035, x: 0.5, s: 0, school: 1, fr: ['Sardines', 'En banc serré, elles semblent ne former qu’un seul grand animal.'], en: ['Sardines', 'In a tight school they look like one big animal.'] },
-  { id: 'hatchet', p: 0.125, x: 0.7, s: 0.16, swim: 1, fr: ['Poisson-hachette', 'Son ventre lumineux efface son ombre, vue d’en dessous.'], en: ['Hatchetfish', 'Its glowing belly erases its shadow, seen from below.'] },
-  { id: 'lantern', p: 0.15, x: 0.3, s: 0.12, swim: 1, many: 7, rise: 1, fr: ['Poisson-lanterne', 'L’un des poissons les plus nombreux de la planète.'], en: ['Lanternfish', 'One of the most numerous fish on the planet.'] },
-  { id: 'siphono', p: 0.175, x: 0.66, s: 0.55, glow: 1, drift: 1, fr: ['Siphonophore', 'Ce n’est pas un animal, mais une colonie d’animaux reliés entre eux.'], en: ['Siphonophore', 'Not one animal, but a colony of animals joined together.'] },
-  { id: 'vampire', p: 0.275, x: 0.62, s: 0.3, drift: 1, fr: ['Calmar vampire', 'Malgré son nom, il se nourrit de neige marine, pas de sang.'], en: ['Vampire squid', 'Despite its name, it eats marine snow, not blood.'] },
-  { id: 'atolla', p: 0.345, x: 0.5, s: 0.26, glow: 1, drift: 1, many: 3, fr: ['Méduse Atolla', 'Attaquée, elle s’allume comme une alarme pour attirer plus gros que son agresseur.'], en: ['Atolla jellyfish', 'When attacked, it flashes like an alarm to call in something bigger.'] },
-  { id: 'angler', p: 0.372, x: 0.36, s: 0.3, swim: 1, lure: [0.06, 0.12], fr: ['Baudroie des abysses', 'Sa lanterne brille grâce à des bactéries qui vivent dedans.'], en: ['Deep-sea anglerfish', 'Its lantern glows thanks to bacteria living inside it.'] },
-  { id: 'gulper', p: 0.405, x: 0.62, s: 0.36, swim: 1, tail: [0.42, 0.78], fr: ['Anguille-pélican', 'Sa bouche géante s’ouvre comme un filet.'], en: ['Gulper eel', 'Its giant mouth opens like a net.'] },
-  { id: 'octopus', p: 0.6, x: 0.5, s: 0.28, drift: 1, axis: 'h', fr: ['Pieuvre Dumbo', 'La pieuvre la plus profonde connue, vue à près de 7 000 m.'], en: ['Dumbo octopus', 'The deepest octopus known, seen at nearly 7,000 m.'] },
-  { id: 'tripod', p: 0.64, x: 0.5, s: 0.36, floor: 1, axis: 'h', fr: ['Poisson-trépied', 'Immobile face au courant, il attend que la nourriture passe.'], en: ['Tripod fish', 'Standing still against the current, it waits for food to drift by.'] },
-  { id: 'seapig', p: 0.68, x: 0.5, s: 0.18, floor: 1, axis: 'h', walk: 1, fr: ['Cochon de mer', 'Une holothurie qui marche en troupeau sur la vase.'], en: ['Sea pig', 'A sea cucumber that walks across the mud in herds.'] },
-  { id: 'snailfish', p: 0.854, x: 0.5, s: 0.22, swim: 1, fr: ['Poisson-limace', 'Filmé à 8 336 m en 2022 : le poisson le plus profond jamais vu.'], en: ['Snailfish', 'Filmed at 8,336 m in 2022: the deepest fish ever seen.'] },
-  { id: 'amphipod', p: 0.955, x: 0.42, s: 0.1, swim: 1, many: 5, fr: ['Amphipode des fosses', 'Il vit tout au fond, à près de 11 000 m.'], en: ['Trench amphipod', 'It lives at the very bottom, near 11,000 m.'] },
+  { id: 'hatchet', vid: 1, p: 0.125, x: 0.7, s: 0.16, swim: 1, fr: ['Poisson-hachette', 'Son ventre lumineux efface son ombre, vue d’en dessous.'], en: ['Hatchetfish', 'Its glowing belly erases its shadow, seen from below.'] },
+  { id: 'lantern', vid: 1, p: 0.15, x: 0.3, s: 0.12, swim: 1, many: 7, rise: 1, fr: ['Poisson-lanterne', 'L’un des poissons les plus nombreux de la planète.'], en: ['Lanternfish', 'One of the most numerous fish on the planet.'] },
+  { id: 'siphono', vid: 1, p: 0.175, x: 0.66, s: 0.55, glow: 1, drift: 1, fr: ['Siphonophore', 'Ce n’est pas un animal, mais une colonie d’animaux reliés entre eux.'], en: ['Siphonophore', 'Not one animal, but a colony of animals joined together.'] },
+  { id: 'vampire', vid: 1, p: 0.275, x: 0.62, s: 0.3, drift: 1, fr: ['Calmar vampire', 'Malgré son nom, il se nourrit de neige marine, pas de sang.'], en: ['Vampire squid', 'Despite its name, it eats marine snow, not blood.'] },
+  { id: 'atolla', vid: 1, p: 0.345, x: 0.5, s: 0.26, glow: 1, drift: 1, many: 3, fr: ['Méduse Atolla', 'Attaquée, elle s’allume comme une alarme pour attirer plus gros que son agresseur.'], en: ['Atolla jellyfish', 'When attacked, it flashes like an alarm to call in something bigger.'] },
+  { id: 'angler', vid: 1, p: 0.372, x: 0.36, s: 0.3, swim: 1, fr: ['Baudroie des abysses', 'Sa lanterne brille grâce à des bactéries qui vivent dedans.'], en: ['Deep-sea anglerfish', 'Its lantern glows thanks to bacteria living inside it.'] },
+  { id: 'gulper', vid: 1, p: 0.405, x: 0.62, s: 0.36, swim: 1, fr: ['Anguille-pélican', 'Sa bouche géante s’ouvre comme un filet.'], en: ['Gulper eel', 'Its giant mouth opens like a net.'] },
+  { id: 'octopus', vid: 1, p: 0.6, x: 0.5, s: 0.28, drift: 1, axis: 'h', fr: ['Pieuvre Dumbo', 'La pieuvre la plus profonde connue, vue à près de 7 000 m.'], en: ['Dumbo octopus', 'The deepest octopus known, seen at nearly 7,000 m.'] },
+  { id: 'snailfish', vid: 1, p: 0.854, x: 0.5, s: 0.22, swim: 1, fr: ['Poisson-limace', 'Filmé à 8 336 m en 2022 : le poisson le plus profond jamais vu.'], en: ['Snailfish', 'Filmed at 8,336 m in 2022: the deepest fish ever seen.'] },
+  { id: 'amphipod', vid: 1, p: 0.955, x: 0.42, s: 0.1, swim: 1, many: 5, fr: ['Amphipode des fosses', 'Il vit tout au fond, à près de 11 000 m.'], en: ['Trench amphipod', 'It lives at the very bottom, near 11,000 m.'] },
+];
+// creatures seen in the filmed scenes: found when the scene plays
+const ENVC = [
+  { id: 'turtle', p: 0.02, fr: ['Tortue verte', 'Au repos, elle peut rester plusieurs heures sous l’eau sans respirer.'], en: ['Green sea turtle', 'Resting, it can stay under water for hours without a breath.'] },
+  { id: 'sardine', p: 0.05, fr: ['Sardines', 'En banc serré, elles semblent ne former qu’un seul grand animal.'], en: ['Sardines', 'In a tight school they look like one big animal.'] },
+  { id: 'manta', p: 0.062, fr: ['Raie manta', 'Jusqu’à cinq mètres d’envergure, et elle ne mange que du plancton.'], en: ['Manta ray', 'Up to five metres across, and it eats only plankton.'] },
+  { id: 'seapig', p: 0.585, fr: ['Cochon de mer', 'Une holothurie qui marche en troupeau sur la vase.'], en: ['Sea pig', 'A sea cucumber that walks across the mud in herds.'] },
+  { id: 'tripod', p: 0.64, fr: ['Poisson-trépied', 'Immobile face au courant, il attend que la nourriture passe.'], en: ['Tripod fish', 'Standing still against the current, it waits for food to drift by.'] },
+];
+// the living places: filmed loops, faded in and out with depth (still picture until the clip is ready)
+const ENV = [
+  { id: 'env-shallow', still: 'bg-shallow', a: (p) => 1 - smooth(0.036, 0.05, p) },
+  { id: 'env-sardines', still: 'bg-shallow', a: (p) => smooth(0.036, 0.05, p) * (1 - smooth(0.082, 0.1, p)) },
+  { id: 'env-plain', still: 'bg-plain', a: (p) => smooth(0.545, 0.57, p) * (1 - smooth(0.745, 0.77, p)) },
+  { id: 'env-trench', still: 'bg-trench', a: (p) => smooth(0.9, 0.95, p) },
 ];
 // the big moments (clips), and the ones counted as found when seen
 const M = [
@@ -72,6 +82,15 @@ const IMG = {};
 const SIZES = await fetch('art/sizes.json').then((r) => r.json()).catch(() => ({}));
 const img = (name) => (IMG[name] ||= Object.assign(new Image(), { src: `art/${name}.webp`, decoding: 'async' }));
 const bgImg = (name) => img(name + (coarse ? '-m' : ''));
+// filmed loops: one muted <video> each, played only while on screen (an iPhone decodes only a few at once)
+const VIDS = {};
+function vidEl(name) {
+  let v = VIDS[name];
+  if (!v) { v = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.setAttribute('muted', ''); v.preload = 'auto'; v.src = `video/${name}.mp4`; v.lastUse = 0; if (name === 'env-sardines') v.defaultPlaybackRate = v.playbackRate = 0.75; VIDS[name] = v; }
+  return v;
+}
+function useVid(name, now) { const v = vidEl(name); v.lastUse = now; if (v.paused && started && !document.hidden) v.play().catch(() => {}); return v.readyState >= 2 && v.videoWidth ? v : null; }
+function idleVids(now) { for (const v of Object.values(VIDS)) if (!v.paused && now - v.lastUse > 1.2) v.pause(); }
 
 // ------------------------------------------------------------------ the canvas
 const cv = $('sea'), g = cv.getContext('2d');
@@ -84,8 +103,6 @@ const dk = document.createElement('canvas'), dg = dk.getContext('2d');
 // marine snow and bioluminescent sparks
 const SNOW = Array.from({ length: coarse ? 90 : 180 }, () => ({ x: Math.random(), y: Math.random(), z: 0.3 + Math.random() * 0.7, r: 0.6 + Math.random() * 1.8 }));
 let sparks = [];
-// the school of sardines
-const FISH = Array.from({ length: coarse ? 46 : 80 }, (_, i) => ({ x: 0.5 + Math.cos(i) * 0.15, y: Math.sin(i * 1.7) * 0.1, vx: 0, vy: 0, a: i * 0.7 }));
 
 // ------------------------------------------------------------------ state
 let p = 0, vp = 0, started = false, dived = false, ended = false, moment = null, holdT = 0, holding = false;
@@ -122,7 +139,7 @@ function texts() {
   for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
   updFound();
 }
-const total = C.length + M.length;
+const total = C.length + M.length + ENVC.length;
 function updFound() { $('found').textContent = `${found.size} / ${total} ${t('found')}`; }
 function discover(id) { if (found.has(id)) return false; found.add(id); store.set('abysses-found', JSON.stringify([...found])); updFound(); audio.sfx('sfx/glow.mp3', 0.5, 1.2); return true; }
 let cardT = 0;
@@ -212,7 +229,7 @@ const lampLight = (x, y) => { if (!lampOn) return 0; const d = Math.hypot(x - la
 let prev = performance.now(), hud = 0;
 function frame(now) {
   const dt = Math.min(0.05, (now - prev) / 1000); prev = now;
-  if (!document.hidden) { step(dt, now / 1000); draw(now / 1000); }
+  if (!document.hidden) { step(dt, now / 1000); draw(now / 1000); idleVids(now / 1000); }
   requestAnimationFrame(frame);
 }
 function step(dt, time) {
@@ -227,6 +244,7 @@ function step(dt, time) {
   if (dived && !ended && !rising) {
     for (const [id, at] of LINES) if (p >= at && !spoken.has(id)) say(id);
     for (const m of M) if (p >= m.p - 0.0005 && !spoken.has('m-' + m.id) && m.id !== 'bottom') { spoken.add('m-' + m.id); playMoment(m); break; }
+    for (const e of ENVC) if (p >= e.p && !spoken.has('e-' + e.id)) { spoken.add('e-' + e.id); if (discover(e.id)) card(e, W * 0.06, H * 0.18); }
     if (p >= 0.258 && !lampAllowed) { lampAllowed = true; lampOn = true; $('lamp').classList.add('show'); audio.sfx('sfx/lamp.mp3', 0.8); say('z2d'); }
     if (p >= 0.33 && !lampAsked) { lampAsked = true; awaitingLamp = true; say('z3b'); hint('lampOff'); $('lamp').classList.add('call'); setTimeout(() => { if (awaitingLamp) { awaitingLamp = false; hint(null); lampOn = false; $('lamp').classList.add('off'); bloom(); } }, 15000); }
     if (p >= 0.95 && !spoken.has('z5c')) { say('z5c'); }
@@ -245,17 +263,6 @@ function step(dt, time) {
   dark = smooth(120, 900, d);
   // the HUD, a few times a second
   if ((hud -= dt) < 0) { hud = 0.12; updHud(d); }
-  // sardines: swirl, flee the finger
-  const sy = (0.5 + (0.035 - p) * K) * H;
-  if (sy > -H && sy < 2 * H) for (const f of FISH) {
-    f.a += dt * 0.6; const cx = W * 0.5 + Math.cos(f.a) * W * 0.18, cy = sy + Math.sin(f.a * 1.3) * H * 0.16;
-    let ax = (cx - f.x) * 1.4, ay = (cy - f.y) * 1.4;
-    const dx = f.x - pointer.x, dy = f.y - pointer.y, dd = Math.hypot(dx, dy);
-    if (pointer.x >= 0 && dd < 170) { ax += dx / dd * 2600; ay += dy / dd * 2600; }
-    f.vx = (f.vx + ax * dt) * Math.pow(0.3, dt); f.vy = (f.vy + ay * dt) * Math.pow(0.3, dt);
-    f.x += f.vx * dt; f.y += f.vy * dt;
-    if (!f.init) { f.x = cx + (Math.random() - 0.5) * 200; f.y = cy + (Math.random() - 0.5) * 120; f.init = 1; }
-  }
 }
 function updHud(d) {
   $('h-depth').textContent = Math.round(d).toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-US');
@@ -278,6 +285,22 @@ function drawBg(name, alpha, zoom = 1) {
   const s = Math.max(W / im.naturalWidth, H / im.naturalHeight) * zoom, w = im.naturalWidth * s, h = im.naturalHeight * s;
   g.globalAlpha = alpha; g.drawImage(im, (W - w) / 2, (H - h) / 2, w, h); g.globalAlpha = 1;
 }
+function drawEnv(e, alpha, time) {
+  if (alpha <= 0.002) return;
+  const v = useVid(e.id, time);
+  if (!v) return drawBg(e.still, alpha);
+  const s = Math.max(W / v.videoWidth, H / v.videoHeight), w = v.videoWidth * s, h = v.videoHeight * s;
+  g.globalAlpha = alpha; g.drawImage(v, (W - w) / 2, (H - h) / 2, w, h); g.globalAlpha = 1;
+}
+// a filmed creature: its loop, cropped to the animal, the black water dropped by a screen blend
+function drawVid(c, x, y, w, alpha, mode, time) {
+  const v = useVid('c-' + c.id, time), bb = (SIZES[c.id] || {}).bb;
+  if (!v || !bb) { g.save(); g.globalCompositeOperation = mode; const r = drawImg(c.id, x, y, w, alpha); g.restore(); return r; }
+  const m = 0.04, sx = Math.max(0, bb[0] - m) * v.videoWidth, sy = Math.max(0, bb[1] - m) * v.videoHeight;
+  const sw = Math.min(1, bb[2] + m) * v.videoWidth - sx, sh = Math.min(1, bb[3] + m) * v.videoHeight - sy, h = w * sh / sw;
+  g.save(); g.globalCompositeOperation = mode; g.globalAlpha = alpha; g.drawImage(v, sx, sy, sw, sh, x - w / 2, y - h / 2, w, h); g.restore();
+  return [x - w / 2, y - h / 2, x + w / 2, y + h / 2];
+}
 function draw(time) {
   const d = depthAt(p), [r, gg, b] = waterAt(d);
   // water: lighter above, darker below
@@ -285,13 +308,12 @@ function draw(time) {
   grd.addColorStop(0, `rgb(${Math.min(255, r * 1.35) | 0},${Math.min(255, gg * 1.3) | 0},${Math.min(255, b * 1.25) | 0})`);
   grd.addColorStop(1, `rgb(${(r * 0.6) | 0},${(gg * 0.6) | 0},${(b * 0.65) | 0})`);
   g.fillStyle = grd; g.fillRect(0, 0, W, H);
-  if (!dived) { drawBg('bg-surface', 1); return; }
+  if (!dived) { drawEnv({ id: 'env-surface', still: 'bg-surface' }, 1, time); return; }
   // pictures of places
-  drawBg('bg-shallow', 1 - smooth(0.0, 0.075, p), 1 + p * 2);
-  drawBg('bg-plain', smooth(0.545, 0.57, p) * (1 - smooth(0.745, 0.77, p)) * 0.95);
-  drawBg('bg-trench', smooth(0.9, 0.95, p), 1 + smooth(0.95, 0.97, p) * 0.15);
+  let envLit = 0;
+  for (const e of ENV) { const a = e.a(p); drawEnv(e, a, time); if (e.id === 'env-plain' || e.id === 'env-trench') envLit = Math.max(envLit, a); }
   // sunbeams in the first metres
-  const rays = 1 - smooth(0.02, 0.1, p);
+  const rays = 0; // the filmed water has its own sunbeams
   if (rays > 0.01) {
     g.save(); g.globalCompositeOperation = 'lighter';
     for (let i = 0; i < 6; i++) {
@@ -304,7 +326,6 @@ function draw(time) {
   // creatures
   placed.length = 0; const glows = [];
   for (const c of C) {
-    if (c.school) { drawSchool(time); continue; }
     for (let k = 0; k < (c.many || 1); k++) {
       let [x, y] = screenPos(c, k);
       if (y < -H * 0.6 || y > H * 1.6 || x < -W || x > 2 * W) continue;
@@ -314,7 +335,7 @@ function draw(time) {
       if (c.walk) x += ((time * 6) % 60) - 30;
       const w = (c.s * Math.min(H, W * 1.15) * (SIZES[c.id] ? SIZES[c.id].w / Math.max(SIZES[c.id].h, 1) : 1.6)) * (c.many > 1 ? 0.75 + (k % 3) * 0.15 : 1);
       if (c.glow) { glows.push([c, x, y, w, k]); continue; }
-      const bb = drawImg(c.id, x, y, w, 1, (c.swim && Math.cos(time * 0.5 + k * 1.3) < 0) ? false : false);
+      const bb = c.vid ? drawVid(c, x, y, w, 1, 'screen', time) : drawImg(c.id, x, y, w, 1);
       if (bb) placed.push({ c, x0: bb[0], y0: bb[1], x1: bb[2], y1: bb[3] });
       if (c.lure) glows.push(['lure', bb ? bb[0] + (bb[2] - bb[0]) * c.lure[0] : x, bb ? bb[1] + (bb[3] - bb[1]) * c.lure[1] : y]);
       if (c.tail) glows.push(['tail', bb ? bb[0] + (bb[2] - bb[0]) * c.tail[0] : x, bb ? bb[1] + (bb[3] - bb[1]) * c.tail[1] : y]);
@@ -335,7 +356,7 @@ function draw(time) {
     const q = 4, dw = Math.ceil(W / q), dh = Math.ceil(H / q);
     if (dk.width !== dw || dk.height !== dh) { dk.width = dw; dk.height = dh; }
     dg.globalCompositeOperation = 'source-over'; dg.clearRect(0, 0, dw, dh);
-    dg.fillStyle = `rgba(0,2,6,${0.985 * dark})`; dg.fillRect(0, 0, dw, dh);
+    dg.fillStyle = `rgba(0,2,6,${0.985 * dark * (1 - 0.7 * envLit)})`; dg.fillRect(0, 0, dw, dh); // the filmed places carry their own lamp pool
     if (lamp.k > 0.01) {
       dg.globalCompositeOperation = 'destination-out';
       const lx = lamp.x * dw, ly = lamp.y * dh, lr = lamp.r / q * (0.9 + Math.sin(time * 2.1) * 0.02);
@@ -360,7 +381,7 @@ function draw(time) {
       g.fillStyle = lg; g.beginPath(); g.arc(x, y, rr, 0, 7); g.fill(); continue;
     }
     const [c, x, y, w, k] = gl, pulse = c.id === 'atolla' ? 0.55 + 0.45 * Math.abs(Math.sin(time * 2.6 + k)) : 0.85 + 0.15 * Math.sin(time * 1.3 + k);
-    const bb = drawImg(c.id, x, y, w, pulse);
+    const bb = c.vid ? drawVid(c, x, y, w, Math.min(1, pulse + 0.3), 'lighter', time) : drawImg(c.id, x, y, w, pulse);
     if (bb) placed.push({ c, x0: bb[0], y0: bb[1], x1: bb[2], y1: bb[3] });
   }
   if (sparks.length) {
@@ -375,22 +396,9 @@ function draw(time) {
   }
   g.restore();
 }
-function drawSchool(time) {
-  const im = img('sardine'); if (!im.complete || !im.naturalWidth) return;
-  const sy0 = (0.5 + (0.035 - p) * K) * H; if (sy0 < -H * 0.8 || sy0 > H * 1.8) return; // only near the surface
-  const w = Math.min(W, H) * 0.075, h = w * im.naturalHeight / im.naturalWidth;
-  for (const f of FISH) {
-    if (f.y < -50 || f.y > H + 50) continue;
-    const ang = Math.atan2(f.vy, f.vx);
-    g.save(); g.translate(f.x, f.y); g.rotate(ang); g.drawImage(im, -w / 2, -h / 2, w, h); g.restore();
-  }
-  const sy = (0.5 + (0.035 - p) * K) * H;
-  if (sy > 0 && sy < H) placed.push({ c: C.find((c) => c.id === 'sardine'), x0: W * 0.25, y0: sy - H * 0.2, x1: W * 0.75, y1: sy + H * 0.2 });
-}
-
 // ------------------------------------------------------------------ start, dive, bottom, rise
 async function start() {
-  audio.unlock(); started = true;
+  audio.unlock(); started = true; for (const v of Object.values(VIDS)) v.play().catch(() => {});
   document.body.classList.add('in');
   await loadTimings(lang);
   audio.loop('music', 'sfx/theme.mp3', 'music', 0.5, 4); audio.setMusic(true);
@@ -415,7 +423,7 @@ async function finishRise() {
   audio.sfx('sfx/surface.mp3', 1); dived = false; document.body.classList.remove('dived'); setBed(0);
   await sleep(800); await say('end'); await sleep(600);
   const grid = $('grid');
-  grid.innerHTML = [...C, ...M].map((c) => `<figure class="${found.has(c.id) ? '' : 'no'}"><img src="art/${C.includes(c) ? c.id : 'm-' + c.id}.webp" alt=""><figcaption>${c[lang][0]}</figcaption></figure>`).join('');
+  grid.innerHTML = [...ENVC, ...C, ...M].map((c) => `<figure class="${found.has(c.id) ? '' : 'no'}"><img src="art/${M.includes(c) ? 'm-' + c.id : c.id}.webp" alt=""><figcaption>${c[lang][0]}</figcaption></figure>`).join('');
   $('count').textContent = `${found.size} ${t('of')} ${total} ${t('count')}`;
   $('end').classList.add('on');
 }
@@ -428,6 +436,6 @@ document.addEventListener('visibilitychange', () => { audio.pause(document.hidde
 let wl = null; addEventListener('pointerdown', async () => { try { if ('wakeLock' in navigator && (!wl || wl.released)) wl = await navigator.wakeLock.request('screen'); } catch {} }, { capture: true });
 
 texts(); loadTimings(lang);
-for (const n of ['bg-surface', 'bg-shallow', 'sardine', 'turtle', 'manta']) n.startsWith('bg') ? bgImg(n) : img(n);
+bgImg('bg-surface'); bgImg('bg-shallow'); vidEl('env-surface'); vidEl('env-shallow');
 requestAnimationFrame(frame);
 window.__abysses = { get p() { return p; }, set p(v) { p = v; }, set speed(v) { SPEED = v; }, get state() { return { p, moment: !!moment, awaitingLamp, awaitingHold, rising, ended }; }, audio, say, M, C, start };
