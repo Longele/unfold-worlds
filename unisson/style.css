@@ -1,0 +1,66 @@
+@font-face { font-family: 'Cormorant Garamond'; font-weight: 300; src: url(../fonts/cormorant-garamond-latin-300-normal.woff2) format('woff2'); font-display: swap; }
+@font-face { font-family: 'Cormorant Garamond'; font-weight: 400; font-style: italic; src: url(../fonts/cormorant-garamond-latin-400-italic.woff2) format('woff2'); font-display: swap; }
+@font-face { font-family: 'JetBrains Mono'; font-weight: 400; src: url(../fonts/jetbrains-mono-latin-400-normal.woff2) format('woff2'); font-display: swap; }
+:root { --paper: #f4efe6; --gold: #ffd08a; --sky: #86e3ff; --rose: #ff7aa8; --serif: 'Cormorant Garamond', Georgia, serif; --mono: 'JetBrains Mono', ui-monospace, monospace; --ease: cubic-bezier(.2, .8, .2, 1); }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color: var(--paper); font-family: var(--serif); user-select: none; -webkit-user-select: none; touch-action: none; overscroll-behavior: none; }
+button, input { font: inherit; color: inherit; background: none; border: 0; }
+button { cursor: pointer; }
+canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+.brand { font-family: var(--mono); font-size: 11px; letter-spacing: .6em; text-indent: .6em; background: linear-gradient(90deg, var(--gold), var(--sky), var(--rose)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.kick { margin: 0 0 12px; font-family: var(--mono); font-size: 11px; letter-spacing: .32em; text-transform: uppercase; color: var(--gold); }
+.go { display: inline-block; padding: 16px 38px; border-radius: 999px; background: linear-gradient(120deg, var(--gold), #ffb36b 40%, var(--rose)); color: #120806; font-size: 22px; box-shadow: 0 0 60px rgba(255, 170, 120, .35); transition: transform .3s var(--ease); }
+.go:hover { transform: scale(1.03); }
+.go.small { padding: 12px 22px; font-size: 18px; }
+
+/* ---------------------------------------------------------------- the big screen */
+.top { position: fixed; top: 0; left: 0; right: 0; z-index: 3; display: flex; justify-content: space-between; align-items: center; padding: 26px 34px; pointer-events: none; }
+.screen .brand { font-size: 14px; }
+.count { font-family: var(--mono); font-size: 13px; letter-spacing: .18em; text-transform: uppercase; opacity: .8; }
+.count b { font-family: var(--serif); font-weight: 300; font-size: 44px; letter-spacing: 0; margin-right: 6px; vertical-align: -6px; font-variant-numeric: tabular-nums; }
+.title { position: fixed; left: 0; right: 0; top: 13vh; z-index: 2; text-align: center; font-weight: 300; font-style: italic; font-size: clamp(42px, 6vw, 96px); opacity: 0; pointer-events: none; text-shadow: 0 0 40px rgba(0, 0, 0, .8); }
+.title.show { animation: ttl 5.5s var(--ease) forwards; }
+@keyframes ttl { 0% { opacity: 0; transform: translateY(14px); letter-spacing: .12em; } 18% { opacity: 1; transform: none; letter-spacing: .02em; } 75% { opacity: 1; } 100% { opacity: 0; } }
+.big { position: fixed; inset: 0; z-index: 2; display: grid; place-items: center; font-weight: 300; font-size: 38vh; line-height: 1; pointer-events: none; color: #fff; text-shadow: 0 0 80px rgba(255, 190, 120, .7); }
+.big.pop, .num.pop { animation: pop .6s var(--ease); }
+@keyframes pop { 0% { transform: scale(1.25); opacity: 0; } 30% { opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+.lobby { position: fixed; inset: 0; z-index: 2; padding-top: 10vh !important; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto 1fr; align-content: center; gap: 10px 48px; padding: 0 7vw; pointer-events: none; opacity: 0; transition: opacity 1s; }
+.screen[data-scene="lobby"].live .lobby { opacity: 1; }
+.lobby .kick { grid-column: 1; align-self: end; }
+.lobby h1 { grid-column: 1; margin: 0; font-weight: 300; font-size: clamp(48px, 6.2vw, 110px); line-height: 1; max-width: 12ch; }
+.qrbox { grid-column: 2; grid-row: 1 / span 3; align-self: center; text-align: center; padding: 22px; border-radius: 26px; background: #fff; color: #000; box-shadow: 0 0 120px rgba(255, 200, 140, .25); }
+.qrbox #qr { width: min(30vh, 320px); height: min(30vh, 320px); }
+.qrbox #qr svg { width: 100%; height: 100%; display: block; }
+.qrbox .url { margin: 10px 0 0; font-family: var(--mono); font-size: 13px; letter-spacing: .04em; }
+.lobby .room { grid-column: 1; align-self: start; font-family: var(--mono); font-size: 14px; letter-spacing: .3em; text-transform: uppercase; opacity: .75; }
+.lobby .room b { font-size: 30px; letter-spacing: .25em; color: var(--gold); margin-left: 10px; }
+.open { position: fixed; inset: 0; z-index: 5; display: grid; place-content: center; justify-items: center; text-align: center; gap: 18px; background: radial-gradient(ellipse at 50% 40%, #1a1008, #000); transition: opacity .8s, visibility .8s; }
+.open h1 { margin: 0; font-family: var(--mono); font-weight: 400; font-size: clamp(30px, 5vw, 64px); letter-spacing: .6em; text-indent: .6em; background: linear-gradient(90deg, var(--gold), var(--sky), var(--rose)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.open p { margin: 0 0 10px; font-size: 22px; opacity: .75; max-width: 520px; }
+.live .open { opacity: 0; visibility: hidden; }
+.regie { position: fixed; left: 50%; bottom: 22px; z-index: 4; transform: translateX(-50%); display: flex; gap: 6px; padding: 6px; border-radius: 999px; background: rgba(20, 16, 12, .75); border: 1px solid rgba(255, 255, 255, .1); transition: opacity .4s; }
+.regie button { padding: 10px 16px; border-radius: 999px; font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: rgba(244, 239, 230, .7); }
+.regie button:hover { color: #fff; background: rgba(255, 255, 255, .06); }
+.regie button.on { background: var(--paper); color: #000; }
+.regie .sep { width: 1px; margin: 6px 4px; background: rgba(255, 255, 255, .15); }
+.bare .regie { opacity: 0; } .bare .regie:hover { opacity: 1; }
+
+/* ---------------------------------------------------------------- the phone */
+.join { position: fixed; inset: 0; z-index: 3; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: max(28px, env(safe-area-inset-top)) 26px max(28px, env(safe-area-inset-bottom)); background: radial-gradient(ellipse 120% 70% at 50% 0%, #2a1808, #000 70%); transition: opacity .8s, visibility .8s; }
+.in .join { opacity: 0; visibility: hidden; }
+.join h1 { margin: 10px 0 0; font-weight: 300; font-size: 44px; line-height: 1.02; }
+.join .lead { margin: 0 0 18px; font-size: 20px; line-height: 1.35; opacity: .8; }
+.codeRow { display: flex; gap: 10px; }
+.codeRow input { flex: 1; min-width: 0; padding: 14px 18px; border-radius: 16px; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .15); font-family: var(--mono); font-size: 22px; letter-spacing: .4em; text-transform: uppercase; text-align: center; }
+.zones { display: grid; gap: 10px; }
+.zones button { padding: 20px; border-radius: 20px; font-size: 26px; text-align: left; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .12); transition: background .3s, transform .2s; }
+.zones button:active { transform: scale(.98); }
+.zones button[data-z="g"] { box-shadow: inset 4px 0 0 var(--sky); } .zones button[data-z="c"] { box-shadow: inset 4px 0 0 var(--gold); } .zones button[data-z="d"] { box-shadow: inset 4px 0 0 var(--rose); }
+.zones button.on { background: rgba(255, 255, 255, .16); }
+.safe { margin: 14px 0 0; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; line-height: 1.6; text-transform: uppercase; opacity: .45; }
+.hint { position: fixed; left: 0; right: 0; bottom: max(40px, calc(env(safe-area-inset-bottom) + 24px)); z-index: 2; padding: 0 28px; text-align: center; font-size: 24px; line-height: 1.25; text-shadow: 0 2px 20px rgba(0, 0, 0, .7); opacity: 0; pointer-events: none; }
+.hint.on { animation: hint 1s var(--ease) forwards; }
+@keyframes hint { from { opacity: 0; transform: translateY(10px); } to { opacity: .92; transform: none; } }
+.num { position: fixed; inset: 0; z-index: 2; display: grid; place-items: center; font-weight: 300; font-size: 50vh; line-height: 1; pointer-events: none; text-shadow: 0 0 60px rgba(255, 255, 255, .6); }
+.dot { position: fixed; top: max(14px, env(safe-area-inset-top)); right: 16px; z-index: 2; width: 8px; height: 8px; border-radius: 50%; background: #555; }
+.dot.ok { background: #7dffb0; box-shadow: 0 0 10px #7dffb0; } .dot.off { background: #ff9a5c; }

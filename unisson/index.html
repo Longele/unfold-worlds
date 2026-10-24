@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>UNISSON</title>
+<meta name="description" content="Ce soir, c’est vous l’orchestre. Votre téléphone devient une lumière et un instrument, avec toute la salle.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%227%22 fill=%22%23000%22/%3E%3Ccircle cx=%225%22 cy=%229%22 r=%221.4%22 fill=%22%23ffd08a%22/%3E%3Ccircle cx=%228%22 cy=%227%22 r=%221.4%22 fill=%22%2386e3ff%22/%3E%3Ccircle cx=%2211%22 cy=%229%22 r=%221.4%22 fill=%22%23ff7aa8%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css?v=202610241030">
+</head>
+<body class="phone">
+<canvas id="glow"></canvas>
+<section id="join" class="join">
+  <div class="brand">UNISSON</div>
+  <h1 data-t="joinT"></h1>
+  <p class="lead" data-t="joinS"></p>
+  <div id="codeRow" class="codeRow"><input id="codeIn" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE"><button id="codeGo" class="go small" data-t="codeGo"></button></div>
+  <div id="zones" class="zones">
+    <p class="kick" data-t="where"></p>
+    <button data-z="g"><span data-t="zg"></span></button>
+    <button data-z="c"><span data-t="zc"></span></button>
+    <button data-z="d"><span data-t="zd"></span></button>
+  </div>
+  <p class="safe" data-t="safe"></p>
+</section>
+<div id="hint" class="hint"></div>
+<div id="num" class="num"></div>
+<div id="dot" class="dot"></div>
+<script type="module" src="phone.js?v=202610241030"></script>
+</body>
+</html>

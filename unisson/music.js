@@ -1,0 +1,132 @@
+// UNISSON music, played by the screen through the venue sound system. All synthesis (no samples), locked
+// to the screen's clock: steps are scheduled ahead on the AudioContext timeline, mapped from Date.now().
+// The crowd never plays notes freely: its taps are counted, and that energy opens and fills the music on the
+// next sixteenth, so a room of thousands always sounds right.
+import { BEAT } from './show.js';
+
+const N = (m) => 440 * Math.pow(2, (m - 69) / 12);
+// D minor, i VI III VII: Dm9, Bbmaj7, Fmaj7, Csus2
+const CHORDS = [[50, 53, 57, 60, 64], [46, 50, 53, 57, 62], [41, 45, 48, 52, 57], [48, 50, 55, 60, 62]];
+const ROOTS = [38, 34, 41, 36];
+const SCALE = [62, 65, 67, 69, 72, 74, 77, 79, 81, 84]; // D minor pentatonic, high
+
+export class Music {
+  constructor() {
+    const c = this.c = new (window.AudioContext || window.webkitAudioContext)();
+    this.out = c.createDynamicsCompressor(); this.out.threshold.value = -14; this.out.ratio.value = 3;
+    this.master = c.createGain(); this.master.gain.value = 0.9; this.out.connect(this.master).connect(c.destination);
+    // a room reverb from decaying noise
+    const len = c.sampleRate * 3.2, ir = c.createBuffer(2, len, c.sampleRate);
+    for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6); }
+    this.verb = c.createConvolver(); this.verb.buffer = ir; this.wet = c.createGain(); this.wet.gain.value = 0.42; this.verb.connect(this.wet).connect(this.out);
+    this.noise = c.createBuffer(1, c.sampleRate, c.sampleRate); const nd = this.noise.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    this.scene = 'lobby'; this.t0 = Date.now(); this.step = 0; this.energy = 0; this.taps = 0;
+    this.sync();
+    setInterval(() => this.tick(), 25);
+  }
+  resume() { return this.c.resume(); }
+  sync() { this.base = this.c.currentTime - Date.now() / 1000; } // AudioContext time for a Date.now() instant
+  at(ms) { return ms / 1000 + this.base; }
+  cue(scene, t0) { this.scene = scene; this.t0 = t0; this.step = Math.max(0, Math.ceil((Date.now() - t0) / (BEAT / 4))); this.held = null; }
+  crowd(n, phones) { this.taps += n; this.energy = Math.min(1, this.energy * 0.9 + (n / Math.max(4, phones * 0.6)) * 0.6); }
+
+  // ---------------------------------------------------------------- the score, one sixteenth at a time
+  tick() {
+    if (this.c.state !== 'running') return;
+    if (Math.abs(this.c.currentTime - Date.now() / 1000 - this.base) > 0.03) this.sync();
+    const ahead = Date.now() + 160;
+    while (this.t0 + this.step * BEAT / 4 < ahead) { this.play(this.step, this.at(this.t0 + this.step * BEAT / 4)); this.step++; }
+    this.energy *= 0.995;
+  }
+  play(s, t) {
+    const beat = s / 4, bar = Math.floor(beat / 4), inBar = s % 16, ch = bar % 4, E = this.energy;
+    const pend = this.taps; this.taps = 0;
+    switch (this.scene) {
+      case 'lobby':
+        if (s % 64 === 0) this.pad(CHORDS[0].slice(0, 3), t, BEAT * 16 / 1000, 0.05, 700);
+        break;
+      case 'eveil':
+        if (s % 32 === 0) this.pad(CHORDS[(s / 32) % 2 ? 1 : 0], t, BEAT * 8.5 / 1000, 0.07 + 0.05 * Math.min(1, beat / 32), 900 + 1600 * E);
+        if (s % 2 === 0 && pend) for (let i = 0; i < Math.min(3, Math.ceil(pend / 3)); i++) this.chime(N(SCALE[(Math.random() * SCALE.length) | 0]), t + i * 0.03, 0.05);
+        if (s % 16 === 8 && Math.random() < 0.5) this.chime(N(SCALE[(Math.random() * 6) | 0]), t, 0.03);
+        break;
+      case 'vague':
+        if (inBar === 0) { this.pad(CHORDS[ch], t, BEAT * 4 / 1000, 0.06, 1200 + 2600 * E); this.sub(N(ROOTS[ch]), t, BEAT * 3.6 / 1000, 0.32); }
+        if (inBar % 8 === 0) this.kick(t, 0.75);
+        if (inBar % 2 === 0) this.hat(t, inBar % 4 === 2 ? 0.08 : 0.04);
+        if (inBar === 4 || inBar === 12) this.clap(t, 0.12 + 0.3 * E);
+        if (E > 0.25 && s % 2 === 1) this.pluck(N(CHORDS[ch][(s >> 1) % 5] + 12), t, 0.05 * E);
+        if (pend && s % 2 === 0) this.chime(N(SCALE[(Math.random() * SCALE.length) | 0]), t, 0.025 + 0.02 * E);
+        break;
+      case 'drop': {
+        const e = s * BEAT / 4; // ms since the cue
+        if (e < 4 * BEAT) { // the countdown: a tick on each number, a riser, then a beat of silence
+          if (s === 0) this.riser(t, BEAT * 3 / 1000);
+          if (s % 4 === 0 && s < 12) this.tickSound(t, s === 8 ? 1.6 : 1);
+          if (s >= 8 && s < 12) this.snare(t, 0.06 + (s - 8) * 0.03);
+          break;
+        }
+        const d = s - 16, dIn = d % 16, dch = Math.floor(d / 16) % 4;
+        if (d === 0) { this.boom(t); }
+        if (dIn % 4 === 0) this.kick(t, 1);
+        if (dIn === 0) { this.pad(CHORDS[dch], t, BEAT * 4 / 1000, 0.08, 2600 + 3000 * E); this.sub(N(ROOTS[dch]), t, BEAT * 3.8 / 1000, 0.45); }
+        if (dIn % 4 === 2) this.sub(N(ROOTS[dch] + 12), t, BEAT * 0.4 / 1000, 0.22);
+        this.hat(t, dIn % 2 ? 0.035 : 0.07);
+        if (dIn === 4 || dIn === 12) this.clap(t, 0.32 + 0.3 * E);
+        if (s % 2 === 1) this.pluck(N(CHORDS[dch][(d * 3) % 5] + 12), t, 0.04 + 0.05 * E);
+        if (pend && E > 0.4 && s % 2 === 0) this.snare(t, 0.05 + 0.08 * E);
+        break;
+      }
+      case 'coeur': {
+        const e = s * BEAT / 4, rate = 70 - Math.min(40, e / 1500), per = 60000 / rate;
+        if (!this.held || e - this.held >= per) { this.held = e; this.heart(t, Math.max(0.15, 1 - e / 60000)); }
+        if (s % 64 === 0) this.pad([38, 45, 50, 53], t, BEAT * 16 / 1000, 0.05, 600);
+        break;
+      }
+      case 'fin':
+        if (s === 0) this.pad([50, 54, 57, 62, 66], t, 9, 0.08, 1400); // D major: the resolution
+        break;
+    }
+  }
+
+  // ---------------------------------------------------------------- instruments
+  env(g, t, a, peak, hold, rel) { g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + a); g.gain.setValueAtTime(peak, t + a + hold); g.gain.exponentialRampToValueAtTime(0.0001, t + a + hold + rel); }
+  send(node, dry = 1, wet = 0.5) { const d = this.c.createGain(), w = this.c.createGain(); d.gain.value = dry; w.gain.value = wet; node.connect(d).connect(this.out); node.connect(w).connect(this.verb); }
+  pad(notes, t, dur, vol, cut) {
+    const c = this.c, f = c.createBiquadFilter(), g = c.createGain(); f.type = 'lowpass'; f.frequency.setValueAtTime(cut * 0.5, t); f.frequency.linearRampToValueAtTime(cut, t + dur * 0.5); f.Q.value = 0.7;
+    this.env(g, t, Math.min(1.6, dur * 0.3), vol, dur * 0.5, Math.max(0.8, dur * 0.4));
+    for (const m of notes) for (const det of [-9, 0, 8]) { const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.value = N(m); o.detune.value = det; o.connect(f); o.start(t); o.stop(t + dur * 1.6 + 1); }
+    f.connect(g); this.send(g, 0.6, 0.8);
+  }
+  chime(fr, t, vol) {
+    const c = this.c, o = c.createOscillator(), o2 = c.createOscillator(), g = c.createGain();
+    o.type = 'sine'; o2.type = 'sine'; o.frequency.value = fr; o2.frequency.value = fr * 2.76; const g2 = c.createGain(); g2.gain.value = 0.25;
+    o.connect(g); o2.connect(g2).connect(g); this.env(g, t, 0.004, vol, 0.02, 1.4); this.send(g, 0.5, 0.9);
+    o.start(t); o2.start(t); o.stop(t + 2); o2.stop(t + 2);
+  }
+  pluck(fr, t, vol) {
+    const c = this.c, o = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain(); o.type = 'square'; o.frequency.value = fr;
+    f.type = 'lowpass'; f.frequency.setValueAtTime(4000, t); f.frequency.exponentialRampToValueAtTime(500, t + 0.25);
+    o.connect(f).connect(g); this.env(g, t, 0.003, vol, 0.01, 0.3); this.send(g, 0.7, 0.4); o.start(t); o.stop(t + 0.5);
+  }
+  sub(fr, t, dur, vol) { const c = this.c, o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = fr; o.connect(g); this.env(g, t, 0.02, vol, dur * 0.7, dur * 0.3); g.connect(this.out); o.start(t); o.stop(t + dur + 0.1); }
+  kick(t, vol) {
+    const c = this.c, o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.14);
+    o.connect(g); this.env(g, t, 0.002, vol, 0.03, 0.32); g.connect(this.out); o.start(t); o.stop(t + 0.5);
+  }
+  burst(t, type, freq, q, vol, dur, wet = 0.2) {
+    const c = this.c, s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); s.buffer = this.noise; f.type = type; f.frequency.value = freq; f.Q.value = q;
+    s.connect(f).connect(g); this.env(g, t, 0.001, vol, 0.005, dur); this.send(g, 1, wet); s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.1);
+  }
+  hat(t, vol) { this.burst(t, 'highpass', 7500, 0.8, vol, 0.045, 0.05); }
+  clap(t, vol) { for (let i = 0; i < 3; i++) this.burst(t + i * 0.011, 'bandpass', 1500, 1.2, vol * (i === 2 ? 1 : 0.6), i === 2 ? 0.16 : 0.02, 0.35); }
+  snare(t, vol) { this.burst(t, 'bandpass', 2200, 0.6, vol, 0.12, 0.3); }
+  tickSound(t, k) { const c = this.c, o = c.createOscillator(), g = c.createGain(); o.frequency.value = 880 * k; o.connect(g); this.env(g, t, 0.002, 0.12, 0.02, 0.2); this.send(g, 0.6, 0.6); o.start(t); o.stop(t + 0.4); }
+  riser(t, dur) {
+    const c = this.c, s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); s.buffer = this.noise; s.loop = true; f.type = 'bandpass'; f.Q.value = 3;
+    f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(7000, t + dur); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + dur); g.gain.linearRampToValueAtTime(0.0001, t + dur + 0.05);
+    s.connect(f).connect(g); this.send(g, 0.8, 0.6); s.start(t); s.stop(t + dur + 0.2);
+  }
+  boom(t) { this.kick(t, 1.2); this.burst(t, 'lowpass', 900, 0.5, 0.5, 1.6, 0.9); const c = this.c, o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(60, t); o.frequency.exponentialRampToValueAtTime(30, t + 1.5); o.connect(g); this.env(g, t, 0.005, 0.6, 0.2, 1.4); g.connect(this.out); o.start(t); o.stop(t + 2); }
+  heart(t, vol) { this.kick(t, 0.55 * vol); this.kick(t + 0.17, 0.35 * vol); }
+}
