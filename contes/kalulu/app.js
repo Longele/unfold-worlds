@@ -1,6 +1,6 @@
 // Kalulu: the book around the stage. Language, the read-along caption, page navigation, pause, the end card.
-import { Stage, Audio, sleep } from './engine.js?v=202610232330';
-import { makeStory, SPEAKER } from './story.js?v=202610232330';
+import { Stage, Audio, sleep } from './engine.js?v=202610240010';
+import { makeStory, SPEAKER } from './story.js?v=202610240010';
 
 const $ = (id) => document.getElementById(id);
 const T = {

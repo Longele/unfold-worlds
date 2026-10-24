@@ -192,3 +192,20 @@ body.night #light { background: radial-gradient(ellipse 50% 45% at var(--lx, 62%
 body.ended .cap { opacity: 0 !important; transition: opacity .6s; }
 /* phones: the lamp light stays put (a drifting light reads as the picture moving) */
 @media (pointer: coarse) { #light { animation: none; } #ambient { transition: none; } }
+/* phones and tablets: a lighter render. Android drops tiles (parts of the picture flicker or vanish) when
+   animated layers sit under masks, blend modes, backdrop blur and per-frame drop-shadows. Keep the look, not the cost. */
+@media (pointer: coarse) {
+  body.boxed-x #stage, body.boxed-y #stage { -webkit-mask-image: none; mask-image: none; box-shadow: 0 0 60px 10px rgba(14, 6, 2, .7); }
+  #cam { will-change: auto; }
+  .puppet, body.night .puppet { filter: none; }
+  .puppet.kalulu { filter: drop-shadow(0 0 3px rgba(255, 226, 180, .8)); }
+  body.night .puppet.kalulu { filter: drop-shadow(0 0 3px rgba(210, 225, 255, .7)); }
+  .prop.ink { filter: brightness(.42) saturate(1.2); }
+  .prop.fg { filter: brightness(.38) saturate(1.2) !important; }
+  #fx { mix-blend-mode: normal; }
+  #light { display: none; }
+  .sky.sunset { mix-blend-mode: normal; opacity: .6; }
+  nav#bar { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(26, 13, 6, .82); }
+  #pause { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(26, 13, 6, .85); }
+  #iris:not(.run) { display: none; }
+}

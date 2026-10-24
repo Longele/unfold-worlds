@@ -148,8 +148,11 @@ export class Puppet {
 // ------------------------------------------------------------------ particles
 export class Particles {
   constructor(canvas) {
-    this.c = canvas; this.g = canvas.getContext('2d'); this.ps = []; this.fireflies = []; this.dust = true;
-    for (let i = 0; i < 70; i++) this.ps.push(this.mote());
+    this.c = canvas; this.ps = []; this.fireflies = []; this.dust = true;
+    const lite = matchMedia('(pointer: coarse)').matches;
+    if (lite) { canvas.width = W / 2; canvas.height = H / 2; }
+    this.g = canvas.getContext('2d'); if (lite) this.g.scale(0.5, 0.5);
+    for (let i = 0; i < (lite ? 35 : 70); i++) this.ps.push(this.mote());
   }
   mote() { return { k: 'mote', x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - 0.5) * 6, vy: -4 - Math.random() * 8, r: 1 + Math.random() * 2.5, a: 0.15 + Math.random() * 0.35, life: 1e9 }; }
   burst(x, y, kind, n = 24) {
