@@ -198,6 +198,7 @@ export class Stage {
     this.bg = $('#bg', root); this.bg2 = $('#bg2', root); this.actorsEl = $('#actors', root); this.frontEl = $('#front', root);
     this.fx = new Particles($('#fx', root)); this.hot = $('#hot', root); this.sky = $('#sky', root);
     this.actors = {}; this.props = []; this.par = { x: 0, y: 0, tx: 0, ty: 0 };
+    this.cam = $('#cam', root); this.focus = null; this.cz = 1; this.cx = W / 2; this.cy = H / 2;
     this.scale = 1; this.fit(); addEventListener('resize', () => this.fit());
     addEventListener('pointermove', (e) => { this.par.tx = e.clientX / innerWidth - 0.5; this.par.ty = e.clientY / innerHeight - 0.5; }, { passive: true });
     addEventListener('deviceorientation', (e) => { if (e.gamma == null) return; this.par.tx = Math.max(-0.5, Math.min(0.5, e.gamma / 50)); this.par.ty = Math.max(-0.5, Math.min(0.5, (e.beta - 40) / 60)); }, { passive: true });
@@ -210,6 +211,13 @@ export class Stage {
         this.bg.style.transform = `translate(${(-this.par.x * 18).toFixed(1)}px, ${(-this.par.y * 10).toFixed(1)}px) scale(${z.toFixed(4)})`;
         this.actorsEl.style.transform = `translate(${(-this.par.x * 34).toFixed(1)}px, ${(-this.par.y * 16).toFixed(1)}px)`;
         this.frontEl.style.transform = `translate(${(-this.par.x * 70).toFixed(1)}px, ${(-this.par.y * 26).toFixed(1)}px)`;
+        // camera: lean in a little toward the speaker, ease back when it is the child's turn
+        const busy = this.hot.childElementCount > 0, f = !busy && this.focus && this.actors[this.focus];
+        const tz = f ? 1.07 : 1.0, tx = f ? f.x : W / 2, ty = f ? f.y - f.rig.feet * f.s * 0.55 : H / 2;
+        const k = Math.min(1, dt / 1400);
+        this.cz += (tz - this.cz) * k; this.cx += (tx - this.cx) * k; this.cy += (ty - this.cy) * k;
+        const ox = (W / 2 - this.cx) * (this.cz - 1), oy = (H / 2 - this.cy) * (this.cz - 1);
+        this.cam.style.transform = `translate(${ox.toFixed(1)}px, ${oy.toFixed(1)}px) scale(${this.cz.toFixed(4)})`;
         for (const a of Object.values(this.actors)) a.frame(now, dt);
         this.onFrame?.(now, dt);
         this.fx.frame(dt);
@@ -232,7 +240,7 @@ export class Stage {
   }
   // stage coordinates from a pointer event
   pt(e) { const r = this.root.getBoundingClientRect(); return { x: (e.clientX - r.left) / this.scale, y: (e.clientY - r.top) / this.scale }; }
-  turnPage() { const el = this.root.querySelector('#turn'); if (!el) return; el.classList.remove('go'); void el.offsetWidth; el.classList.add('go'); }
+  turnPage() { const el = this.root.querySelector('#iris'); if (!el) return; el.classList.remove('run'); void el.offsetWidth; el.classList.add('run'); }
   setBg(name, ms = 900) {
     return new Promise((res) => {
       const img = new Image(); img.src = `art/${name}.webp`;

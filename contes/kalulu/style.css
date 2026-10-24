@@ -137,13 +137,36 @@ body.in.idle .cap { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 14px);
   .langs { transition: opacity .6s; }
 }
 
-/* page turn: a warm sheet with a soft shadow sweeps right to left */
-#turn { position: absolute; inset: 0; pointer-events: none; transform: translateX(110%); background: linear-gradient(90deg, rgba(40, 18, 6, 0) 0, rgba(40, 18, 6, .35) 3%, #f3e2c6 7%, #ead3ad 60%, #e2c597 100%); box-shadow: -40px 0 80px rgba(30, 12, 2, .35); z-index: 3; }
-#turn.go { animation: turnpage 1.25s cubic-bezier(.55, 0, .35, 1) forwards; }
-@keyframes turnpage { 0% { transform: translateX(110%); } 45% { transform: translateX(0); } 55% { transform: translateX(0); } 100% { transform: translateX(-115%); } }
 .puppet { cursor: pointer; }
 
 /* screens of another shape than 16:9: the picture continues, blurred, around the stage */
 #ambient { position: absolute; inset: -60px; background-size: cover; background-position: 50% 50%; filter: blur(28px) brightness(.62) saturate(1.1); transform: scale(1.08); transition: background-image .8s; }
 body.boxed-x #stage { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 3%, #000 97%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 3%, #000 97%, transparent 100%); }
 body.boxed-y #stage { -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 4%, #000 96%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0, #000 4%, #000 96%, transparent 100%); }
+
+/* camera layer (everything that moves together when the camera leans in) */
+#cam { position: absolute; inset: 0; transform-origin: 50% 50%; will-change: transform; }
+/* between pages the lamp behind the screen is lowered then raised: a soft iris of warm darkness */
+#iris { position: absolute; inset: 0; pointer-events: none; z-index: 3; opacity: 0;
+  background: radial-gradient(circle at 50% 54%, transparent calc(var(--r) - 180px), rgba(255, 168, 90, .14) calc(var(--r) - 70px), #140904 var(--r)); }
+@property --r { syntax: '<length>'; inherits: false; initial-value: 1400px; }
+#iris.run { animation: iris 1.5s cubic-bezier(.65, 0, .35, 1) forwards; }
+@keyframes iris {
+  0% { --r: 1400px; opacity: 1; }
+  36% { --r: 0px; opacity: 1; }
+  52% { --r: 0px; opacity: 1; }
+  99% { --r: 1400px; opacity: 1; }
+  100% { --r: 1400px; opacity: 0; }
+}
+/* the lamp behind the screen is alive: a warm pool that breathes and drifts */
+#light { animation: lamp 11s ease-in-out infinite alternate; background: radial-gradient(ellipse 60% 55% at var(--lx, 55%) 30%, rgba(255, 214, 150, .26), transparent 70%); }
+@keyframes lamp { 0% { --lx: 45%; opacity: .85; } 30% { opacity: 1; } 55% { opacity: .9; } 100% { --lx: 62%; opacity: 1; } }
+@property --lx { syntax: '<percentage>'; inherits: false; initial-value: 55%; }
+body.night #light { background: radial-gradient(ellipse 50% 45% at var(--lx, 62%) 22%, rgba(220, 230, 255, .16), transparent 65%); }
+/* depth: the grass right in front of the lens is softer */
+.prop.fg { filter: brightness(.38) saturate(1.2) blur(2px) !important; }
+/* caption: lighter, more refined */
+.cap::before { background: radial-gradient(closest-side, rgba(20, 9, 3, .5), rgba(20, 9, 3, .18) 60%, rgba(20, 9, 3, 0)) !important; }
+.cap { letter-spacing: .01em; }
+.cap span { transition: color .25s, text-shadow .25s; }
+.cap span.lit { text-shadow: 0 0 18px rgba(255, 220, 160, .35), 0 2px 14px rgba(20, 8, 0, .9); }

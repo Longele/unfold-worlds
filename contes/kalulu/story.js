@@ -1,6 +1,6 @@
 // Kalulu and the great tug of war: the eight pages. Each page sets its stage, then runs as a little script:
 // voices, puppet moves, sounds, and the moments where the child's hand moves the story on.
-import { W, H, sleep, tapZone, dragAlong, rapid, swipeAcross, choose, hint } from './engine.js?v=202610231955';
+import { W, H, sleep, tapZone, dragAlong, rapid, swipeAcross, choose, hint } from './engine.js?v=202610232140';
 
 const SPEAKER = { k: 'kalulu', e: 'elephant', h: 'hippo' };
 const GROUND = 930;
@@ -11,7 +11,7 @@ export function makeStory(api) {
   const sfx = (n, v = 1, r = 1) => audio.sfx(`sfx/${n}.mp3`, v, r);
   const amb = (n) => audio.loop('amb', `sfx/${n}.mp3`, 'amb', 1);
   const shake = (px = 10, ms = 600) => { const el = stage.root; el.classList.remove('shake'); void el.offsetWidth; el.style.setProperty('--sh', px + 'px'); el.classList.add('shake'); setTimeout(() => el.classList.remove('shake'), ms); };
-  const grass = (y = 965, dark = true) => { for (const x of [-120, 980]) stage.prop('grass', { x, y, s: 1.05, cls: dark ? 'ink' : '' }); };
+  const grass = (y = 965, dark = true) => { for (const x of [-120, 980]) stage.prop('grass', { x, y, s: 1.05, cls: dark ? 'ink fg' : 'fg' }); };
   const birds = () => {
     ['bird1', 'bird2', 'bird3'].forEach((b, i) => {
       const el = stage.prop(b, { x: 500 + i * 140, y: 640 + i * 30, s: 0.55, cls: 'ink fly', layer: 'actors' });

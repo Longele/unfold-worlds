@@ -1,6 +1,6 @@
 // Kalulu: the book around the stage. Language, the read-along caption, page navigation, pause, the end card.
-import { Stage, Audio, sleep } from './engine.js?v=202610231955';
-import { makeStory, SPEAKER } from './story.js?v=202610231955';
+import { Stage, Audio, sleep } from './engine.js?v=202610232140';
+import { makeStory, SPEAKER } from './story.js?v=202610232140';
 
 const $ = (id) => document.getElementById(id);
 const T = {
@@ -28,11 +28,12 @@ function showLine(id) {
   const spans = [...cap.children];
   const actor = stage.actors[SPEAKER[tm.who]];
   if (actor) actor.talk = 1;
+  stage.focus = actor && tm.who !== 'n' ? SPEAKER[tm.who] : null;
   return (time) => {
     let open = 0;
     tm.words.forEach((w, i) => { const on = time >= w.s - 0.02; spans[i].classList.toggle('lit', on); if (time >= w.s && time <= w.e) open = 1; });
     if (actor) actor.mouth = open ? 0.6 + 0.4 * Math.abs(Math.sin(time * 18)) : 0;
-    if (time > 1e8) { if (actor) { actor.talk = 0; actor.mouth = 0; } }
+    if (time > 1e8) { if (actor) { actor.talk = 0; actor.mouth = 0; } stage.focus = null; }
   };
 }
 async function say(id) {
@@ -57,14 +58,15 @@ async function go(i) {
   $('end').classList.remove('on');
   document.body.classList.toggle('night', !!P.night);
   cap.className = 'cap';
-  stage.root.classList.add('turning'); stage.turnPage(); audio.sfx('sfx/page.mp3', 0.6);
-  await stage.setBg(P.bg, 700);
+  stage.root.classList.add('turning'); stage.turnPage(); stage.focus = null; if (page > 0 || i > 0) audio.sfx('sfx/sunrise.mp3', 0.28, 0.9);
+  await sleep(520); if (r !== run) return; // the lamp is down
+  await stage.setBg(P.bg, 260);
   if (r !== run) return;
   stage.clearActors(); stage.clearProps(); stage.sky.className = 'sky';
   P.setup?.();
   stage.root.classList.remove('turning');
   audio.loop('amb', `sfx/${P.amb}.mp3`, 'amb', 1);
-  if (!P.night) audio.stopLoop('music', 2);
+  if (audio.musicOn) audio.loop('music', 'sfx/theme.mp3', 'music', 0.55, 3);
   try {
     await P.run(check(r));
     if (r === run && page < pages.length - 1) { await sleep(900); if (r === run) go(page + 1); }
