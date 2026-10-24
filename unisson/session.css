@@ -1,0 +1,41 @@
+/* UNISSON session: the big screen as a live mix, and the phone as one instrument of it */
+.session .lyrics { position: fixed; left: 0; right: 0; top: 47vh; z-index: 2; text-align: center; pointer-events: none; opacity: 1; transition: opacity .6s; }
+.session .lyrics .now { margin: 0; font-weight: 300; font-size: clamp(40px, 5.6vw, 100px); line-height: 1.05; text-shadow: 0 0 50px rgba(0, 0, 0, .9), 0 0 30px rgba(255, 190, 140, .35); }
+.session .lyrics .next { margin: 14px 0 0; font-style: italic; font-size: clamp(22px, 2.4vw, 40px); opacity: .45; }
+.session .lyrics.sing .now { font-size: clamp(56px, 8vw, 150px); color: #fff6ea; }
+.session .title.stay { opacity: 1; transform: none; }
+.session .sub { position: fixed; left: 0; right: 0; top: calc(13vh + clamp(60px, 8vw, 130px)); z-index: 2; margin: 0; text-align: center; font-style: italic; font-size: clamp(20px, 2.2vw, 34px); opacity: .7; pointer-events: none; }
+.cols { position: fixed; left: 0; right: 0; bottom: 92px; z-index: 2; display: grid; grid-template-columns: .34fr 1fr 1fr 1fr 1fr .34fr; pointer-events: none; transition: opacity .8s; }
+.cols::before, .cols::after { content: ''; }
+.col { text-align: center; opacity: .35; transition: opacity .6s, transform .6s var(--ease); }
+.col.on { opacity: 1; }
+.col b { display: block; font-weight: 300; font-style: italic; font-size: clamp(24px, 2.6vw, 44px); color: hsl(var(--h) 90% 72%); text-shadow: 0 0 calc(var(--lv, 0) * 40px) hsl(var(--h) 90% 60%); }
+.col i { display: block; margin-top: 6px; font-style: normal; font-family: var(--mono); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; opacity: .6; }
+.session[data-stage="accueil"] .cols { opacity: 0; }
+.session[data-stage="fin"] .cols { opacity: .5; }
+.bare .cols { bottom: 36px; }
+.session .regie { flex-wrap: nowrap; }
+
+/* ---------------------------------------------------------------- the phone */
+.player .join { gap: 16px; }
+.player .join h1 { font-size: clamp(38px, 11vw, 60px); }
+.role { position: fixed; inset: 0; z-index: 2; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px; pointer-events: none; }
+.in .role { display: flex; }
+.role .who { margin: 0; font-family: var(--mono); font-size: 11px; letter-spacing: .32em; text-transform: uppercase; opacity: .7; }
+.role h2 { margin: 10px 0 0; font-weight: 300; font-style: italic; font-size: clamp(46px, 14vw, 76px); line-height: 1; color: hsl(var(--h) 90% 74%); text-shadow: 0 0 40px hsl(var(--h) 90% 50% / .6); transition: transform .5s var(--ease); }
+.role .do { margin: 18px 0 0; max-width: 18ch; font-size: 26px; line-height: 1.2; }
+.role .state { position: fixed; left: 0; right: 0; bottom: max(44px, calc(env(safe-area-inset-bottom) + 28px)); margin: 0; font-family: var(--mono); font-size: 12px; letter-spacing: .24em; text-transform: uppercase; opacity: .7; }
+.role .num { position: fixed; inset: 0; display: grid; place-items: center; font-weight: 300; font-size: 46vh; line-height: 1; color: #fff; text-shadow: 0 0 60px hsl(var(--h) 90% 60%); }
+.role .lyr { position: fixed; left: 0; right: 0; top: 14vh; margin: 0; padding: 0 24px; font-size: 34px; line-height: 1.15; text-shadow: 0 0 20px rgba(0, 0, 0, .7); }
+.playing .role h2 { transform: translateY(-18vh) scale(.8); }
+.playing .role .do { transform: translateY(-16vh); font-size: 20px; opacity: .6; }
+.playing .role .who { opacity: 0; }
+.role .who, .role .do { transition: opacity .4s, transform .5s var(--ease); }
+.listen .role .do { opacity: .55; }
+.player .bar { position: fixed; left: 12vw; right: 12vw; bottom: max(90px, calc(env(safe-area-inset-bottom) + 72px)); height: 8px; border-radius: 8px; background: rgba(255, 255, 255, .12); overflow: hidden; display: none; }
+.player .bar i { display: block; height: 100%; width: calc(var(--c, 0) * 100%); background: linear-gradient(90deg, var(--gold), var(--rose)); transition: width .3s; }
+.charge .player .bar, .player.charge .bar { display: block; }
+.listenclip { position: fixed; left: 50%; bottom: max(110px, calc(env(safe-area-inset-bottom) + 90px)); transform: translateX(-50%); z-index: 3; display: none; gap: 10px; }
+.listenclip button { padding: 14px 22px; border-radius: 999px; background: var(--paper); color: #000; font-family: var(--mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; white-space: nowrap; }
+.listenclip button.ghost { background: rgba(255, 255, 255, .12); color: var(--paper); }
+.fin .listenclip.ready { display: flex; }
