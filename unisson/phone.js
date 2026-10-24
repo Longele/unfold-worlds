@@ -1,9 +1,9 @@
 // UNISSON phone: one gesture, an instant answer under the finger, and a screen that is one light of the room.
 // It sends a summary of its taps every quarter second (never one message per tap), keeps its clock on the
 // screen's, and plays every cue on the dated instant. If the network drops, the light keeps the score going.
-import { phone, randCode, cleanRoom } from './net.js?v=202610241415';
-import { light, seatOf, hsl, BEAT, STEP, PADS, PLAYABLE, DROP_IN, ZH, score, bellsFor, partOf, freeNote, NOTE_FR, NOTE_EN } from './show.js?v=202610241415';
-import { Synth } from './music.js?v=202610241415';
+import { phone, randCode, cleanRoom } from './net.js?v=202610241515';
+import { light, seatOf, hsl, BEAT, STEP, PADS, PLAYABLE, DROP_IN, ZH, score, bellsFor, partOf, freeNote, NOTE_FR, NOTE_EN } from './show.js?v=202610241515';
+import { Synth } from './music.js?v=202610241515';
 
 const $ = (id) => document.getElementById(id);
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };

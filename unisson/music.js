@@ -3,7 +3,7 @@
 // the shared clock: a note is scheduled on the AudioContext timeline at its Date.now() instant (plus the phone's
 // offset to the screen). The crowd plays real notes, but on the next sixteenth and inside the current chord,
 // so a room of thousands always sounds in time and in tune.
-import { BEAT, STEP, CHORDS, ROOTS, SCALE, chordAt, score, COUNT_IN, partOf } from './show.js?v=202610241415';
+import { BEAT, STEP, CHORDS, ROOTS, SCALE, chordAt, score, COUNT_IN, partOf } from './show.js?v=202610241515';
 
 const N = (m) => 440 * Math.pow(2, (m - 69) / 12);
 

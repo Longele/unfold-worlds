@@ -1,14 +1,14 @@
 // UNISSON big screen: the room as points of light, the QR code and the live count, the music on the venue
 // sound system, and the control bar that fires each moment. A simulated crowd lets it be shown without a room.
-import { screen, randCode, cleanRoom } from './net.js?v=202610241415';
-import { light, seatOf, ZONES, BEAT, BAR, DROP_IN, PAL, STEP, PADS, ZH, score, bellsFor, partOf, freeNote } from './show.js?v=202610241415';
-import { Music } from './music.js?v=202610241415';
+import { screen, randCode, cleanRoom } from './net.js?v=202610241515';
+import { light, seatOf, ZONES, BEAT, BAR, DROP_IN, PAL, STEP, PADS, ZH, score, bellsFor, partOf, freeNote } from './show.js?v=202610241515';
+import { Music } from './music.js?v=202610241515';
 
 const $ = (id) => document.getElementById(id);
 const T = {
   fr: { phones: 'téléphones', kick: 'Sortez vos téléphones', lobbyT: 'Ce soir, c’est vous l’orchestre', code: 'Code', openS: 'L’écran de la salle. Branchez-le sur la sono, puis ouvrez la salle.', openB: 'Ouvrir la salle',
     cLobby: 'Accueil', cEveil: 'L’éveil', cVague: 'La vague', cDrop: 'Le drop', cJam: 'L’orchestre', cCoeur: 'Le cœur', cFin: 'Fin', sim: '+ 60 simulés', full: 'Plein écran',
-    sSilent: 'Douce nuit', sJoie: 'Ode à la joie', net: { on: 'Filet : oui', off: 'Filet : non' }, zgC: 'Les graves', zcC: 'Le milieu', zdC: 'Les aigus', pall: 'Tous ensemble', pg: 'Les graves, seuls !', pc: 'Le milieu, seul !', pd: 'Les aigus, seuls !', plibre: 'Libre ! Secouez tous', score: (a, b) => `La salle a joué ${a} notes sur ${b}`,
+    sSilent: 'Silent Night', sJoie: 'Ode à la joie', net: { on: 'Filet : oui', off: 'Filet : non' }, zgC: 'Les graves', zcC: 'Le milieu', zdC: 'Les aigus', pall: 'Tous ensemble', pg: 'Les graves, seuls !', pc: 'Le milieu, seul !', pd: 'Les aigus, seuls !', plibre: 'Libre ! Secouez tous', score: (a, b) => `La salle a joué ${a} notes sur ${b}`,
     zg: 'Le rythme', zc: 'Les basses', zd: 'La mélodie', player: 'joueur', players: 'joueurs', tJam: 'C’est vous qui jouez', snd: { both: 'Son : sono + téléphones', pa: 'Son : sono', tel: 'Son : téléphones' },
     tEveil: 'L’éveil', tVague: 'La vague', tDrop: '', tCoeur: 'Un seul cœur', tFin: 'Merci' },
   en: { phones: 'phones', kick: 'Take out your phones', lobbyT: 'Tonight, you are the orchestra', code: 'Code', openS: 'The room screen. Plug it into the sound system, then open the room.', openB: 'Open the room',
