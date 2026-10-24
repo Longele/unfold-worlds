@@ -3,7 +3,7 @@
 // the shared clock: a note is scheduled on the AudioContext timeline at its Date.now() instant (plus the phone's
 // offset to the screen). The crowd plays real notes, but on the next sixteenth and inside the current chord,
 // so a room of thousands always sounds in time and in tune.
-import { BEAT, STEP, CHORDS, ROOTS, SCALE, chordAt, score, COUNT_IN } from './show.js?v=202610241300';
+import { BEAT, STEP, CHORDS, ROOTS, SCALE, chordAt, score, COUNT_IN, partOf } from './show.js?v=202610241415';
 
 const N = (m) => 440 * Math.pow(2, (m - 69) / 12);
 
@@ -172,8 +172,8 @@ export class Music extends Synth {
   }
 
   // ---------------------------------------------------------------- a song, rung by the room
-  cueSong(id, t0, net = true) {
-    this.scene = 'chant'; this.t0 = t0; this.song = score(id); this.net = net; this.rung = new Map(); this.ghost = new Set(); this.cbeat = 0;
+  cueSong(id, t0, net = true, zs = null) {
+    this.scene = 'chant'; this.t0 = t0; this.song = score(id); this.net = net; this.zs = zs; this.rung = new Map(); this.ghost = new Set(); this.free8 = new Map(); this.cbeat = 0;
   }
   chant() {
     const sg = this.song, ahead = Date.now() + 160;
@@ -184,19 +184,36 @@ export class Music extends Synth {
       else if ((b - COUNT_IN) % sg.meter === 0) { const ch = sg.chords[Math.floor((b - COUNT_IN) / sg.meter)]; if (ch) { this.wash(ch, t, sg.beat * sg.meter / 1000, 0.035, 1100); this.sub(440 * Math.pow(2, (ch[0] - 12 - 69) / 12), t, sg.beat * sg.meter * 0.9 / 1000, 0.18); } }
       this.cbeat++;
     }
-    // the safety net: every note rings softly on time, so the song never breaks; the room rings it loud
-    if (this.net) for (const n of sg.notes) { const ms = this.t0 + n.at; if (ms < ahead && ms > Date.now() - 50 && !this.ghost.has(n.i)) { this.ghost.add(n.i); this.bell(440 * Math.pow(2, (n.m - 69) / 12), this.at(ms), n.len, 0.05); } }
+    // a free passage: the screen carries the tune while the room throws in notes of the chord
+    // the safety net plays a note only once nobody rang it, softly and a beat-fraction late: the room hears its own gaps
+    const now = Date.now();
+    for (const n of sg.notes) {
+      const ms = this.t0 + n.at; if (ms > ahead) break; if (this.ghost.has(n.i) || ms < now - 400) continue;
+      const fr = 440 * Math.pow(2, (n.m - 69) / 12);
+      if (partOf(n, this.zs) === 'libre') { this.ghost.add(n.i); this.bell(fr, this.at(Math.max(ms, now + 5)), n.len, 0.13); }
+      else if (this.net && now > ms + 90 && !this.rung.has(n.i)) { this.ghost.add(n.i); this.bell(fr, this.at(now + 5), n.len, 0.05); }
+    }
   }
   // a phone rang note k: early or on time, it sounds exactly on its beat; late, only if no net already sang it
-  ring(k) {
+  ring(k, v = 0.7) {
     if (this.scene !== 'chant' || !this.song) return false;
     const n = this.song.notes[k]; if (!n) return false;
     const ms = this.t0 + n.at, now = Date.now(), c = (this.rung.get(k) || 0) + 1; this.rung.set(k, c);
     if (c > 3) return true;
-    const fr = 440 * Math.pow(2, (n.m - 69) / 12), vol = c === 1 ? 0.2 : 0.08;
+    const fr = 440 * Math.pow(2, (n.m - 69) / 12), vol = (c === 1 ? 0.22 : 0.09) * (0.45 + 0.75 * v) * (this.ghost.has(k) ? 0.5 : 1); // a harder swing rings louder
     if (now < ms - 15) this.bell(fr, this.at(ms), n.len, vol);
-    else if (now < ms + 250 && !this.net) this.bell(fr, this.at(now + 10), n.len, vol);
-    else if (now < ms + 250) this.bell(fr, this.at(now + 10), n.len, vol * 0.35);
+    else if (now < ms + 300) this.bell(fr, this.at(now + 10), n.len, vol);
+    return true;
+  }
+  // a free note from a phone: on its eighth, a few voices at most per eighth
+  free(m, s, v = 0.7) {
+    if (this.scene !== 'chant' || !this.song) return false;
+    const half = this.song.beat / 2, now = Date.now(); let ms = this.t0 + s * half;
+    if (ms < now + 30) { s = Math.ceil((now + 30 - this.t0) / half); ms = this.t0 + s * half; }
+    const k = s + ':' + m, c = (this.free8.get(k) || 0) + 1, all = (this.free8.get(s) || 0) + 1; this.free8.set(k, c); this.free8.set(s, all);
+    if (this.free8.size > 3000) this.free8.clear();
+    if (c > 2 || all > 7) return true;
+    this.bell(440 * Math.pow(2, (m - 69) / 12), this.at(ms), half * 3, 0.1 * (0.5 + 0.7 * v));
     return true;
   }
   // a note from a phone: on its sixteenth, or the next one if it arrived late

@@ -63,10 +63,13 @@ canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 /* ---------------------------------------------------------------- the phone */
 .bell { position: fixed; left: 0; right: 0; top: 46%; z-index: 2; transform: translateY(-50%); text-align: center; pointer-events: none; opacity: 0; transition: opacity .5s; }
 .chant .bell { opacity: 1; }
+.bell .names span { transition: opacity .2s; } .bell .names span.dim { opacity: .3; }
+.bell .names[data-n="3"] { font-size: 48px; } .bell .names[data-n="4"], .bell .names[data-n="5"] { font-size: 34px; gap: 10px; } .bell .names[data-n="6"], .bell .names[data-n="7"], .bell .names[data-n="8"] { font-size: 26px; flex-wrap: wrap; padding: 0 22vw; gap: 4px 10px; }
 .bell .names { display: flex; justify-content: center; gap: 14px; font-weight: 300; font-size: 64px; line-height: 1; text-shadow: 0 2px 24px rgba(0, 0, 0, .5); }
 .bell .cue { position: absolute; left: 0; right: 0; top: calc(50% + 50vmin); margin: 0; font-family: var(--mono); font-size: 13px; letter-spacing: .26em; text-transform: uppercase; opacity: .7; }
 .bell .cue.now { font-family: var(--serif); font-size: 42px; letter-spacing: 0; text-transform: none; opacity: 1; color: #fff; text-shadow: 0 0 30px rgba(255, 255, 255, .7); }
-.bell .cue.ready { opacity: 1; color: var(--gold); }
+.bell .cue.ready, .bell .cue.solo, .bell .cue.libre { opacity: 1; color: var(--gold); }
+.bell .cue.libre, .bell .cue.end { font-family: var(--serif); font-size: 28px; letter-spacing: 0; text-transform: none; opacity: 1; }
 .chant .hint { display: none; }
 
 .pads { position: fixed; left: 0; right: 0; top: max(64px, calc(env(safe-area-inset-top) + 48px)); bottom: max(120px, calc(env(safe-area-inset-bottom) + 100px)); z-index: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px; opacity: 0; pointer-events: none; transform: scale(.96); transition: opacity .5s, transform .5s var(--ease); }

@@ -82,13 +82,13 @@ export const hsl = (c, k = 1) => `hsl(${c.h.toFixed(0)} ${c.s}% ${(c.l * (0.12 +
 // A syllable of '' continues the previous word (a held or slurred note).
 const C5 = 72, D5 = 74, E5 = 76, F5 = 77, G5 = 79;
 export const SONGS = {
-  jingle: { fr: 'Jingle Bells', en: 'Jingle Bells', bpm: 116, meter: 4,
+  jingle: { fr: 'Jingle Bells', en: 'Jingle Bells', bpm: 116, meter: 4, parts: [[0, 'all'], [16, 'g'], [24, 'd'], [32, 'c'], [40, 'libre'], [48, 'all']],
     chords: [[48, 52, 55], [48, 52, 55], [48, 52, 55], [48, 52, 55], [41, 45, 48, 53], [48, 52, 55], [50, 54, 57, 60], [43, 47, 50, 53], [48, 52, 55], [48, 52, 55], [48, 52, 55], [48, 52, 55], [41, 45, 48, 53], [48, 52, 55], [43, 47, 50, 53], [48, 52, 55]],
     notes: [[E5, 1, 'Jin-'], [E5, 1, 'gle'], [E5, 2, 'bells,'], [E5, 1, 'jin-'], [E5, 1, 'gle'], [E5, 2, 'bells,'], [E5, 1, 'jin-'], [G5, 1, 'gle'], [C5, 1.5, 'all'], [D5, 0.5, 'the'], [E5, 4, 'way!'],
       [F5, 1, 'Oh,'], [F5, 1, 'what'], [F5, 1.5, 'fun'], [F5, 0.5, 'it'], [F5, 1, 'is'], [E5, 1, 'to'], [E5, 1, 'ride'], [E5, 0.5, 'in'], [E5, 0.5, 'a'], [E5, 1, 'one'], [D5, 1, 'horse'], [D5, 1, 'o-'], [E5, 1, 'pen'], [D5, 2, 'sleigh,'], [G5, 2, 'hey!'],
       [E5, 1, 'Jin-'], [E5, 1, 'gle'], [E5, 2, 'bells,'], [E5, 1, 'jin-'], [E5, 1, 'gle'], [E5, 2, 'bells,'], [E5, 1, 'jin-'], [G5, 1, 'gle'], [C5, 1.5, 'all'], [D5, 0.5, 'the'], [E5, 4, 'way!'],
       [F5, 1, 'Oh,'], [F5, 1, 'what'], [F5, 1.5, 'fun'], [F5, 0.5, 'it'], [F5, 1, 'is'], [E5, 1, 'to'], [E5, 1, 'ride'], [E5, 0.5, 'in'], [E5, 0.5, 'a'], [G5, 1, 'one'], [G5, 1, 'horse'], [F5, 1, 'o-'], [D5, 1, 'pen'], [C5, 4, 'sleigh!']] },
-  silent: { fr: 'Douce nuit', en: 'Silent Night', bpm: 84, meter: 3,
+  silent: { fr: 'Douce nuit', en: 'Silent Night', bpm: 84, meter: 3, parts: [[0, 'all'], [24, 'g'], [36, 'd'], [48, 'c'], [60, 'all']],
     chords: [[48, 52, 55], [48, 52, 55], [48, 52, 55], [48, 52, 55], [43, 47, 50, 53], [43, 47, 50, 53], [48, 52, 55], [48, 52, 55], [41, 45, 48], [41, 45, 48], [48, 52, 55], [48, 52, 55], [41, 45, 48], [41, 45, 48], [48, 52, 55], [48, 52, 55], [43, 47, 50, 53], [43, 47, 50, 53], [48, 52, 55], [48, 52, 55], [48, 52, 55], [43, 47, 50, 53], [48, 52, 55], [48, 52, 55]],
     notes: [[67, 1.5, 'Si-'], [69, 0.5, 'lent'], [67, 1, 'night,'], [64, 3, ''], [67, 1.5, 'ho-'], [69, 0.5, 'ly'], [67, 1, 'night,'], [64, 3, ''],
       [74, 2, 'All'], [74, 1, 'is'], [71, 3, 'calm,'], [72, 2, 'all'], [72, 1, 'is'], [67, 3, 'bright,'],
@@ -96,7 +96,7 @@ export const SONGS = {
       [69, 2, 'Ho-'], [69, 1, 'ly'], [72, 1.5, 'in-'], [71, 0.5, 'fant'], [69, 1, 'so-'], [67, 1.5, 'ten-'], [69, 0.5, 'der'], [67, 1, 'and'], [64, 3, 'mild,'],
       [74, 2, 'Sleep'], [74, 1, 'in'], [77, 1.5, 'heav-'], [74, 0.5, 'en-'], [71, 1, 'ly'], [72, 3, 'peace,'], [76, 3, ''],
       [72, 1.5, 'Sleep'], [67, 0.5, 'in'], [64, 1, 'heav-'], [67, 1.5, 'en-'], [65, 0.5, 'ly'], [62, 1, ''], [60, 3, 'peace.']] },
-  joie: { fr: 'L’Ode à la joie', en: 'Ode to Joy', bpm: 104, meter: 4,
+  joie: { fr: 'L’Ode à la joie', en: 'Ode to Joy', bpm: 104, meter: 4, parts: [[0, 'all'], [8, 'd'], [16, 'libre'], [24, 'all']],
     chords: [[48, 52, 55], [43, 47, 50], [48, 52, 55], [43, 47, 50], [48, 52, 55], [43, 47, 50], [48, 52, 55], [43, 47, 50, 55]],
     notes: [[E5, 1, 'Freu-'], [E5, 1, 'de,'], [F5, 1, 'schö-'], [G5, 1, 'ner'], [G5, 1, 'Göt-'], [F5, 1, 'ter'], [E5, 1, 'fun-'], [D5, 1, 'ken,'], [C5, 1, 'Toch-'], [C5, 1, 'ter'], [D5, 1, 'aus'], [E5, 1, 'E-'], [E5, 1.5, 'ly-'], [D5, 0.5, 'si-'], [D5, 2, 'um,'],
       [E5, 1, 'Wir'], [E5, 1, 'be-'], [F5, 1, 'tre-'], [G5, 1, 'ten'], [G5, 1, 'feu-'], [F5, 1, 'er'], [E5, 1, 'trun-'], [D5, 1, 'ken,'], [C5, 1, 'Himm-'], [C5, 1, 'li-'], [D5, 1, 'sche,'], [E5, 1, 'dein'], [D5, 1.5, 'Hei-'], [C5, 0.5, 'lig-'], [C5, 2, 'tum!']] },
@@ -106,17 +106,27 @@ export const COUNT_IN = 4; // four beats of count-in before the first note
 export function score(id) {
   const s = SONGS[id], beat = 60000 / s.bpm, pitches = [...new Set(s.notes.map((n) => n[0]))].sort((a, b) => a - b);
   const zoneOf = (m) => { const k = pitches.indexOf(m) / Math.max(1, pitches.length - 1); return k < 0.34 ? 'g' : k < 0.67 ? 'c' : 'd'; };
-  let at = COUNT_IN; const notes = s.notes.map(([m, d, w], i) => { const n = { i, m, d, w, at: at * beat, len: d * beat, z: zoneOf(m) }; at += d; return n; });
-  return { ...s, id, beat, pitches, notes, end: at * beat, zoneOf };
+  const P = s.parts || [[0, 'all']], partAt = (b) => { let p = 'all'; for (const [from, m] of P) if (b >= from - 0.01) p = m; return p; };
+  let at = COUNT_IN; const notes = s.notes.map(([m, d, w], i) => { const n = { i, m, d, w, at: at * beat, len: d * beat, z: zoneOf(m), part: partAt(at - COUNT_IN) }; at += d; return n; });
+  const parts = P.map(([from, m]) => ({ at: (from + COUNT_IN) * beat, m }));
+  return { ...s, id, beat, pitches, notes, parts, end: at * beat, zoneOf, partAt: (e) => partAt(e / beat - COUNT_IN) };
 }
 // which notes this phone rings: in a small section every phone has all its section's notes; in a full room the
 // notes are shared out (at least two phones per bell) by a stable hash of the seat
-export function bellsFor(sc, zone, zoneCount, r) {
-  const mine = sc.pitches.filter((m) => sc.zoneOf(m) === zone);
+// (solo: the section carries the whole melody alone, so its phones share every pitch of the song)
+export function bellsFor(sc, zone, zoneCount, r, solo = false) {
+  const mine = solo ? sc.pitches : sc.pitches.filter((m) => sc.zoneOf(m) === zone);
   if (!mine.length) return new Set();
   const groups = Math.max(1, Math.min(mine.length, Math.floor(zoneCount / 2)));
   const g = Math.floor(r * 9973) % groups;
   return new Set(mine.filter((_, i) => i % groups === g));
+}
+// the passage a note belongs to; a solo for a section with nobody in it goes back to the whole room
+export const partOf = (n, zs) => (n.part.length === 1 && zs && !zs[n.part] ? 'all' : n.part);
+// in a free passage any phone rings any note of the chord, in the bells' octave, so it is always in tune
+export function freeNote(sc, e) {
+  const bar = Math.floor(e / sc.beat - COUNT_IN) / sc.meter | 0, ch = sc.chords[Math.max(0, Math.min(sc.chords.length - 1, bar))];
+  const pc = ch[(Math.random() * ch.length) | 0] % 12; return 72 + pc + (Math.random() < 0.35 ? 12 : 0);
 }
 export const NOTE_FR = ['Do', 'Do♯', 'Ré', 'Mi♭', 'Mi', 'Fa', 'Fa♯', 'Sol', 'La♭', 'La', 'Si♭', 'Si'];
 export const NOTE_EN = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];

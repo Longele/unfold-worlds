@@ -1,19 +1,19 @@
 // UNISSON big screen: the room as points of light, the QR code and the live count, the music on the venue
 // sound system, and the control bar that fires each moment. A simulated crowd lets it be shown without a room.
-import { screen, randCode, cleanRoom } from './net.js?v=202610241300';
-import { light, seatOf, ZONES, BEAT, BAR, DROP_IN, PAL, STEP, PADS, ZH, score, bellsFor } from './show.js?v=202610241300';
-import { Music } from './music.js?v=202610241300';
+import { screen, randCode, cleanRoom } from './net.js?v=202610241415';
+import { light, seatOf, ZONES, BEAT, BAR, DROP_IN, PAL, STEP, PADS, ZH, score, bellsFor, partOf, freeNote } from './show.js?v=202610241415';
+import { Music } from './music.js?v=202610241415';
 
 const $ = (id) => document.getElementById(id);
 const T = {
   fr: { phones: 'téléphones', kick: 'Sortez vos téléphones', lobbyT: 'Ce soir, c’est vous l’orchestre', code: 'Code', openS: 'L’écran de la salle. Branchez-le sur la sono, puis ouvrez la salle.', openB: 'Ouvrir la salle',
     cLobby: 'Accueil', cEveil: 'L’éveil', cVague: 'La vague', cDrop: 'Le drop', cJam: 'L’orchestre', cCoeur: 'Le cœur', cFin: 'Fin', sim: '+ 60 simulés', full: 'Plein écran',
-    sSilent: 'Douce nuit', sJoie: 'Ode à la joie', net: { on: 'Filet : oui', off: 'Filet : non' }, zgC: 'Les graves', zcC: 'Le milieu', zdC: 'Les aigus',
+    sSilent: 'Douce nuit', sJoie: 'Ode à la joie', net: { on: 'Filet : oui', off: 'Filet : non' }, zgC: 'Les graves', zcC: 'Le milieu', zdC: 'Les aigus', pall: 'Tous ensemble', pg: 'Les graves, seuls !', pc: 'Le milieu, seul !', pd: 'Les aigus, seuls !', plibre: 'Libre ! Secouez tous', score: (a, b) => `La salle a joué ${a} notes sur ${b}`,
     zg: 'Le rythme', zc: 'Les basses', zd: 'La mélodie', player: 'joueur', players: 'joueurs', tJam: 'C’est vous qui jouez', snd: { both: 'Son : sono + téléphones', pa: 'Son : sono', tel: 'Son : téléphones' },
     tEveil: 'L’éveil', tVague: 'La vague', tDrop: '', tCoeur: 'Un seul cœur', tFin: 'Merci' },
   en: { phones: 'phones', kick: 'Take out your phones', lobbyT: 'Tonight, you are the orchestra', code: 'Code', openS: 'The room screen. Plug it into the sound system, then open the room.', openB: 'Open the room',
     cLobby: 'Welcome', cEveil: 'Awakening', cVague: 'The wave', cDrop: 'The drop', cJam: 'The orchestra', cCoeur: 'The heart', cFin: 'End', sim: '+ 60 simulated', full: 'Full screen',
-    sSilent: 'Silent Night', sJoie: 'Ode to Joy', net: { on: 'Safety net: on', off: 'Safety net: off' }, zgC: 'The low bells', zcC: 'The middle bells', zdC: 'The high bells',
+    sSilent: 'Silent Night', sJoie: 'Ode to Joy', net: { on: 'Safety net: on', off: 'Safety net: off' }, zgC: 'The low bells', zcC: 'The middle bells', zdC: 'The high bells', pall: 'Everyone together', pg: 'The low bells, alone!', pc: 'The middle, alone!', pd: 'The high bells, alone!', plibre: 'Free! Everyone swing', score: (a, b) => `The room played ${a} of ${b} notes`,
     zg: 'The rhythm', zc: 'The bass', zd: 'The melody', player: 'player', players: 'players', tJam: 'You are the band', snd: { both: 'Sound: PA + phones', pa: 'Sound: PA', tel: 'Sound: phones' },
     tEveil: 'Awakening', tVague: 'The wave', tDrop: '', tCoeur: 'One heart', tFin: 'Thank you' },
 };
@@ -29,7 +29,7 @@ if (window.qrcode) { const q = window.qrcode(0, 'M'); q.addData(joinUrl); q.make
 
 // ---------------------------------------------------------------- the room
 const phones = new Map(); // id -> { seat, last, flare, sim }
-let scene = 'lobby', t0 = Date.now(), link = null, music = null, snd = 'both', song = null, net = true, zc = { g: 0, c: 0, d: 0 };
+let scene = 'lobby', t0 = Date.now(), link = null, music = null, snd = 'both', song = null, net = true, zc = { g: 0, c: 0, d: 0 }, zs = null;
 const played = { g: [], c: [], d: [] }; // who played lately, per section
 function touch(id, z) {
   let p = phones.get(id);
@@ -40,7 +40,8 @@ function onMessage(m) {
   if (!m || !m.id && m.t !== 'p') return;
   if (m.t === 'p') { link?.send({ t: 'q', k: m.k, h: Date.now() }); return; }
   const p = touch(m.id, m.z);
-  if (m.t === 'm') { if (snd !== 'tel') music?.ring(m.k | 0); p.flare = Math.min(1, p.flare + 0.7); played[p.seat.zone].push({ t: Date.now(), id: m.id }); rung.add(m.k | 0); return; }
+  if (m.t === 'f') { if (snd !== 'tel') music?.free(m.m | 0, m.s | 0, +m.v || 0.7); p.flare = Math.min(1, p.flare + 0.5 + 0.5 * (+m.v || 0.7)); played[p.seat.zone].push({ t: Date.now(), id: m.id }); freeHits++; return; }
+  if (m.t === 'm') { if (snd !== 'tel') music?.ring(m.k | 0, +m.v || 0.7); p.flare = Math.min(1, p.flare + 0.7); played[p.seat.zone].push({ t: Date.now(), id: m.id }); rung.add(m.k | 0); return; }
   if (m.t === 'n') { if (snd !== 'tel') music?.note(p.seat.zone, m.p | 0, m.s | 0); else music?.crowd(1, live()); p.flare = Math.min(1, p.flare + 0.5); played[p.seat.zone].push({ t: Date.now(), id: m.id }); return; }
   if (m.t === 'b' && m.n > 0) { p.flare = Math.min(1, p.flare + 0.35 + m.n * 0.1); music?.crowd(m.n, live()); }
 }
@@ -77,7 +78,7 @@ function cue(sc) {
   const ttl = { eveil: 'tEveil', vague: 'tVague', jam: 'tJam', coeur: 'tCoeur', fin: 'tFin' }[sc];
   const el = $('title'); el.textContent = ttl ? t(ttl) : ''; el.classList.remove('show'); void el.offsetWidth; if (ttl) el.classList.add('show');
 }
-function state() { return { t: 's', sc: scene, t0, n: live(), snd, song, net, zc }; }
+function state() { return { t: 's', sc: scene, t0, n: live(), snd, song, net, zc, zs }; }
 setInterval(() => { zc = zoneCounts(); link?.send(state()); }, 1500); // late joiners catch up
 // the three sections at the foot of the screen, with how many are playing now
 setInterval(() => {
@@ -92,8 +93,8 @@ $('net').onclick = () => { net = !net; $('net').textContent = t('net')[net ? 'on
 // a song: the room becomes a handbell choir
 let sc0 = null;
 function cueSong(id) {
-  song = id; scene = 'chant'; t0 = Date.now() + 1500; zc = zoneCounts(); sc0 = score(id); rung.clear(); simRung.clear(); lyr.key = '';
-  music?.cueSong(id, t0, net);
+  song = id; scene = 'chant'; t0 = Date.now() + 1500; zc = zoneCounts(); zs = { ...zc }; sc0 = score(id); rung.clear(); simRung.clear(); lyr.key = ''; lyr.part = ''; lyr.end = false; freeHits = 0;
+  music?.cueSong(id, t0, net, zs);
   const msg = state(); link?.send(msg); setTimeout(() => link?.send(msg), 300);
   document.body.dataset.scene = 'chant';
   for (const b of document.querySelectorAll('[data-cue], [data-song]')) b.classList.toggle('on', b.dataset.song === id);
@@ -109,9 +110,13 @@ setInterval(() => {
   for (const n of sc0.notes) {
     if (simRung.has(n.i) || n.at - e > 200 || n.at - e < -100) continue;
     simRung.add(n.i);
-    for (const p of phones.values()) if (p.sim && Math.random() < 0.55 && bellsFor(sc0, p.seat.zone, zc[p.seat.zone], p.seat.r).has(n.m)) { music?.ring(n.i); rung.add(n.i); p.flare = Math.min(1, p.flare + 0.7); played[p.seat.zone].push({ t: Date.now(), id: p.seat.r }); }
+    const part = partOf(n, zs);
+    for (const p of phones.values()) if (p.sim && Math.random() < 0.55 && (part === 'all' || part === p.seat.zone) && bellsFor(sc0, p.seat.zone, zc[p.seat.zone], p.seat.r, part !== 'all').has(n.m)) { music?.ring(n.i, 0.4 + Math.random() * 0.6); rung.add(n.i); p.flare = Math.min(1, p.flare + 0.7); played[p.seat.zone].push({ t: Date.now(), id: p.seat.r }); }
   }
+  // and in a free passage, simulated phones swing whenever they like
+  if (partOf({ part: sc0.partAt(e) }, zs) === 'libre') for (const p of phones.values()) if (p.sim && Math.random() < 0.02) { music?.free(freeNote(sc0, e), Math.ceil((e + 40) / (sc0.beat / 2)), Math.random()); p.flare = 1; played[p.seat.zone].push({ t: Date.now(), id: p.seat.r }); freeHits++; }
 }, 50);
+let freeHits = 0;
 setInterval(() => { $('n').textContent = live().toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-US'); }, 400);
 for (const b of document.querySelectorAll('[data-cue]')) b.onclick = () => cue(b.dataset.cue);
 $('sim').onclick = () => simulate(60);
@@ -138,9 +143,9 @@ const sparks = [];
 // in a song, a phone glows while one of its bells is ringing
 function bellLight(p, e) {
   if (!sc0) return { h: 0, s: 0, l: 0, a: 0 };
-  if (!p.bells || p.bz !== zc[p.seat.zone] || p.bs !== sc0.id) { p.bz = zc[p.seat.zone]; p.bs = sc0.id; p.bells = bellsFor(sc0, p.seat.zone, zc[p.seat.zone], p.seat.r); }
+  if (!p.bells || p.bz !== zc[p.seat.zone] || p.bs !== sc0.id) { p.bz = zc[p.seat.zone]; p.bs = sc0.id; p.bells = bellsFor(sc0, p.seat.zone, zc[p.seat.zone], p.seat.r); p.solo = bellsFor(sc0, p.seat.zone, zc[p.seat.zone], p.seat.r, true); }
   let a = 0.06;
-  for (const n of sc0.notes) { if (n.at > e) break; const k = (e - n.at) / Math.min(1400, n.len + 500); if (k < 1 && p.bells.has(n.m)) a = Math.max(a, (rung.has(n.i) ? 1 : 0.35) * Math.pow(1 - k, 1.6)); }
+  for (const n of sc0.notes) { if (n.at > e) break; const part = partOf(n, zs), own = part === 'all' ? p.bells.has(n.m) : part === p.seat.zone && p.solo.has(n.m); const k = (e - n.at) / Math.min(1400, n.len + 500); if (k < 1 && own) a = Math.max(a, (rung.has(n.i) ? 1 : 0.2) * Math.pow(1 - k, 1.6)); }
   return { h: ZH[p.seat.zone], s: 85, l: 62, a };
 }
 // the song on the big screen: notes flowing to the line of now, the words to sing
@@ -152,15 +157,28 @@ function songArt(e) {
   for (const n of sc0.notes) {
     const dt = n.at - e; if (dt > span) break; if (dt < -1500) continue;
     const x = lineX + (dt / span) * W * 0.46, y = top + hgt - (P.indexOf(n.m) / Math.max(1, P.length - 1)) * hgt, past = dt < 0, hit = rung.has(n.i);
+    const part = partOf(n, zs), hue = part.length === 1 ? ZH[part] : ZH[n.z], free = part === 'libre';
     const k = past ? Math.max(0, 1 + dt / 1500) : 1, r = (5 + Math.min(16, n.len / 90)) * (past && hit ? 1 + (1 - k) * 2.5 : 1);
-    const gr = g.createRadialGradient(x, y, 0, x, y, r * 3); gr.addColorStop(0, `hsla(${ZH[n.z]},90%,${past && hit ? 85 : 68}%,${(past ? (hit ? 0.9 : 0.25) : 0.8) * k})`); gr.addColorStop(1, 'rgba(0,0,0,0)');
-    g.fillStyle = gr; g.beginPath(); g.arc(x, y, r * 3, 0, 7); g.fill();
+    if (hit || (free && past)) { const gr = g.createRadialGradient(x, y, 0, x, y, r * 3); gr.addColorStop(0, `hsla(${hue},90%,85%,${(free ? 0.4 : 0.95) * k})`); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r * 3, 0, 7); g.fill(); }
+    else { g.strokeStyle = past ? `hsla(0,0%,60%,${0.35 * k})` : `hsla(${hue},80%,70%,${free ? 0.25 : 0.75})`; g.lineWidth = 2; g.beginPath(); g.arc(x, y, r, 0, 7); g.stroke(); }
   }
   // the words, one line at a time; a held note keeps its word lit
   if (!sc0.lines) { sc0.lines = []; let cur = []; for (const n of sc0.notes) { cur.push(n); if (/[,.!]$/.test(n.w) && cur.length > 2) { sc0.lines.push(cur); cur = []; } } if (cur.length) sc0.lines.push(cur); }
   let li = sc0.lines.findIndex((l) => l[l.length - 1].at + l[l.length - 1].len > e); if (li < 0) li = sc0.lines.length - 1;
   const show = (l, lit) => l.filter((n) => n.w).map((n) => `<span class="${lit && n.at <= e ? 'lit' : ''}">${n.w.replace(/-$/, '')}</span>${n.w.endsWith('-') ? '' : ' '}`).join('');
   const key = li + ':' + sc0.notes.filter((n) => n.at <= e).length;
+  // a new passage: the screen says who plays
+  const part = partOf({ part: sc0.partAt(e + 600) }, zs);
+  if (e > sc0.notes[0].at - 600 && e < sc0.end && part !== lyr.part) { lyr.part = part; const el = $('title'); el.textContent = t('p' + part); el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+  // the end: what the room played, section by section
+  if (e > sc0.end + 600) {
+    if (!lyr.end) {
+      lyr.end = true; const own = sc0.notes.filter((n) => partOf(n, zs) !== 'libre'), got = own.filter((n) => rung.has(n.i)).length;
+      const per = ZONES.map((z) => { const o = own.filter((n) => (partOf(n, zs) === 'all' ? n.z : partOf(n, zs)) === z); return o.length ? `<span style="color:hsl(${ZH[z]} 80% 70%);margin:0 .7em">${t('z' + z + 'C')} ${Math.round(100 * o.filter((n) => rung.has(n.i)).length / o.length)} %</span>` : ''; }).filter(Boolean).join('   ');
+      $('lyrics').querySelector('.now').innerHTML = `<span class="lit">${t('score')(got, own.length)}</span>`; $('lyrics').querySelector('.next').innerHTML = per;
+    }
+    return;
+  }
   if (lyr.key !== key) { lyr.key = key; $('lyrics').querySelector('.now').innerHTML = show(sc0.lines[li], true); $('lyrics').querySelector('.next').innerHTML = sc0.lines[li + 1] ? show(sc0.lines[li + 1], false) : ''; }
 }
 function stageArt(now, e, E) {
