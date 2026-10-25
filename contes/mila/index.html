@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Mila et la luciole perdue</title>
+<meta name="description" content="Une bande dessinée interactive pour les 4 à 8 ans : aide Mila à ramener Pipo, la petite luciole, chez lui.">
+<meta name="theme-color" content="#0b1030">
+<link rel="stylesheet" href="style.css?v=202610251930">
+</head>
+<body>
+<section id="cover" class="cover">
+  <div class="cimg"></div>
+  <div class="ctx">
+    <p class="kick">Une BD à toucher</p>
+    <h1 id="title"></h1>
+    <button id="readMe" class="btn main" data-t="readMe"></button>
+    <button id="readSelf" class="btn" data-t="readSelf"></button>
+    <a class="back" href="../">← Les contes</a>
+  </div>
+</section>
+<main id="page" class="page">
+  <div id="panel" class="panel"><canvas id="fx"></canvas><div id="spots" class="spots"></div><div id="layer" class="layer"></div></div>
+  <div id="meter" class="meter"><i></i></div>
+  <p id="hint" class="hint"></p>
+  <div class="foot"><a class="home" href="../" aria-label="Les contes">←</a><div id="dots" class="dots"></div><button id="next" class="next" aria-label="Suivant">→</button></div>
+</main>
+<section id="endcard" class="endcard">
+  <p class="fin" data-t="end"></p>
+  <button id="again" class="btn main" data-t="again"></button>
+  <a class="btn" href="../" data-t="more"></a>
+</section>
+<script type="module" src="app.js?v=202610251930"></script>
+</body>
+</html>
