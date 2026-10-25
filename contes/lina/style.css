@@ -81,3 +81,5 @@ button, a { font: inherit; color: inherit; background: none; border: 0; text-dec
 .foundring { position: absolute; width: 22%; aspect-ratio: 1; transform: translate(-50%, -50%); border: 4px solid var(--gold); border-radius: 50%; box-shadow: 0 0 24px rgba(255, 200, 80, .8); animation: foundring 2.6s ease-out forwards; }
 @keyframes foundring { 0% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; } 20% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; } }
 .spot.calm { box-shadow: 0 0 0 calc(3px + var(--k, 0) * 6px) rgba(255, 220, 150, calc(.4 + var(--k, 0) * .5)), 0 0 calc(20px + var(--k, 0) * 40px) rgba(255, 210, 120, .5); animation: none; }
+.langs { display: flex; gap: 8px; margin: -2px 0 6px; } .langs button { padding: 7px 14px; border-radius: 999px; border: 2px solid rgba(255, 255, 255, .35); font-weight: 700; font-size: 15px; opacity: .75; } .langs button.on { background: var(--paper); color: var(--ink); border-color: var(--ink); opacity: 1; }
+.choice { max-width: 44%; white-space: normal; text-align: center; font-size: 19px; line-height: 1.1; padding: 12px 14px; }

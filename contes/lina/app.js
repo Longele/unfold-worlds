@@ -2,18 +2,31 @@
 // the page; its lines are read aloud in their bubbles with the word being said lit up; on some panels the child
 // takes Lina's magnifying glass or binoculars (a live magnified view under the finger), keeps still to reassure a
 // frightened hedgehog, or says hello to the little ones.
-import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610252330';
+import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610260015';
 
 const $ = (id) => document.getElementById(id);
-const lang = 'fr';
-const T = { readMe: 'Lis-moi l’histoire', readSelf: 'Je lis tout seul', again: 'Relire l’histoire', more: 'D’autres contes', end: 'Fin', loupe: 'Glisse la loupe pour chercher', binocs: 'Glisse les jumelles pour chercher', still: 'Doigt posé sur Pic, sans bouger', greet: 'Touche les petits hérissons', choice: 'Choisis un chemin' };
-for (const el of document.querySelectorAll('[data-t]')) el.textContent = T[el.dataset.t];
-$('title').textContent = TITLE[lang];
-document.querySelector('.kick').textContent = 'Une BD à explorer';
+// the language: from the stories page (?lang=), else the last one chosen, else the phone's
+const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
+let lang = new URLSearchParams(location.search).get('lang') || store.get('contes-lang') || ((navigator.language || '').startsWith('fr') ? 'fr' : 'en');
+if (!['fr', 'en'].includes(lang)) lang = 'fr';
+const TT = {
+  fr: { readMe: 'Lis-moi l’histoire', readSelf: 'Je lis tout seul', again: 'Relire l’histoire', more: 'D’autres contes', end: 'Fin', kick: 'Une BD à explorer', back: '← Les contes', loupe: 'Glisse la loupe pour chercher', binocs: 'Glisse les jumelles pour chercher', still: 'Doigt posé sur Pic, sans bouger', greet: 'Touche les petits hérissons', choice: 'Choisis un chemin' },
+  en: { readMe: 'Read it to me', readSelf: 'I’ll read it myself', again: 'Read it again', more: 'More stories', end: 'The End', kick: 'A comic to explore', back: '← Stories', loupe: 'Slide the magnifying glass to search', binocs: 'Slide the binoculars to search', still: 'Finger on Pic, don’t move', greet: 'Touch the little hedgehogs', choice: 'Choose a path' },
+};
+let T = TT[lang];
+function applyLang() {
+  T = TT[lang]; document.documentElement.lang = lang;
+  for (const el of document.querySelectorAll('[data-t]')) el.textContent = T[el.dataset.t];
+  $('title').textContent = TITLE[lang]; document.querySelector('.kick').textContent = T.kick; document.querySelector('.back').textContent = T.back;
+  for (const el of document.querySelectorAll('a[href="../"]')) el.href = `../?lang=${lang}`;
+  for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
+  fetch(`voice/${lang}/timings.json?v=202610260015`).then((r) => r.json()).then((j) => (timings = j));
+}
+for (const b of document.querySelectorAll('[data-lang]')) b.onclick = () => { lang = b.dataset.lang; store.set('contes-lang', lang); applyLang(); };
 
 let timings = {}, mode = 'voice', idx = -1, branch = null, busy = false, ctx = null, sfxBuf = {};
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-fetch(`voice/${lang}/timings.json?v=202610252330`).then((r) => r.json()).then((j) => (timings = j));
+applyLang();
 
 // ---------------------------------------------------------------- sound: decoded effects, streamed ambience, voices and theme
 const SFX = ['loupe', 'found', 'binocs', 'sniff', 'squeak', 'uncurl', 'hush', 'hug', 'page', 'pop', 'tap', 'pencil'];
@@ -163,7 +176,7 @@ const acts = {
   }),
   greet: (a) => new Promise((res) => {
     hint(T.greet); let n = 0;
-    for (const p of a.spots) { const s = spot(p.at, 0.085, 'soft'); s.onpointerdown = (e) => { e.stopPropagation(); sfx('squeak'); word(p.word, [p.at[0], p.at[1] - 0.07]); burst(p.at[0], p.at[1], 14, 340); if (!s.done) { s.done = true; s.classList.add('done'); if (++n === a.spots.length) { hint(''); setTimeout(res, 600); } } }; }
+    for (const p of a.spots) { const s = spot(p.at, 0.085, 'soft'); s.onpointerdown = (e) => { e.stopPropagation(); sfx('squeak'); word(p.word[lang], [p.at[0], p.at[1] - 0.07]); burst(p.at[0], p.at[1], 14, 340); if (!s.done) { s.done = true; s.classList.add('done'); if (++n === a.spots.length) { hint(''); setTimeout(res, 600); } } }; }
   }),
 };
 const cur = () => PANELS[idx];
