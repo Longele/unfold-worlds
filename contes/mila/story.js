@@ -9,7 +9,7 @@ export const PANELS = [
   { id: 'c3', img: 'c3', amb: 'amb-garden', lines: [{ id: 'c3a', b: [0.58, 0.14], t: [0.6, 0.4] }, { id: 'c3b', b: [0.36, 0.34], t: [0.16, 0.48] }] },
   { id: 'c4', img: 'c4', amb: 'amb-garden', lines: [{ id: 'c4a', b: [0.6, 0.13], t: [0.56, 0.48] }, { id: 'c4b', b: [0.33, 0.28], t: [0.42, 0.4] }] },
   { id: 'c5', img: 'c5', amb: 'amb-garden', lines: [{ id: 'c5a', cap: 1 }],
-    act: { kind: 'hold', at: [0.5, 0.72], ms: 2600, then: [{ id: 'c5b', b: [0.68, 0.5], t: [0.55, 0.7] }] } },
+    act: { kind: 'hold', at: [0.8, 0.63], ms: 2600, then: [{ id: 'c5b', b: [0.64, 0.25], t: [0.79, 0.56] }] } },
   { id: 'c6', img: 'c6', video: 'c6', amb: 'amb-forest', lines: [{ id: 'c6a', cap: 1 }],
     act: { kind: 'sounds', spots: [{ at: [0.17, 0.78], sfx: 'cricket', word: 'CRI-CRI !' }, { at: [0.89, 0.6], sfx: 'owlet', word: 'HOU HOU !' }, { at: [0.87, 0.9], sfx: 'frog', word: 'CROA !' }] } },
   { id: 'c7', img: 'c7', amb: 'amb-river', lines: [{ id: 'c7a', cap: 1 }],

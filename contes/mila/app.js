@@ -2,7 +2,7 @@
 // bubbles (the word being said lights up, so a child can follow the text); an interactive panel waits for the
 // child's gesture. Voices stream as plain audio elements and only the short effects are decoded, so a long read
 // stays light on an iPhone.
-import { PANELS, TITLE, WHO } from './story.js?v=202610251930';
+import { PANELS, TITLE, WHO } from './story.js?v=202610252030';
 
 const $ = (id) => document.getElementById(id);
 const lang = 'fr';
@@ -13,7 +13,7 @@ $('title').textContent = TITLE[lang];
 $('panel').append($('meter')); // the charge bar sits inside the picture, above the hint
 let timings = {}, mode = 'voice', idx = -1, branch = null, busy = false, ctx = null, sfxBuf = {};
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-fetch(`voice/${lang}/timings.json?v=202610251930`).then((r) => r.json()).then((j) => (timings = j));
+fetch(`voice/${lang}/timings.json?v=202610252030`).then((r) => r.json()).then((j) => (timings = j));
 
 // ---------------------------------------------------------------- sound: decoded effects, streamed ambience, voices and lullaby
 const SFX = ['found', 'glow', 'tap', 'wake', 'lightup', 'page', 'pop', 'cricket', 'owlet', 'frog', 'plouf', 'creak', 'hop'];
@@ -21,10 +21,17 @@ async function initAudio() {
   ctx = new (window.AudioContext || window.webkitAudioContext)(); await ctx.resume();
   SFX.forEach(async (n) => { try { const r = await fetch(`sfx/${n}.mp3`); sfxBuf[n] = await ctx.decodeAudioData(await r.arrayBuffer()); } catch {} });
 }
-function sfx(n, vol = 1) { const b = sfxBuf[n]; if (!ctx || !b) return; const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; g.gain.value = vol; s.connect(g).connect(ctx.destination); s.start(); }
-const music = new Audio('sfx/lullaby.mp3'); music.loop = true; music.volume = 0.32;
-const amb = new Audio(); amb.loop = true; amb.volume = 0.5;
-function ambience(n) { const src = `sfx/${n}.mp3`; if (amb.src.endsWith(src)) return; amb.src = src; amb.play().catch(() => {}); }
+// the mix: the storyteller always on top. Effects sit about 12 dB under the voice and dip further while
+// someone speaks; the lullaby and the ambience duck under every line and come back between lines.
+const SFX_GAIN = 0.3; let speaking = false;
+function sfx(n, vol = 1) { const b = sfxBuf[n]; if (!ctx || !b) return; const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; g.gain.value = vol * SFX_GAIN * (speaking ? 0.55 : 1); s.connect(g).connect(ctx.destination); s.start(); }
+const music = new Audio('sfx/lullaby.mp3'); music.loop = true; music.volume = 0.3;
+const amb = new Audio(); amb.loop = true; amb.volume = 0.45;
+const AMB = { 'amb-room': 0.9, 'amb-garden': 0.5, 'amb-forest': 0.45, 'amb-river': 0.45 }; let ambLevel = 0.45;
+function ambience(n) { const src = `sfx/${n}.mp3`; ambLevel = AMB[n] ?? 0.45; if (!amb.src.endsWith(src)) { amb.src = src; amb.play().catch(() => {}); } fade(amb, ambLevel * (speaking ? 0.45 : 1)); }
+const fades = new Map();
+function fade(el, to, ms = 350) { clearInterval(fades.get(el)); const from = el.volume, t0 = performance.now(); fades.set(el, setInterval(() => { const k = Math.min(1, (performance.now() - t0) / ms); el.volume = Math.max(0, Math.min(1, from + (to - from) * k)); if (k >= 1) clearInterval(fades.get(el)); }, 30)); }
+function duck(on) { speaking = on; fade(music, on ? 0.11 : 0.3); fade(amb, ambLevel * (on ? 0.45 : 1)); }
 const voice = new Audio(); voice.preload = 'auto';
 
 // ---------------------------------------------------------------- the panel
@@ -37,7 +44,7 @@ function showLine(ln) {
   if (!ln.cap) { el.style.left = ln.b[0] * 100 + '%'; el.style.top = ln.b[1] * 100 + '%'; }
   $('layer').append(el);
   if (!ln.cap) requestAnimationFrame(() => tail(el, ln.t));
-  sfx('pop', 0.5);
+  sfx('pop', 0.45);
   return el;
 }
 // the bubble's tail: a curved wedge from the bubble towards the one who speaks
@@ -54,14 +61,14 @@ function tail(el, t) {
 async function say(ln) {
   const el = showLine(ln);
   if (mode !== 'voice') { await sleep(300); return el; }
-  voice.src = `voice/${lang}/${ln.id}.mp3`;
-  try { await voice.play(); } catch { return el; }
+  voice.src = `voice/${lang}/${ln.id}.mp3`; duck(true);
+  try { await voice.play(); } catch { duck(false); return el; }
   const words = wordsOf(ln.id), spans = el.querySelectorAll('span');
   await new Promise((res) => {
     const tick = () => {
       const t = voice.currentTime;
       spans.forEach((s, i) => s.classList.toggle('on', words[i] && t >= words[i].s - 0.03 && t < (words[i + 1]?.s ?? 99)));
-      if (voice.ended || voice.paused) { spans.forEach((s) => s.classList.remove('on')); res(); } else requestAnimationFrame(tick);
+      if (voice.ended || voice.paused) { spans.forEach((s) => s.classList.remove('on')); duck(false); res(); } else requestAnimationFrame(tick);
     };
     voice.onended = () => {}; tick();
   });
@@ -136,7 +143,7 @@ function film(name, loop) {
 async function show(i, dir = 1) {
   if (busy) return; busy = true; hint(''); $('next').classList.remove('on');
   const p = PANELS[i]; idx = i;
-  sfx('page', 0.8);
+  sfx('page', 0.7);
   const page = $('page'); page.classList.remove('turn-in'); page.classList.add('turn-out'); await sleep(320);
   clearLayer(); glows.length = 0; sparks.length = 0; $('panel').onpointerdown = null;
   for (const el of document.querySelectorAll('#panel .art')) el.remove();
@@ -147,7 +154,7 @@ async function show(i, dir = 1) {
   ambience(p.amb);
   if (p.video && p.id !== 'c11') film(p.video, true);
   await sleep(450);
-  if (p.sfx) { sfx(p.sfx); if (p.word) setTimeout(() => word(p.word.t, p.word.at), 900); }
+  if (p.sfx) { sfx(p.sfx); if (p.word) setTimeout(() => word(p.word.t, p.word.at), 500); await sleep(1300); } // the panel's sound first, then the story
   for (const ln of p.lines) await say(ln);
   if (p.act) {
     await acts[p.act.kind](p.act);
