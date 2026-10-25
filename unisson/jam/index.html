@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>UNISSON</title>
+<meta name="description" content="Joue d’un vrai instrument dès la première seconde. Seul, à plusieurs, ou toute une salle.">
+<meta name="theme-color" content="#0a0806">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%227%22 fill=%22%23000%22/%3E%3Ccircle cx=%225%22 cy=%229%22 r=%221.4%22 fill=%22%23ffd08a%22/%3E%3Ccircle cx=%228%22 cy=%227%22 r=%221.4%22 fill=%22%2386e3ff%22/%3E%3Ccircle cx=%2211%22 cy=%229%22 r=%221.4%22 fill=%22%23ff7aa8%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="jam.css?v=202610242330">
+<script src="../../lib/qrcode.js"></script>
+</head>
+<body>
+<section id="home" class="home">
+  <div class="brand">UNISSON</div>
+  <h1 data-t="homeT"></h1>
+  <p class="lead" data-t="homeS"></p>
+  <button id="solo" class="big-btn"><b data-t="solo"></b><span data-t="soloS"></span></button>
+  <button id="create" class="big-btn"><b data-t="create"></b><span data-t="createS"></span></button>
+  <div class="join-row"><input id="code" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE"><button id="join" data-t="join"></button></div>
+  <p class="credits" data-t="credits"></p>
+</section>
+
+<section id="studio" class="studio">
+  <header class="bar">
+    <button id="back" class="icon" aria-label="Retour">←</button>
+    <nav id="tabs" class="tabs"></nav>
+  </header>
+  <div class="songs"><div id="songs" class="chips"></div><div id="roomtag" class="roomtag"></div><button id="beat" class="beat"></button></div>
+  <div id="guide" class="guide">
+    <div class="now"><svg id="diag" class="diag" viewBox="0 0 60 72"></svg><div><small data-t="nowT"></small><b id="cnow"></b></div></div>
+    <div class="nxt"><small data-t="nextT"></small><b id="cnext"></b><i id="prog"><u></u></i></div>
+  </div>
+  <div id="pattern" class="pattern"></div>
+  <div id="chords" class="chords"></div>
+  <div id="surface" class="surface">
+    <canvas id="strings"></canvas>
+    <div id="pad" class="cpad"></div>
+    <div id="keys" class="keys"></div>
+    <div id="drums" class="drums"></div>
+    <p id="hint" class="hint"></p>
+  </div>
+  <footer class="rec">
+    <button id="rec" class="r"><i></i><span data-t="rec"></span></button>
+    <button id="listen" class="g" data-t="listen"></button>
+    <button id="clear" class="g" data-t="clear"></button>
+    <button id="export" class="g" data-t="export"></button>
+    <p id="recst" class="recst"></p>
+  </footer>
+  <aside id="stage" class="stage"><div id="qr"></div><p id="joinurl"></p><p class="cnt"><b id="members">0</b> <span data-t="players"></span></p></aside>
+</section>
+<script type="module" src="jam.js?v=202610242330"></script>
+</body>
+</html>
