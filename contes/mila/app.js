@@ -2,7 +2,7 @@
 // bubbles (the word being said lights up, so a child can follow the text); an interactive panel waits for the
 // child's gesture. Voices stream as plain audio elements and only the short effects are decoded, so a long read
 // stays light on an iPhone.
-import { PANELS, TITLE, WHO } from './story.js?v=202610252030';
+import { PANELS, TITLE, WHO } from './story.js?v=202610252330';
 
 const $ = (id) => document.getElementById(id);
 const lang = 'fr';
@@ -13,7 +13,7 @@ $('title').textContent = TITLE[lang];
 $('panel').append($('meter')); // the charge bar sits inside the picture, above the hint
 let timings = {}, mode = 'voice', idx = -1, branch = null, busy = false, ctx = null, sfxBuf = {};
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-fetch(`voice/${lang}/timings.json?v=202610252030`).then((r) => r.json()).then((j) => (timings = j));
+fetch(`voice/${lang}/timings.json?v=202610252330`).then((r) => r.json()).then((j) => (timings = j));
 
 // ---------------------------------------------------------------- sound: decoded effects, streamed ambience, voices and lullaby
 const SFX = ['found', 'glow', 'tap', 'wake', 'lightup', 'page', 'pop', 'cricket', 'owlet', 'frog', 'plouf', 'creak', 'hop'];
@@ -79,7 +79,8 @@ function clearLayer() { $('layer').innerHTML = ''; $('spots').innerHTML = ''; }
 
 // ---------------------------------------------------------------- effects: sparkles and glows over the panel
 const fx = $('fx'), g = fx.getContext('2d'); let FW = 0, FH = 0; const sparks = [], glows = [];
-function fitFx() { const r = $('panel').getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, 2); FW = r.width; FH = r.height; fx.width = FW * d; fx.height = FH * d; g.setTransform(d, 0, 0, d, 0, 0); }
+// the layout size of the panel, not the box of a page still turning in 3D
+function fitFx() { const d = Math.min(devicePixelRatio || 1, 2); FW = $('panel').clientWidth; FH = $('panel').clientHeight; fx.width = FW * d; fx.height = FH * d; g.setTransform(d, 0, 0, d, 0, 0); }
 function burst(x, y, n = 26, hue = 70) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, v = 1 + Math.random() * 3.5; sparks.push({ x: x * FW, y: y * FH, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 1, life: 1, hue: hue + Math.random() * 40 }); } }
 function drawFx() {
   requestAnimationFrame(drawFx); g.clearRect(0, 0, FW, FH); g.globalCompositeOperation = 'lighter';
