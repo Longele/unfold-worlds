@@ -3,7 +3,7 @@
 // arrow keys), blows the moon dust off the window, jumps in low gravity, leaves footprints, lights a dark crater,
 // finds Africa with the binoculars and turns the Moon through its phases. Everything also works on a laptop:
 // every phone gesture has a mouse or keyboard twin, and the microphone always has a button to fall back on.
-import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610260500';
+import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610260600';
 
 const $ = (id) => document.getElementById(id);
 // the language: from the stories page (?lang=), else the last one chosen, else the phone's
@@ -12,9 +12,9 @@ let lang = new URLSearchParams(location.search).get('lang') || store.get('contes
 if (!['fr', 'en'].includes(lang)) lang = 'fr';
 const TT = {
   fr: { readMe: 'Lis-moi l’histoire', readSelf: 'Je lis tout seul', again: 'Relire l’histoire', more: 'D’autres contes', end: 'Fin', kick: 'Une BD à vivre', back: '← Les contes', parents: 'Pour les parents : cette histoire peut utiliser le micro, pour crier et souffler. Rien n’est enregistré. Sans micro, un bouton fait la même chose.', keys: 'Espace ou → : suivant',
-    tape: 'Touche les morceaux à coller', lamp1: 'Touche la lampe', shout: 'Crie « décollage ! »', shoutBtn: 'Appuie longtemps ici', steer: 'Penche, glisse ou utilise les flèches', binocs: 'Glisse les jumelles sur la Terre', bubbles: 'Touche les bulles d’eau', blow: 'Souffle sur le hublot', blowBtn: 'ou frotte avec ton doigt', jump: 'Touche Nala pour sauter', prints: 'Touche le sol', lamp: 'Promène la lampe dans le cratère', silent: 'Touche Bip', choice: 'Choisis ton retour', chutes: 'Touche les parachutes', phases: 'Glisse pour faire tourner la Lune', earth: 'Terre', moon: 'Lune', ph: ['Nouvelle lune', 'Croissant', 'Premier quartier', 'Lune gibbeuse', 'Pleine lune', 'Lune gibbeuse', 'Dernier quartier', 'Croissant'] },
+    tape: 'Touche les morceaux à coller', lamp1: 'Touche la lampe', shout: 'Crie « décollage ! »', shoutBtn: 'Appuie longtemps ici', steer: 'Penche, glisse ou utilise les flèches', binocs: 'Glisse les jumelles sur la Terre', bubbles: 'Touche les bulles d’eau', blow: 'Souffle sur le hublot', blowBtn: 'ou frotte avec ton doigt', jump: 'Touche l’écran pour faire sauter Nala', prints: 'Touche le sol', lamp: 'Promène la lampe dans le cratère', silent: 'Touche Bip', choice: 'Choisis ton retour', chutes: 'Touche les parachutes', phases: 'Glisse pour faire tourner la Lune', earth: 'Terre', moon: 'Lune', ph: ['Nouvelle lune', 'Croissant', 'Premier quartier', 'Lune gibbeuse', 'Pleine lune', 'Lune gibbeuse', 'Dernier quartier', 'Croissant'] },
   en: { readMe: 'Read it to me', readSelf: 'I’ll read it myself', again: 'Read it again', more: 'More stories', end: 'The End', kick: 'A comic to live', back: '← Stories', parents: 'For parents: this story can use the microphone, to shout and to blow. Nothing is recorded. Without a microphone, a button does the same.', keys: 'Space or →: next',
-    tape: 'Touch the pieces to tape', lamp1: 'Touch the lamp', shout: 'Shout “lift-off!”', shoutBtn: 'Press and hold here', steer: 'Tilt, slide or use the arrow keys', binocs: 'Slide the binoculars over the Earth', bubbles: 'Touch the water bubbles', blow: 'Blow on the window', blowBtn: 'or rub it with your finger', jump: 'Touch Nala to jump', prints: 'Touch the ground', lamp: 'Move the lamp around the crater', silent: 'Touch Bip', choice: 'Choose how you return', chutes: 'Touch the parachutes', phases: 'Slide to turn the Moon', earth: 'Earth', moon: 'Moon', ph: ['New moon', 'Crescent', 'First quarter', 'Gibbous moon', 'Full moon', 'Gibbous moon', 'Last quarter', 'Crescent'] },
+    tape: 'Touch the pieces to tape', lamp1: 'Touch the lamp', shout: 'Shout “lift-off!”', shoutBtn: 'Press and hold here', steer: 'Tilt, slide or use the arrow keys', binocs: 'Slide the binoculars over the Earth', bubbles: 'Touch the water bubbles', blow: 'Blow on the window', blowBtn: 'or rub it with your finger', jump: 'Touch the screen to make Nala jump', prints: 'Touch the ground', lamp: 'Move the lamp around the crater', silent: 'Touch Bip', choice: 'Choose how you return', chutes: 'Touch the parachutes', phases: 'Slide to turn the Moon', earth: 'Earth', moon: 'Moon', ph: ['New moon', 'Crescent', 'First quarter', 'Gibbous moon', 'Full moon', 'Gibbous moon', 'Last quarter', 'Crescent'] },
 };
 let T = TT[lang];
 function applyLang() {
@@ -23,7 +23,7 @@ function applyLang() {
   $('title').textContent = TITLE[lang]; document.querySelector('.kick').textContent = T.kick; document.querySelector('.back').textContent = T.back;
   for (const el of document.querySelectorAll('a[href^="../"]')) el.href = `../?lang=${lang}`;
   for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
-  fetch(`voice/${lang}/timings.json?v=202610260500`).then((r) => r.json()).then((j) => (timings = j));
+  fetch(`voice/${lang}/timings.json?v=202610260600`).then((r) => r.json()).then((j) => (timings = j));
 }
 for (const b of document.querySelectorAll('[data-lang]')) b.onclick = () => { lang = b.dataset.lang; store.set('contes-lang', lang); applyLang(); };
 
@@ -225,9 +225,10 @@ const acts = {
   // touch each spot once (tape, water bubbles, parachutes)
   taps: (a) => new Promise((res) => {
     hint(T[a.hint]); let n = 0;
+    if (a.dim) $('layer').classList.add('dim'); // the narration box steps back so nothing hides behind it
     for (const at of a.spots) {
       const s = spot(at, a.r, 'soft' + (a.float ? ' float' : ''));
-      s.onpointerdown = (e) => { e.stopPropagation(); if (s.done) return; s.done = true; s.classList.add('done'); sfx(a.sfx); word(a.word[lang], [at[0], at[1] < 0.3 ? at[1] + 0.09 : at[1] - 0.06]); burst(at[0], at[1], 18, a.hue ?? 40); if (a.float) s.style.visibility = 'hidden'; if (++n === a.spots.length) { hint(''); setTimeout(res, 700); } };
+      s.onpointerdown = (e) => { e.stopPropagation(); if (s.done) return; s.done = true; s.classList.add('done'); sfx(a.sfx); word(a.word[lang], [at[0], at[1] < 0.3 ? at[1] + 0.09 : at[1] - 0.06]); burst(at[0], at[1], 18, a.hue ?? 40); if (a.float) s.style.visibility = 'hidden'; if (++n === a.spots.length) { hint(''); setTimeout(() => { $('layer').classList.remove('dim'); res(); }, 700); } };
     }
     // laptop: the space bar touches the next one
     keyAct = (e, down) => { if (down && e.key === ' ') { $('spots').querySelector('.spot:not(.done)')?.dispatchEvent(new PointerEvent('pointerdown')); if (n === a.spots.length) keyAct = null; return true; } };
@@ -309,9 +310,11 @@ const acts = {
     let n = 0, busyJ = false;
     const go = () => {
       if (busyJ) return; busyJ = true; sfx('boing'); lines.classList.add('on'); const t0 = performance.now(), D = 2600;
-      const f = (now) => { const k = Math.min(1, (now - t0) / D), y = 4 * k * (1 - k) * a.h; im.style.transform = `translate(-50%, calc(-100% - ${y * FH}px)) rotate(${Math.sin(k * 6.28) * 6}deg)`; if (k < 1) requestAnimationFrame(f); else { sfx('step'); burst(a.at[0], a.at[1], 14, 30); busyJ = false; if (++n >= a.n) { keyAct = null; hint(''); setTimeout(res, 600); } } };
+      const f = (now) => { const k = Math.min(1, (now - t0) / D), y = 4 * k * (1 - k) * a.h; im.style.transform = `translate(-50%, calc(-100% - ${y * FH}px)) rotate(${Math.sin(k * 6.28) * 6}deg)`; if (k < 1) requestAnimationFrame(f); else { sfx('step'); burst(a.at[0], a.at[1], 14, 30); busyJ = false; if (++n >= a.n) { stop(); keyAct = null; hint(''); setTimeout(res, 600); } } };
       requestAnimationFrame(f);
     };
+    // a tap anywhere on the panel makes her jump (she is small on a phone), and the space bar on a laptop
+    const stop = drag({ down: go });
     im.onpointerdown = (e) => { e.stopPropagation(); go(); };
     keyAct = (e, down) => { if (down && e.key === ' ') { go(); return true; } };
   }),
@@ -419,4 +422,5 @@ $('readSelf').onclick = () => start('self');
 $('again').onclick = () => { $('endcard').classList.remove('on'); branch = null; show(0); };
 addEventListener('resize', () => { if (idx >= 0) fitFx(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { music.pause(); amb.pause(); voice.pause(); } else if (idx >= 0) { music.play().catch(() => {}); amb.play().catch(() => {}); } });
-window.__nala = { get idx() { return idx; }, get busy() { return busy; }, next, show, get branch() { return branch; } };
+// test hook: open any panel, even while the current one waits for the child
+window.__nala = { get idx() { return idx; }, get busy() { return busy; }, next, show, goto: (i) => { busy = false; keyAct = null; show(i); }, get branch() { return branch; } };

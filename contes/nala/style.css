@@ -110,6 +110,7 @@ button, a { font: inherit; color: inherit; background: none; border: 0; text-dec
 .alt { position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%); z-index: 8; padding: 12px 20px; border-radius: 16px; border: 3px solid var(--ink); background: var(--paper); color: var(--ink); font-weight: 700; font-size: 18px; box-shadow: 3px 3px 0 var(--ink); white-space: nowrap; touch-action: none; }
 .alt:active { transform: translate(-50%, 2px); background: var(--gold); }
 /* Nala jumping on the Moon, and the two heights: on Earth, on the Moon */
+.panel img.sprite { pointer-events: auto; }
 .sprite { position: absolute; width: 34%; transform: translate(-50%, -100%); pointer-events: auto; cursor: pointer; z-index: 4; filter: drop-shadow(0 6px 6px rgba(0, 0, 0, .35)); }
 .heights { position: absolute; width: 40%; height: 0; transform: translateX(-50%); pointer-events: none; opacity: 0; transition: opacity .5s; }
 .heights.on { opacity: 1; }
