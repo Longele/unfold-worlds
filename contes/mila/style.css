@@ -75,3 +75,7 @@ button, a { font: inherit; color: inherit; background: none; border: 0; text-dec
 .endcard::before { content: ''; position: fixed; inset: 0; z-index: -1; background: rgba(11, 16, 48, .82); }
 .endcard.on { opacity: 1; visibility: visible; }
 .fin { margin: 0 0 10px; text-align: center; font-family: var(--pow); font-size: 96px; color: var(--gold); -webkit-text-stroke: 3px var(--ink); text-shadow: 5px 5px 0 var(--ink); }
+/* Android Chrome: the panel owns every touch (no page pan stealing a drag, no long-press image menu) */
+.page, .panel { touch-action: none; }
+.art, .panel img, .panel video { pointer-events: none; -webkit-user-drag: none; -webkit-touch-callout: none; user-select: none; }
+.panel, .spots, .spot, .choice { -webkit-touch-callout: none; }

@@ -83,3 +83,7 @@ button, a { font: inherit; color: inherit; background: none; border: 0; text-dec
 .spot.calm { box-shadow: 0 0 0 calc(3px + var(--k, 0) * 6px) rgba(255, 220, 150, calc(.4 + var(--k, 0) * .5)), 0 0 calc(20px + var(--k, 0) * 40px) rgba(255, 210, 120, .5); animation: none; }
 .langs { display: flex; gap: 8px; margin: -2px 0 6px; } .langs button { padding: 7px 14px; border-radius: 999px; border: 2px solid rgba(255, 255, 255, .35); font-weight: 700; font-size: 15px; opacity: .75; } .langs button.on { background: var(--paper); color: var(--ink); border-color: var(--ink); opacity: 1; }
 .choice { max-width: 44%; white-space: normal; text-align: center; font-size: 19px; line-height: 1.1; padding: 12px 14px; }
+/* Android Chrome: the panel owns every touch (no page pan stealing a drag, no long-press image menu) */
+.page, .panel { touch-action: none; }
+.art, .panel img, .panel video { pointer-events: none; -webkit-user-drag: none; -webkit-touch-callout: none; user-select: none; }
+.panel, .spots, .spot, .choice { -webkit-touch-callout: none; }

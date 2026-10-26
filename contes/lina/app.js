@@ -2,7 +2,7 @@
 // the page; its lines are read aloud in their bubbles with the word being said lit up; on some panels the child
 // takes Lina's magnifying glass or binoculars (a live magnified view under the finger), keeps still to reassure a
 // frightened hedgehog, or says hello to the little ones.
-import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610260015';
+import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610260100';
 
 const $ = (id) => document.getElementById(id);
 // the language: from the stories page (?lang=), else the last one chosen, else the phone's
@@ -20,7 +20,7 @@ function applyLang() {
   $('title').textContent = TITLE[lang]; document.querySelector('.kick').textContent = T.kick; document.querySelector('.back').textContent = T.back;
   for (const el of document.querySelectorAll('a[href="../"]')) el.href = `../?lang=${lang}`;
   for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
-  fetch(`voice/${lang}/timings.json?v=202610260015`).then((r) => r.json()).then((j) => (timings = j));
+  fetch(`voice/${lang}/timings.json?v=202610260100`).then((r) => r.json()).then((j) => (timings = j));
 }
 for (const b of document.querySelectorAll('[data-lang]')) b.onclick = () => { lang = b.dataset.lang; store.set('contes-lang', lang); applyLang(); };
 
@@ -147,7 +147,7 @@ function lensTool(kind, a) {
     let down = false;
     $('panel').onpointerdown = (e) => { e.preventDefault(); down = true; pos = toPanel(e); try { $('panel').setPointerCapture(e.pointerId); } catch {} };
     $('panel').onpointermove = (e) => { if (down || e.pointerType === 'mouse') pos = toPanel(e); };
-    addEventListener('pointerup', () => (down = false));
+    addEventListener('pointerup', () => (down = false)); addEventListener('pointercancel', () => (down = false));
   });
 }
 // a circle that draws itself around what was found
@@ -172,7 +172,7 @@ const acts = {
     };
     requestAnimationFrame(tick);
     $('panel').onpointerdown = onDown; s.onpointerdown = onDown; $('panel').onpointermove = onMove;
-    addEventListener('pointerup', () => { down = null; });
+    addEventListener('pointerup', () => { down = null; }); addEventListener('pointercancel', () => { down = null; });
   }),
   greet: (a) => new Promise((res) => {
     hint(T.greet); let n = 0;
@@ -219,6 +219,9 @@ function next() {
   show(n);
 }
 function end() { $('endcard').classList.add('on'); music.volume = 0.4; }
+// no long-press menu or text selection anywhere in the book (Android Chrome opens one on a held image)
+addEventListener('contextmenu', (e) => e.preventDefault());
+document.addEventListener('touchmove', (e) => { if (e.target.closest('#panel')) e.preventDefault(); }, { passive: false });
 $('page').addEventListener('pointerdown', (e) => { if (e.target.closest('button') || busy) return; next(); });
 $('next').onclick = next;
 async function start(m) {

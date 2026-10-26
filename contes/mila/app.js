@@ -2,7 +2,7 @@
 // bubbles (the word being said lights up, so a child can follow the text); an interactive panel waits for the
 // child's gesture. Voices stream as plain audio elements and only the short effects are decoded, so a long read
 // stays light on an iPhone.
-import { PANELS, TITLE, WHO } from './story.js?v=202610252330';
+import { PANELS, TITLE, WHO } from './story.js?v=202610260100';
 
 const $ = (id) => document.getElementById(id);
 const lang = 'fr';
@@ -13,7 +13,7 @@ $('title').textContent = TITLE[lang];
 $('panel').append($('meter')); // the charge bar sits inside the picture, above the hint
 let timings = {}, mode = 'voice', idx = -1, branch = null, busy = false, ctx = null, sfxBuf = {};
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-fetch(`voice/${lang}/timings.json?v=202610252330`).then((r) => r.json()).then((j) => (timings = j));
+fetch(`voice/${lang}/timings.json?v=202610260100`).then((r) => r.json()).then((j) => (timings = j));
 
 // ---------------------------------------------------------------- sound: decoded effects, streamed ambience, voices and lullaby
 const SFX = ['found', 'glow', 'tap', 'wake', 'lightup', 'page', 'pop', 'cricket', 'owlet', 'frog', 'plouf', 'creak', 'hop'];
@@ -175,6 +175,9 @@ function next() {
   show(n);
 }
 function end() { $('endcard').classList.add('on'); music.volume = 0.45; }
+// no long-press menu or text selection anywhere in the book (Android Chrome opens one on a held image)
+addEventListener('contextmenu', (e) => e.preventDefault());
+document.addEventListener('touchmove', (e) => { if (e.target.closest('#panel')) e.preventDefault(); }, { passive: false });
 $('page').addEventListener('pointerdown', (e) => { if (e.target.closest('button') || busy) return; next(); });
 $('next').onclick = next;
 async function start(m) {
