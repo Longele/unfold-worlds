@@ -3,8 +3,9 @@
 // go by, keeps quiet by the chrysalis, blows the wings dry, paints them in a mirror, follows the butterfly with the
 // binoculars, lets it drink, carries pollen from flower to flower and lets it go. Every gesture also works with a
 // mouse or the keyboard, and the arrow at the bottom left goes back one page.
-import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610270100';
+import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610270300';
 
+import { goFull, keepFull, iosTip } from '../fs.js?v=202610270300';
 const $ = (id) => document.getElementById(id);
 // the language: from the stories page (?lang=), else the last one chosen, else the phone's
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
@@ -23,7 +24,7 @@ function applyLang() {
   $('title').textContent = TITLE[lang]; document.querySelector('.kick').textContent = T.kick; document.querySelector('.back').textContent = T.back;
   for (const el of document.querySelectorAll('a[href^="../"]')) el.href = `../?lang=${lang}`;
   for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
-  fetch(`voice/${lang}/timings.json?v=202610270100`).then((r) => r.json()).then((j) => (timings = j));
+  fetch(`voice/${lang}/timings.json?v=202610270300`).then((r) => r.json()).then((j) => (timings = j));
 }
 for (const b of document.querySelectorAll('[data-lang]')) b.onclick = () => { lang = b.dataset.lang; store.set('contes-lang', lang); applyLang(); };
 
@@ -446,9 +447,10 @@ async function start(m) {
   document.body.classList.add('reading'); $('cover').classList.add('gone');
   // phones that ask before sharing their tilt (iPhone): ask now, inside the tap that starts the story
   try { await DeviceOrientationEvent?.requestPermission?.(); } catch {}
-  try { if (matchMedia('(pointer: coarse)').matches) await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); } catch {}
+  goFull(); // the real full screen on Android; on the iPhone the page already fills the screen
   branch = null; show(0);
 }
+keepFull(); iosTip(lang);
 $('readMe').onclick = () => start('voice');
 $('readSelf').onclick = () => start('self');
 $('again').onclick = () => { $('endcard').classList.remove('on'); branch = null; show(0); };

@@ -100,3 +100,9 @@ button, a { font: inherit; color: inherit; background: none; border: 0; text-dec
 .prev { width: 44px; height: 44px; margin-left: 6px; border-radius: 50%; border: 3px solid var(--ink); background: var(--paper); color: var(--ink); font-size: 22px; font-weight: 700; box-shadow: 3px 3px 0 var(--ink); opacity: .25; pointer-events: none; transition: opacity .3s; }
 .prev.on { opacity: 1; pointer-events: auto; }
 .prev:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+
+/* the one-time tip on the iPhone: add the story to the home screen to read it in full screen */
+.iostip { display: flex; gap: 10px; align-items: center; margin-top: 4px; padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .3); font-size: 13px; line-height: 1.35; text-align: left; }
+.iostip button { flex: none; padding: 6px 12px; border-radius: 999px; border: 2px solid var(--ink); background: var(--paper); color: var(--ink); font-weight: 700; }
+/* the reading page always fills the visible screen, browser bars or not */
+.page { height: 100dvh; }

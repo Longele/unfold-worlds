@@ -2,8 +2,9 @@
 // the page; its lines are read aloud in their bubbles with the word being said lit up; on some panels the child
 // takes Lina's magnifying glass or binoculars (a live magnified view under the finger), keeps still to reassure a
 // frightened hedgehog, or says hello to the little ones.
-import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610270200';
+import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610270300';
 
+import { goFull, keepFull, iosTip } from '../fs.js?v=202610270300';
 const $ = (id) => document.getElementById(id);
 // the language: from the stories page (?lang=), else the last one chosen, else the phone's
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
@@ -20,7 +21,7 @@ function applyLang() {
   $('title').textContent = TITLE[lang]; document.querySelector('.kick').textContent = T.kick; document.querySelector('.back').textContent = T.back;
   for (const el of document.querySelectorAll('a[href="../"]')) el.href = `../?lang=${lang}`;
   for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
-  fetch(`voice/${lang}/timings.json?v=202610270200`).then((r) => r.json()).then((j) => (timings = j));
+  fetch(`voice/${lang}/timings.json?v=202610270300`).then((r) => r.json()).then((j) => (timings = j));
 }
 for (const b of document.querySelectorAll('[data-lang]')) b.onclick = () => { lang = b.dataset.lang; store.set('contes-lang', lang); applyLang(); };
 
@@ -260,9 +261,10 @@ addEventListener('keydown', (e) => { if (idx < 0) return; if (e.key === 'ArrowLe
 async function start(m) {
   mode = m; await initAudio(); music.play().catch(() => {});
   document.body.classList.add('reading'); $('cover').classList.add('gone');
-  try { await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); } catch {}
+  goFull(); // the real full screen on Android; on the iPhone the page already fills the screen
   branch = null; show(0);
 }
+keepFull(); iosTip(lang);
 $('readMe').onclick = () => start('voice');
 $('readSelf').onclick = () => start('self');
 $('again').onclick = () => { $('endcard').classList.remove('on'); branch = null; show(0); };

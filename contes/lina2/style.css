@@ -136,3 +136,9 @@ body.reading .ambient { opacity: 1; }
 .daylabel { position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%); font-family: var(--pow); font-size: clamp(26px, 7vw, 38px); color: #fff; -webkit-text-stroke: 1px var(--ink); text-shadow: 2px 2px 0 var(--ink); }
 .badge { position: absolute; transform: translate(-50%, -50%); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--gold); color: var(--ink); border: 3px solid var(--ink); font-family: var(--pow); font-size: 24px; box-shadow: 2px 2px 0 var(--ink); animation: pow .5s ease-out; }
 .spot.nope { animation: shake .35s; box-shadow: 0 0 0 4px rgba(230, 80, 60, .8); }
+
+/* the one-time tip on the iPhone: add the story to the home screen to read it in full screen */
+.iostip { display: flex; gap: 10px; align-items: center; margin-top: 4px; padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .3); font-size: 13px; line-height: 1.35; text-align: left; }
+.iostip button { flex: none; padding: 6px 12px; border-radius: 999px; border: 2px solid var(--ink); background: var(--paper); color: var(--ink); font-weight: 700; }
+/* the reading page always fills the visible screen, browser bars or not */
+.page { height: 100dvh; }

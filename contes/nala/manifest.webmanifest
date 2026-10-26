@@ -1,0 +1,17 @@
+{
+ "name": "Nala et la fusée en carton",
+ "short_name": "Nala",
+ "start_url": "./",
+ "scope": "./",
+ "display": "fullscreen",
+ "orientation": "portrait",
+ "background_color": "#0d1430",
+ "theme_color": "#0d1430",
+ "icons": [
+  {
+   "src": "../../icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  }
+ ]
+}
