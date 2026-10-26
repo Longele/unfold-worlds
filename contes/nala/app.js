@@ -3,7 +3,7 @@
 // arrow keys), blows the moon dust off the window, jumps in low gravity, leaves footprints, lights a dark crater,
 // finds Africa with the binoculars and turns the Moon through its phases. Everything also works on a laptop:
 // every phone gesture has a mouse or keyboard twin, and the microphone always has a button to fall back on.
-import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610260600';
+import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610260700';
 
 const $ = (id) => document.getElementById(id);
 // the language: from the stories page (?lang=), else the last one chosen, else the phone's
@@ -12,9 +12,9 @@ let lang = new URLSearchParams(location.search).get('lang') || store.get('contes
 if (!['fr', 'en'].includes(lang)) lang = 'fr';
 const TT = {
   fr: { readMe: 'Lis-moi l’histoire', readSelf: 'Je lis tout seul', again: 'Relire l’histoire', more: 'D’autres contes', end: 'Fin', kick: 'Une BD à vivre', back: '← Les contes', parents: 'Pour les parents : cette histoire peut utiliser le micro, pour crier et souffler. Rien n’est enregistré. Sans micro, un bouton fait la même chose.', keys: 'Espace ou → : suivant',
-    tape: 'Touche les morceaux à coller', lamp1: 'Touche la lampe', shout: 'Crie « décollage ! »', shoutBtn: 'Appuie longtemps ici', steer: 'Penche, glisse ou utilise les flèches', binocs: 'Glisse les jumelles sur la Terre', bubbles: 'Touche les bulles d’eau', blow: 'Souffle sur le hublot', blowBtn: 'ou frotte avec ton doigt', jump: 'Touche l’écran pour faire sauter Nala', prints: 'Touche le sol', lamp: 'Promène la lampe dans le cratère', silent: 'Touche Bip', choice: 'Choisis ton retour', chutes: 'Touche les parachutes', phases: 'Glisse pour faire tourner la Lune', earth: 'Terre', moon: 'Lune', ph: ['Nouvelle lune', 'Croissant', 'Premier quartier', 'Lune gibbeuse', 'Pleine lune', 'Lune gibbeuse', 'Dernier quartier', 'Croissant'] },
+    tape: 'Touche les morceaux à coller', lamp1: 'Touche la lampe', shout: 'Crie « décollage ! »', shoutBtn: 'Appuie longtemps ici', steer: 'Penche, glisse ou utilise les flèches', binocs: 'Glisse les jumelles sur la Terre', bubbles: 'Touche les bulles d’eau', blow: 'Souffle sur le hublot', blowBtn: 'ou frotte avec ton doigt', jump: 'Touche l’écran pour faire sauter Nala', prints: 'Touche le sol', lamp: 'Promène la torche dans le cratère', silent: 'Touche Bip', choice: 'Choisis ton retour', chutes: 'Touche l’écran : ouvre les parachutes !', phases: 'Glisse pour faire tourner la Lune', earth: 'Terre', moon: 'Lune', ph: ['Nouvelle lune', 'Croissant', 'Premier quartier', 'Lune gibbeuse', 'Pleine lune', 'Lune gibbeuse', 'Dernier quartier', 'Croissant'] },
   en: { readMe: 'Read it to me', readSelf: 'I’ll read it myself', again: 'Read it again', more: 'More stories', end: 'The End', kick: 'A comic to live', back: '← Stories', parents: 'For parents: this story can use the microphone, to shout and to blow. Nothing is recorded. Without a microphone, a button does the same.', keys: 'Space or →: next',
-    tape: 'Touch the pieces to tape', lamp1: 'Touch the lamp', shout: 'Shout “lift-off!”', shoutBtn: 'Press and hold here', steer: 'Tilt, slide or use the arrow keys', binocs: 'Slide the binoculars over the Earth', bubbles: 'Touch the water bubbles', blow: 'Blow on the window', blowBtn: 'or rub it with your finger', jump: 'Touch the screen to make Nala jump', prints: 'Touch the ground', lamp: 'Move the lamp around the crater', silent: 'Touch Bip', choice: 'Choose how you return', chutes: 'Touch the parachutes', phases: 'Slide to turn the Moon', earth: 'Earth', moon: 'Moon', ph: ['New moon', 'Crescent', 'First quarter', 'Gibbous moon', 'Full moon', 'Gibbous moon', 'Last quarter', 'Crescent'] },
+    tape: 'Touch the pieces to tape', lamp1: 'Touch the lamp', shout: 'Shout “lift-off!”', shoutBtn: 'Press and hold here', steer: 'Tilt, slide or use the arrow keys', binocs: 'Slide the binoculars over the Earth', bubbles: 'Touch the water bubbles', blow: 'Blow on the window', blowBtn: 'or rub it with your finger', jump: 'Touch the screen to make Nala jump', prints: 'Touch the ground', lamp: 'Move the torch around the crater', silent: 'Touch Bip', choice: 'Choose how you return', chutes: 'Touch the screen: open the parachutes!', phases: 'Slide to turn the Moon', earth: 'Earth', moon: 'Moon', ph: ['New moon', 'Crescent', 'First quarter', 'Gibbous moon', 'Full moon', 'Gibbous moon', 'Last quarter', 'Crescent'] },
 };
 let T = TT[lang];
 function applyLang() {
@@ -23,11 +23,11 @@ function applyLang() {
   $('title').textContent = TITLE[lang]; document.querySelector('.kick').textContent = T.kick; document.querySelector('.back').textContent = T.back;
   for (const el of document.querySelectorAll('a[href^="../"]')) el.href = `../?lang=${lang}`;
   for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
-  fetch(`voice/${lang}/timings.json?v=202610260600`).then((r) => r.json()).then((j) => (timings = j));
+  fetch(`voice/${lang}/timings.json?v=202610260700`).then((r) => r.json()).then((j) => (timings = j));
 }
 for (const b of document.querySelectorAll('[data-lang]')) b.onclick = () => { lang = b.dataset.lang; store.set('contes-lang', lang); applyLang(); };
 
-let timings = {}, mode = 'voice', idx = -1, branch = null, busy = false, ctx = null, sfxBuf = {};
+let timings = {}, mode = 'voice', idx = -1, branch = null, busy = false, ctx = null, sfxBuf = {}, gen = 0; // gen: which page is showing; animations of an older page stop
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 applyLang();
 
@@ -164,22 +164,26 @@ function lensTool(kind, a) {
   return new Promise((res) => {
     hint(T[kind]); sfx(kind === 'lamp' ? 'lamp' : 'binocs');
     const art = $('art'), nw = art.naturalWidth, nh = art.naturalHeight, zoom = kind === 'binocs' ? 3 : 1;
-    let pos = a.start ? [...a.start] : [0.5, 0.62], held = 0, last = performance.now(), done = false, t0 = performance.now();
+    let pos = a.start ? [...a.start] : [0.5, 0.62], held = 0, last = performance.now(), done = false, t0 = performance.now(); const g0 = gen;
     const R = () => FW * (kind === 'binocs' ? 0.17 : 0.24);
     // the binoculars show two round views side by side
     const centres = () => kind === 'binocs' ? [[pos[0] * FW - R() * 0.78, pos[1] * FH], [pos[0] * FW + R() * 0.78, pos[1] * FH]] : [[pos[0] * FW, pos[1] * FH]];
     const draw = () => {
-      if (done) return; requestAnimationFrame(draw);
+      if (done || gen !== g0) return; requestAnimationFrame(draw);
       const now = performance.now(), dt = now - last, x = pos[0] * FW, y = pos[1] * FH; last = now;
       L.clearRect(0, 0, FW, FH);
       if (kind === 'lamp') {
-        // the dark crater, with the pool of light of Nala's helmet lamp
-        L.fillStyle = 'rgba(6,4,12,0.94)'; L.fillRect(0, 0, FW, FH);
-        const r = R() * (1 + Math.sin(now / 90) * 0.03), gr = L.createRadialGradient(x, y, r * 0.15, x, y, r);
-        gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.65, 'rgba(0,0,0,0.85)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
-        L.globalCompositeOperation = 'destination-out'; L.fillStyle = gr; L.beginPath(); L.arc(x, y, r, 0, 7); L.fill(); L.globalCompositeOperation = 'source-over';
-        L.fillStyle = 'rgba(255,170,60,0.12)'; L.beginPath(); L.arc(x, y, r * 0.8, 0, 7); L.fill();
-        L.fillStyle = '#ffd27a'; L.beginPath(); L.ellipse(x, y - 4, 5, 9, 0, 0, 7); L.fill(); L.fillStyle = '#8a4b1f'; L.beginPath(); L.ellipse(x, y + 9, 13, 6, 0, 0, 7); L.fill();
+        // the dark crater, lit by Nala's torch: a beam from her hand to where the finger points, ending in a pool
+        L.fillStyle = 'rgba(6,5,14,0.95)'; L.fillRect(0, 0, FW, FH);
+        const r = R() * 0.8 * (1 + Math.sin(now / 90) * 0.03), ox = a.from[0] * FW, oy = a.from[1] * FH, ang = Math.atan2(y - oy, x - ox), nx = -Math.sin(ang), ny = Math.cos(ang);
+        L.globalCompositeOperation = 'destination-out';
+        const lg = L.createLinearGradient(ox, oy, x, y); lg.addColorStop(0, 'rgba(0,0,0,0.55)'); lg.addColorStop(1, 'rgba(0,0,0,0.9)');
+        L.fillStyle = lg; L.beginPath(); L.moveTo(ox + nx * 6, oy + ny * 6); L.lineTo(x + nx * r, y + ny * r); L.lineTo(x - nx * r, y - ny * r); L.lineTo(ox - nx * 6, oy - ny * 6); L.closePath(); L.fill();
+        const gr = L.createRadialGradient(x, y, r * 0.2, x, y, r * 1.15); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.7, 'rgba(0,0,0,0.9)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+        L.fillStyle = gr; L.beginPath(); L.arc(x, y, r * 1.15, 0, 7); L.fill(); L.globalCompositeOperation = 'source-over';
+        // a faint warm haze inside the beam, and the bright head of the torch
+        L.fillStyle = 'rgba(255,236,180,0.08)'; L.beginPath(); L.moveTo(ox, oy); L.lineTo(x + nx * r, y + ny * r); L.lineTo(x - nx * r, y - ny * r); L.closePath(); L.fill();
+        const hg = L.createRadialGradient(ox, oy, 0, ox, oy, 16); hg.addColorStop(0, 'rgba(255,250,220,1)'); hg.addColorStop(1, 'rgba(255,240,180,0)'); L.fillStyle = hg; L.beginPath(); L.arc(ox, oy, 16, 0, 7); L.fill();
       } else {
         L.fillStyle = 'rgba(4,6,14,0.85)'; L.fillRect(0, 0, FW, FH);
         L.save(); L.beginPath(); for (const [cx, cy] of centres()) { L.moveTo(cx + R(), cy); L.arc(cx, cy, R(), 0, 7); } L.clip(); L.clearRect(0, 0, FW, FH);
@@ -243,11 +247,11 @@ const acts = {
   // the countdown: the louder the child shouts, the faster the meter fills; a long press does it too
   shout: (a) => new Promise(async (res) => {
     hint(T.shout); meter(0); sfx('rumble', 0.6);
-    const mic = await micOn(); let k = 0, held = false, done = false, last = performance.now();
+    const mic = await micOn(); let k = 0, held = false, done = false, last = performance.now(); const g0 = gen;
     const alt = altButton(T.shoutBtn); alt.onpointerdown = (e) => { e.stopPropagation(); held = true; }; alt.onpointerup = alt.onpointerleave = alt.onpointercancel = () => (held = false);
     keyAct = (e, down) => { if (e.key === ' ') { held = down; return true; } };
     const tick = () => {
-      if (done) return; const now = performance.now(), dt = Math.min(0.1, (now - last) / 1000); last = now;
+      if (done || gen !== g0) return; const now = performance.now(), dt = Math.min(0.1, (now - last) / 1000); last = now;
       const lv = mic ? micLevel() : 0;
       k += (lv > 0.18 ? lv * 0.9 : 0) * dt + (held ? 0.45 * dt : 0) - 0.04 * dt; k = Math.max(0, k); meter(k);
       if (lv > 0.18 || held) { if (Math.random() < 0.3) burst(0.5, 0.85, 3, 20); if (Math.random() < 0.05) shake(); }
@@ -257,31 +261,61 @@ const acts = {
     const launch = async () => { buzz([200, 80, 500]); sfx('launch'); shake(); await film(a.film); res(); };
     requestAnimationFrame(tick);
   }),
-  // dodge the satellites: tilt the phone, drag, or use the arrow keys; bumping only costs a little time
+  // the flight, in 3D, seen from behind the rocket: stars rush past, satellites come out of the distance and grow
+  // as they approach; tilt the phone, slide the finger or press the arrow keys to slip between them.
   steer: (a) => new Promise(async (res) => {
-    hint(T.steer); const [rk, st] = await Promise.all([img('art/rocket.png'), img('art/satellite.png')]);
-    let x = 0.5, tilt = null, t0 = performance.now(), last = t0, hits = 0, done = false; const sats = [];
-    const onTilt = (e) => { if (e.gamma != null) tilt = Math.max(-1, Math.min(1, e.gamma / 25)); };
+    hint(T.steer); const [rk, st, bg] = await Promise.all([img('art/rocket-back.png'), img('art/satellite.png'), img('art/k5.jpg')]);
+    let rx = 0, target = 0, bank = 0, tilt = null, t0 = performance.now(), last = t0, done = false, speed = 0.5, flash = 0; const g0 = gen;
+    const stars = Array.from({ length: 170 }, () => ({ x: Math.random() * 2 - 1, y: Math.random() * 2 - 1, z: Math.random() }));
+    const sats = [], puffs = [];
+    const onTilt = (e) => { if (e.gamma != null) tilt = Math.max(-1, Math.min(1, e.gamma / 22)); };
     addEventListener('deviceorientation', onTilt);
-    const stop = drag({ hover: true, down: (p) => (x = p[0]), move: (p, down) => { if (down) x = p[0]; } });
+    const stop = drag({ hover: true, down: (p) => (target = (p[0] - 0.5) * 2.2), move: (p, down) => { if (down || matchMedia('(hover: hover)').matches) target = (p[0] - 0.5) * 2.2; } });
     keyAct = (e) => ['ArrowLeft', 'ArrowRight'].includes(e.key);
-    const RW = () => FW * 0.13, SW = () => FW * 0.17;
     const frame = (now) => {
-      if (done) return; const dt = Math.min(0.05, (now - last) / 1000); last = now; const el = (now - t0) / 1000;
-      if (keys.has('ArrowLeft')) x -= dt * 0.9; if (keys.has('ArrowRight')) x += dt * 0.9;
-      if (tilt != null) x += tilt * dt * 0.9; x = Math.max(0.1, Math.min(0.9, x));
-      if (Math.random() < dt * (1.1 + el * 0.05)) sats.push({ x: 0.1 + Math.random() * 0.8, y: -0.1, v: 0.22 + Math.random() * 0.12, r: Math.random() * 6.28, spin: (Math.random() - 0.5) * 2, hit: false });
-      L.clearRect(0, 0, FW, FH);
-      for (const s of sats) {
-        s.y += s.v * dt; s.r += s.spin * dt;
-        L.save(); L.translate(s.x * FW, s.y * FH); L.rotate(s.r); L.globalAlpha = s.hit ? 0.4 : 1; L.drawImage(st, -SW() / 2, -SW() * st.height / st.width / 2, SW(), SW() * st.height / st.width); L.restore();
-        if (!s.hit && Math.abs(s.y - 0.72) < 0.05 && Math.abs(s.x - x) * FW < (RW() + SW()) * 0.38) { s.hit = true; hits++; t0 += 1200; sfx('bonk'); buzz(60); shake(); burst(x, 0.7, 16, 200); }
+      if (done || gen !== g0) return; const dt = Math.min(0.05, (now - last) / 1000); last = now; const el = (now - t0) / 1000;
+      if (keys.has('ArrowLeft')) target -= dt * 2.2; if (keys.has('ArrowRight')) target += dt * 2.2;
+      if (tilt != null) target += tilt * dt * 2.4;
+      target = Math.max(-1, Math.min(1, target)); const prev = rx; rx += (target - rx) * Math.min(1, dt * 7);
+      bank += ((rx - prev) / Math.max(dt, 0.001) * 0.35 - bank) * Math.min(1, dt * 6);
+      speed = 0.55 + Math.min(el, 16) * 0.05;
+      const K = FW * 0.55, vx = FW * 0.5 - rx * FW * 0.08, vy = FH * 0.36, ry = (FH * 0.8 - vy) / K;
+      // deep space: the painted sky drawn large and slowly coming closer, tilted a little with the turns
+      L.save(); L.translate(FW / 2, FH / 2); L.rotate(-bank * 0.12); const zz = 1.25 + el * 0.02;
+      L.drawImage(bg, 0, 0, bg.width, bg.height * 0.62, -FW * zz / 2 - rx * FW * 0.06, -FH * zz / 2, FW * zz, FH * zz); L.restore();
+      L.fillStyle = 'rgba(4,6,20,0.35)'; L.fillRect(0, 0, FW, FH);
+      // the stars streak past
+      L.lineCap = 'round';
+      for (const s0 of stars) {
+        const z0 = s0.z; s0.z -= dt * speed * 0.45;
+        if (s0.z < 0.04) { s0.x = Math.random() * 2 - 1; s0.y = Math.random() * 2 - 1; s0.z = 1; continue; }
+        const x1 = vx + (s0.x - rx * 0.3) * K / z0, y1 = vy + s0.y * K / z0, x2 = vx + (s0.x - rx * 0.3) * K / s0.z, y2 = vy + s0.y * K / s0.z;
+        L.strokeStyle = `rgba(220,230,255,${Math.min(1, (1 - s0.z) * 1.3)})`; L.lineWidth = Math.max(0.6, 2.2 * (1 - s0.z)); L.beginPath(); L.moveTo(x1, y1); L.lineTo(x2, y2); L.stroke();
       }
-      for (let i = sats.length - 1; i >= 0; i--) if (sats[i].y > 1.1) sats.splice(i, 1);
-      const rh = RW() * rk.height / rk.width, wob = Math.sin(now / 120) * 2;
-      L.drawImage(rk, x * FW - RW() / 2 + wob, FH * 0.72 - rh / 2, RW(), rh);
+      // satellites come from far away (z = 7) to the rocket's plane (z = 1) and fly past
+      if (Math.random() < dt * (0.65 + el * 0.04)) sats.push({ x: (Math.random() * 2 - 1) * 1.1, y: ry * (0.75 + Math.random() * 0.4), z: 7, r: Math.random() * 6.28, spin: (Math.random() - 0.5) * 1.6, hit: false });
+      sats.sort((p, q) => q.z - p.z);
+      for (const o of sats) {
+        const z0 = o.z; o.z -= dt * speed * 2.6; o.r += o.spin * dt;
+        const sx = vx + (o.x - rx * 0.3) * K / o.z, sy = vy + o.y * K / o.z, w = FW * 0.42 / o.z;
+        if (o.z > 0.25) { L.save(); L.globalAlpha = Math.min(1, (7 - o.z) / 2) * (o.hit ? 0.35 : 1); L.translate(sx, sy); L.rotate(o.r); L.drawImage(st, -w / 2, -w * st.height / st.width / 2, w, w * st.height / st.width); L.restore(); }
+        if (z0 > 1 && o.z <= 1) {
+          const dx = Math.abs(o.x - rx);
+          if (dx < 0.32 && Math.abs(o.y - ry) < 0.3) { o.hit = true; t0 += 600; flash = 1; sfx('bonk'); buzz(80); shake(); for (let i = 0; i < 18; i++) puffs.push({ x: 0, y: FH * 0.78, vx: (Math.random() - 0.5) * 260, vy: (Math.random() - 0.5) * 260, life: 1 }); }
+          else if (dx < 0.6) sfx('whoosh', 0.6); // a near miss
+        }
+      }
+      for (let i = sats.length - 1; i >= 0; i--) if (sats[i].z < 0.25) sats.splice(i, 1);
+      // the rocket, seen from behind, banking into the turns, its flame flickering towards us
+      const rw = FW * 0.3, rh = rw * rk.height / rk.width, cx = FW / 2 + rx * FW * 0.3, cy = FH * 0.8 + Math.sin(now / 110) * 2;
+      const fl = L.createRadialGradient(cx, cy + rh * 0.08, 0, cx, cy + rh * 0.08, rw * (0.55 + Math.random() * 0.1)); fl.addColorStop(0, 'rgba(255,220,120,0.55)'); fl.addColorStop(1, 'rgba(255,120,40,0)');
+      L.fillStyle = fl; L.beginPath(); L.arc(cx, cy + rh * 0.08, rw * 0.7, 0, 7); L.fill();
+      L.save(); L.translate(cx, cy); L.rotate(Math.max(-0.5, Math.min(0.5, bank))); L.drawImage(rk, -rw / 2, -rh / 2, rw, rh); L.restore();
+      for (const p of puffs) { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt * 1.5; if (p.life <= 0) continue; L.fillStyle = `rgba(255,230,180,${p.life})`; L.beginPath(); L.arc(cx + p.x, p.y, 4 * p.life + 1, 0, 7); L.fill(); }
+      for (let i = puffs.length - 1; i >= 0; i--) if (puffs[i].life <= 0) puffs.splice(i, 1);
+      if (flash > 0) { L.fillStyle = `rgba(255,255,255,${flash * 0.35})`; L.fillRect(0, 0, FW, FH); flash = Math.max(0, flash - dt * 3); }
       meter(el / a.secs);
-      if (el >= a.secs) { done = true; stop(); keyAct = null; removeEventListener('deviceorientation', onTilt); meter(null); L.clearRect(0, 0, FW, FH); sfx('found'); burst(x, 0.7, 40); hint(''); setTimeout(res, 600); return; }
+      if (el >= a.secs) { done = true; stop(); keyAct = null; removeEventListener('deviceorientation', onTilt); meter(null); L.clearRect(0, 0, FW, FH); sfx('found'); burst(0.5, 0.7, 40); hint(''); setTimeout(res, 600); return; }
       requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);
@@ -299,7 +333,7 @@ const acts = {
     const alt = altButton(T.blowBtn); alt.onpointerdown = (e) => { e.stopPropagation(); for (let i = 0; i < 6; i++) clear([a.box[0] + Math.random() * (a.box[2] - a.box[0]), a.box[1] + Math.random() * (a.box[3] - a.box[1])], 0.08); };
     keyAct = (e, down) => { if (down && e.key === ' ') { alt.onpointerdown(new PointerEvent('pointerdown')); return true; } };
     // a breath clears the dust from the middle of the window outwards
-    const tick = () => { if (done) return; const lv = mic ? micLevel() : 0; if (lv > 0.12) for (let i = 0; i < 2; i++) { const ang = Math.random() * 6.28, rr = Math.random() * 0.33 * Math.min(1, cover() + 0.3); clear([a.c[0] + Math.cos(ang) * rr, a.c[1] + Math.sin(ang) * rr * FW / FH], 0.06 + lv * 0.05); } requestAnimationFrame(tick); };
+    const g0 = gen; const tick = () => { if (done || gen !== g0) return; const lv = mic ? micLevel() : 0; if (lv > 0.12) for (let i = 0; i < 2; i++) { const ang = Math.random() * 6.28, rr = Math.random() * 0.33 * Math.min(1, cover() + 0.3); clear([a.c[0] + Math.cos(ang) * rr, a.c[1] + Math.sin(ang) * rr * FW / FH], 0.06 + lv * 0.05); } requestAnimationFrame(tick); };
     requestAnimationFrame(tick);
   }),
   // jump in low gravity: Nala rises six times higher than on Earth and floats down slowly
@@ -339,6 +373,63 @@ const acts = {
     s.onpointerdown = (e) => { e.stopPropagation(); go(); };
     keyAct = (e, down) => { if (down && e.key === ' ') { go(); return true; } };
   }),
+  // the return: the capsule comes down glowing like a shooting star; a touch opens the parachutes, which bloom
+  // open and slow it down; it sways down to the sea (a splash, rings on the water) or the plain (a cloud of dust)
+  landing: (a) => new Promise(async (res) => {
+    const [cap, chute] = await Promise.all([img('art/capsule.png'), img('art/chute.png')]);
+    let y = -0.12, v = 0.42, open = 0, fold = 0, last = performance.now(), phase = 'fall', done = false, landT = 0, asked = false; const g0 = gen;
+    const parts = [], rings = [], fan = a.chutes === 1 ? [0] : [-0.55, 0, 0.55];
+    const cw = () => FW * 0.24, chw = () => FW * (a.chutes === 1 ? 0.62 : 0.4);
+    const deploy = () => { if (phase !== 'fall') return; phase = 'open'; open = 0.001; sfx('chute'); buzz(120); word(a.word[lang], [0.5, Math.max(0.3, y - 0.2)]); hint(''); stop(); keyAct = null; };
+    const stop = drag({ down: deploy }); keyAct = (e, down) => { if (down && e.key === ' ') { deploy(); return true; } };
+    const frame = (now) => {
+      if (done || gen !== g0) return; const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      if (!asked && y > 0.12) { asked = true; hint(T.chutes); }
+      // falling: fast and burning; it slows by itself near the middle so the child always has time
+      if (phase === 'fall') v += ((y > 0.34 ? 0.04 : 0.42) - v) * Math.min(1, dt * 2);
+      else if (phase === 'open') { open = Math.min(1, open + dt * 1.4); v += (0.075 - v) * Math.min(1, dt * 2.5); }
+      if (phase !== 'landed') y += v * dt;
+      const sway = phase === 'fall' ? 0 : Math.sin(now / 700) * 0.06 * open, cx = FW * 0.5 + sway * FW * 0.2, cy = y * FH;
+      L.clearRect(0, 0, FW, FH);
+      // the heat of the way in: a glow and sparks trailing up behind it, cooling once the parachutes are out
+      const heat = phase === 'fall' ? Math.min(1, v * 3) : phase === 'open' ? Math.max(0, 1 - open * 2) : 0;
+      if (heat > 0.02) {
+        const hg = L.createRadialGradient(cx, cy + cw() * 0.3, 0, cx, cy + cw() * 0.3, cw() * 1.1); hg.addColorStop(0, `rgba(255,190,90,${0.7 * heat})`); hg.addColorStop(1, 'rgba(255,90,30,0)');
+        L.fillStyle = hg; L.beginPath(); L.arc(cx, cy + cw() * 0.3, cw() * 1.1, 0, 7); L.fill();
+        if (Math.random() < heat) parts.push({ x: cx + (Math.random() - 0.5) * cw() * 0.6, y: cy, vx: (Math.random() - 0.5) * 30, vy: -80 - Math.random() * 120, life: 1, c: '255,170,80', s: 3 });
+      }
+      const ch = cw() * cap.height / cap.width, top = cy - ch * 0.45;
+      // the parachutes bloom: from a small bundle to full canopies with a little bounce, cords to the capsule
+      if (open > 0 && fold < 1) {
+        const k = open < 1 ? 1 - Math.pow(1 - open, 3) * Math.cos(open * 9) : 1;
+        for (const f of fan) {
+          const w = chw() * Math.max(0.08, k), h = w * chute.height / chute.width, px = cx + f * FW * (0.1 + 0.32 * k) + Math.sin(now / 600 + f * 3) * 4, py = top - h - FH * 0.03 * k;
+          // after the touchdown the canopies lean over, sink and fade (they lie down on the water or the grass)
+          const side = f || 0.35, fx = px + side * fold * FW * 0.35, fy = py + fold * FH * 0.22;
+          L.save(); L.globalAlpha = 1 - fold; L.translate(fx, fy + h); L.rotate(f * 0.35 * k + Math.sin(now / 800 + f) * 0.04 + side * fold * 2.2); L.drawImage(chute, -w / 2, -h, w, h * (1 - fold * 0.5)); L.restore();
+          L.strokeStyle = `rgba(60,40,30,${0.55 * (1 - fold)})`; L.lineWidth = 1.2; L.beginPath(); L.moveTo(fx, fy + h); L.lineTo(cx, top); L.stroke();
+        }
+      }
+      L.save(); L.translate(cx, cy); L.rotate(sway * 0.5); L.drawImage(cap, -cw() / 2, -ch / 2, cw(), ch); L.restore();
+      // touching down
+      const ground = a.ground * FH - ch * 0.3;
+      if (phase === 'open' && cy >= ground && open >= 1) {
+        phase = 'landed'; landT = now; y = ground / FH; sfx(a.surface === 'sea' ? 'splash' : 'thud'); buzz([100, 60, 200]); shake();
+        for (let i = 0; i < 70; i++) { const an = -Math.PI * (0.1 + Math.random() * 0.8); parts.push({ x: cx + (Math.random() - 0.5) * cw(), y: cy + ch * 0.3, vx: Math.cos(an) * (60 + Math.random() * 220), vy: Math.sin(an) * (100 + Math.random() * 260), life: 1, c: a.surface === 'sea' ? '235,245,255' : '205,170,110', s: a.surface === 'sea' ? 4 : 7, g: 1 }); }
+        rings.push({ r: 0.2 }, { r: 0.05 });
+      }
+      if (phase === 'landed') {
+        const t = (now - landT) / 1000; y = ground / FH + (a.surface === 'sea' ? Math.sin(t * 5) * 0.006 * Math.exp(-t) : 0);
+        for (const rg of rings) { rg.r += dt * 0.6; L.strokeStyle = a.surface === 'sea' ? `rgba(255,255,255,${Math.max(0, 0.8 - rg.r)})` : `rgba(210,180,120,${Math.max(0, 0.6 - rg.r)})`; L.lineWidth = 3; L.beginPath(); L.ellipse(cx, a.ground * FH, rg.r * FW, rg.r * FW * 0.18, 0, 0, 7); L.stroke(); }
+        fold = Math.min(1, Math.max(0, (t - 0.3) * 0.8));
+        if (t > 2.6) { done = true; res(); return; }
+      }
+      for (const p of parts) { p.x += p.vx * dt; p.y += p.vy * dt; if (p.g) p.vy += 420 * dt; p.life -= dt * (p.g ? 0.8 : 1.6); L.fillStyle = `rgba(${p.c},${Math.max(0, p.life)})`; L.beginPath(); L.arc(p.x, p.y, p.s * Math.max(0.2, p.life), 0, 7); L.fill(); }
+      for (let i = parts.length - 1; i >= 0; i--) if (parts[i].life <= 0) parts.splice(i, 1);
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }),
   choice: (a) => new Promise((res) => {
     hint(T.choice);
     for (const o of a.opts) { const b = document.createElement('button'); b.className = 'choice'; b.textContent = o[lang]; b.style.left = o.at[0] * 100 + '%'; b.style.top = o.at[1] * 100 + '%'; $('spots').append(b); b.onpointerdown = (e) => { e.stopPropagation(); sfx('found'); branch = o.go; hint(''); res(); }; }
@@ -376,7 +467,7 @@ function film(name) {
 async function show(i) {
   if (busy) return; busy = true; hint(''); $('next').classList.remove('on'); keyAct = null; meter(null);
   for (const b of document.querySelectorAll('.alt')) b.remove();
-  const p = PANELS[i]; idx = i;
+  const p = PANELS[i]; idx = i; gen++;
   sfx('page', 0.7);
   const page = $('page'); page.classList.remove('turn-in'); page.classList.add('turn-out'); await sleep(320);
   clearLayer(); last = null; sparks.length = 0; $('panel').onpointerdown = $('panel').onpointermove = $('panel').onpointerup = $('panel').onpointercancel = null; L.clearRect(0, 0, FW, FH);
@@ -389,8 +480,9 @@ async function show(i) {
   ambience(p.amb);
   await sleep(450);
   if (p.sfx) { sfx(p.sfx); await sleep(1200); } // the panel's own sound first, then the story
+  const early = p.act?.pre ? acts[p.act.kind](p.act) : null; // some scenes start moving while the narrator speaks
   for (const ln of p.lines) await say(ln);
-  if (p.act) { await acts[p.act.kind](p.act); for (const ln of p.act.then || []) { if (ln.sfx) { sfx(ln.sfx); await sleep(900); } await say(ln); } }
+  if (p.act) { await (early || acts[p.act.kind](p.act)); for (const ln of p.act.then || []) { if (ln.sfx) { sfx(ln.sfx); await sleep(900); } await say(ln); } }
   busy = false; $('next').classList.add('on');
   if (i === PANELS.length - 1) setTimeout(end, 1800);
 }
