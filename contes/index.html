@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Contes · Unfold Worlds</title>
-<meta name="description" content="Des histoires à écouter et à toucher, pour les enfants. Contes d'Afrique et histoires de la Bible.">
+<meta name="description" content="Des BD à écouter et à toucher, pour les enfants : Noé et l’arche, Lina et les petites traces.">
 <meta name="theme-color" content="#140a05">
 <meta property="og:title" content="Contes pour enfants · Unfold Worlds">
 <meta property="og:description" content="Des histoires à écouter et à toucher, pour les enfants.">
@@ -69,18 +69,15 @@ footer a { border-bottom: 1px solid rgba(251, 241, 226, .3); }
 <footer><a href="../" data-t="home"></a></footer>
 <script>
 const T = {
-  fr: { kick: 'Unfold Worlds', title: 'Contes', sub: 'à écouter et à toucher', lead: 'Des histoires racontées à voix haute, que l’enfant fait avancer du bout du doigt. Environ six minutes chacune, en français et en anglais.', home: 'Retour à l’accueil', min: 'min', soon: 'Bientôt', play: 'Écouter' },
-  en: { kick: 'Unfold Worlds', title: 'Stories', sub: 'to listen to and to touch', lead: 'Tales read aloud, that the child moves along with a fingertip. About six minutes each, in French and in English.', home: 'Back to home', min: 'min', soon: 'Coming soon', play: 'Listen' },
+  fr: { kick: 'Unfold Worlds', title: 'Contes', sub: 'à écouter et à toucher', lead: 'Des histoires racontées à voix haute, que l’enfant fait avancer du bout du doigt. Quelques minutes chacune, en français et en anglais.', home: 'Retour à l’accueil', min: 'min', soon: 'Bientôt', play: 'Écouter' },
+  en: { kick: 'Unfold Worlds', title: 'Stories', sub: 'to listen to and to touch', lead: 'Tales read aloud, that the child moves along with a fingertip. A few minutes each, in French and in English.', home: 'Back to home', min: 'min', soon: 'Coming soon', play: 'Listen' },
 };
 // the series and their tales; a tale without "url" shows as coming soon
 const SERIES = [
   { id: 'bd', fr: { name: 'BD à toucher', d: 'Des bandes dessinées qui se lisent toutes seules, et où l’enfant joue dans les cases.' }, en: { name: 'Touch comics', d: 'Comics that read themselves aloud, where the child plays inside the panels.' },
-    tales: [{ url: 'mila/', img: 'mila/art/c11.jpg', min: 4, fr: { t: 'Mila', s: 'et la luciole perdue', m: 'BD interactive · 4 à 8 ans' }, en: { t: 'Mila', s: 'and the lost firefly', m: 'Interactive comic in French · ages 4 to 8' } },
+    tales: [{ url: 'noe/', img: 'noe/art/n5.jpg', min: 4, fr: { t: 'Noé', s: 'et l’arche', m: 'BD interactive · Genèse 6 à 9' }, en: { t: 'Noah', s: 'and the ark', m: 'Interactive comic · Genesis 6 to 9' } },
       { url: 'lina/', img: 'lina/art/l10.jpg', min: 5, fr: { t: 'Lina', s: 'et les petites traces', m: 'BD interactive · 4 à 8 ans' }, en: { t: 'Lina', s: 'and the tiny tracks', m: 'Interactive comic · ages 4 to 8' } }] },
-  { id: 'afrique', fr: { name: 'Contes d’Afrique', d: 'Les grands contes de la tradition orale, en ombres chinoises.' }, en: { name: 'Tales from Africa', d: 'Great tales from the oral tradition, as shadow puppets.' },
-    tales: [{ url: 'kalulu/', img: 'kalulu/art/cover.jpg', min: 6, fr: { t: 'Kalulu', s: 'et le grand tir à la corde', m: 'Conte bantou' }, en: { t: 'Kalulu', s: 'and the great tug of war', m: 'Bantu folk tale' } }] },
-  { id: 'bible', fr: { name: 'Histoires de la Bible', d: 'Les grands récits de la Bible, racontés aux plus petits.' }, en: { name: 'Bible stories', d: 'The great stories of the Bible, told for little ones.' },
-    tales: [{ url: 'noe/', img: 'noe/art/n5.jpg', min: 4, fr: { t: 'Noé', s: 'et l’arche', m: 'BD interactive · Genèse 6 à 9' }, en: { t: 'Noah', s: 'and the ark', m: 'Interactive comic · Genesis 6 to 9' } }] },
+  // kept aside for now (not listed): mila/ "Mila et la luciole perdue" and kalulu/ "Kalulu et le grand tir à la corde"
 ];
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
 let lang = new URLSearchParams(location.search).get('lang') || store.get('contes-lang') || ((navigator.language || '').startsWith('fr') ? 'fr' : 'en');

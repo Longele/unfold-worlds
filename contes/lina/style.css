@@ -87,3 +87,10 @@ button, a { font: inherit; color: inherit; background: none; border: 0; text-dec
 .page, .panel { touch-action: none; }
 .art, .panel img, .panel video { pointer-events: none; -webkit-user-drag: none; -webkit-touch-callout: none; user-select: none; }
 .panel, .spots, .spot, .choice { -webkit-touch-callout: none; }
+/* the speaker button: hear the last line again */
+.replay { width: 48px; height: 48px; margin-left: 8px; border-radius: 50%; border: 3px solid var(--ink); background: var(--paper); box-shadow: 3px 3px 0 var(--ink); display: grid; place-items: center; padding: 0; }
+.replay svg { width: 26px; height: 26px; fill: var(--ink); stroke: var(--ink); stroke-width: 2; stroke-linecap: round; }
+.replay:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.replay.busy { background: var(--gold); }
+.replay.nod { animation: nod 0.9s ease-in-out 2; }
+@keyframes nod { 50% { transform: scale(1.18); background: var(--gold); } }
