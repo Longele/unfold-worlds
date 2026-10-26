@@ -3,7 +3,7 @@
 // measuring rope, taps with the mallet, brushes on the pitch, gathers the pairs, makes it rain, presses the ark
 // into the water and feels it come back up, lights the dark hold with the lamp, sends the dove, draws the rainbow
 // and looks into a raindrop with a magnifying glass.
-import { PANELS, TITLE, WHO } from './story.js?v=202610260300';
+import { PANELS, TITLE, WHO } from './story.js?v=202610260400';
 
 const $ = (id) => document.getElementById(id);
 // the language: from the stories page (?lang=), else the last one chosen, else the phone's
@@ -21,7 +21,7 @@ function applyLang() {
   $('title').textContent = TITLE[lang]; document.querySelector('.kick').textContent = T.kick; document.querySelector('.back').textContent = T.back;
   for (const el of document.querySelectorAll('a[href^="../"]')) el.href = `../?lang=${lang}`;
   for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
-  fetch(`voice/${lang}/timings.json?v=202610260300`).then((r) => r.json()).then((j) => (timings = j));
+  fetch(`voice/${lang}/timings.json?v=202610260400`).then((r) => r.json()).then((j) => (timings = j));
 }
 for (const b of document.querySelectorAll('[data-lang]')) b.onclick = () => { lang = b.dataset.lang; store.set('contes-lang', lang); applyLang(); };
 
@@ -74,23 +74,40 @@ function tail(el, t) {
   s.innerHTML = `<path d="M${bx - uy * w},${by + ux * w} Q${(bx + px) / 2 + uy * 4},${(by + py) / 2 - ux * 4} ${px},${py} Q${(bx + px) / 2 - uy * 2},${(by + py) / 2 + ux * 2} ${bx + uy * w},${by - ux * w} Z"/>`;
   $('layer').insertBefore(s, el); el._tail = s;
 }
+// the last line read on this panel, so the child can hear an instruction again
+let last = null;
 async function say(ln) {
-  const el = showLine(ln);
+  const el = showLine(ln); last = { ln, el };
   if (mode !== 'voice') { await sleep(300); return el; }
-  voice.src = `voice/${lang}/${ln.id}.mp3`; duck(true);
+  return speak(ln, el);
+}
+// each reading has its own number, so a line started over another one (a replay) ends the older one cleanly
+let tok = 0;
+async function speak(ln, el) {
+  const me = ++tok; voice.src = `voice/${lang}/${ln.id}.mp3`; duck(true);
   try { await voice.play(); } catch { duck(false); return el; }
   const words = wordsOf(ln.id), spans = el.querySelectorAll('span');
   await new Promise((res) => {
     const tick = () => {
       const t = voice.currentTime;
       spans.forEach((s, i) => s.classList.toggle('on', words[i] && t >= words[i].s - 0.03 && t < (words[i + 1]?.s ?? 99)));
-      if (voice.ended || voice.paused) { spans.forEach((s) => s.classList.remove('on')); duck(false); res(); } else requestAnimationFrame(tick);
+      if (me !== tok) { spans.forEach((s) => s.classList.remove('on')); res(); }
+      else if (voice.ended || voice.paused) { spans.forEach((s) => s.classList.remove('on')); duck(false); res(); } else requestAnimationFrame(tick);
     };
     tick();
   });
   await sleep(250);
   return el;
 }
+// the speaker button: read the last line again (also in "I read it myself" mode), never over another line
+async function replay() {
+  if (!last || !voice.paused || replaying) return; replaying = true; $('replay').classList.add('busy');
+  const { ln } = last; let el = last.el;
+  if (!el.isConnected) { el = showLine(ln); last.el = el; }
+  await speak(ln, el); replaying = false; $('replay').classList.remove('busy');
+}
+let replaying = false;
+$('replay').onclick = (e) => { e.stopPropagation(); replay(); };
 function clearLayer() { $('layer').innerHTML = ''; $('spots').innerHTML = ''; }
 
 // ---------------------------------------------------------------- effects: sparkles, rain and the push of the water
@@ -123,7 +140,8 @@ function drawFx() {
 }
 requestAnimationFrame(drawFx);
 function word(text, at) { const el = document.createElement('div'); el.className = 'pow'; el.textContent = text; el.style.left = at[0] * 100 + '%'; el.style.top = at[1] * 100 + '%'; el.style.setProperty('--r', (Math.random() * 16 - 8).toFixed(1) + 'deg'); $('layer').append(el); setTimeout(() => el.remove(), 1600); }
-function hint(text) { $('hint').textContent = text || ''; $('hint').classList.toggle('on', !!text); }
+// the instruction under the panel; the speaker button nods once so the child knows it can listen again
+function hint(text) { $('hint').textContent = text || ''; $('hint').classList.toggle('on', !!text); if (text) { const r = $('replay'); r.classList.remove('nod'); void r.offsetWidth; r.classList.add('nod'); } }
 function spot(at, r, cls = '') { const el = document.createElement('button'); el.className = 'spot ' + cls; el.style.left = at[0] * 100 + '%'; el.style.top = at[1] * 100 + '%'; el.style.width = el.style.height = (r * 2 * 100) + '%'; $('spots').append(el); return el; }
 const toPanel = (e) => { const r = $('panel').getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]; };
 const near = (p, q, r) => Math.hypot((p[0] - q[0]) * FW, (p[1] - q[1]) * FH) < r * FW;
@@ -313,8 +331,8 @@ const acts = {
     s.onpointerup = s.onpointercancel = () => (from = null);
   }),
   sounds: (a) => new Promise((res) => {
-    hint(T.sounds); let n = 0;
-    for (const p of a.spots) { const s = spot(p.at, 0.09, 'soft'); s.onpointerdown = (e) => { e.stopPropagation(); sfx(p.sfx); word(p.word[lang], [p.at[0], p.at[1] - 0.09]); burst(p.at[0], p.at[1], 14, 100); if (!s.done) { s.done = true; s.classList.add('done'); if (++n === a.spots.length) { hint(''); setTimeout(res, 900); } } }; }
+    hint(a.hint?.[lang] || T.sounds); let n = 0;
+    for (const p of a.spots) { const s = spot(p.at, a.r || 0.09, 'soft'); s.onpointerdown = (e) => { e.stopPropagation(); sfx(p.sfx); word(p.word[lang], [p.at[0], p.at[1] - 0.09]); burst(p.at[0], p.at[1], 14, 100); if (!s.done) { s.done = true; s.classList.add('done'); if (++n === a.spots.length) { hint(''); setTimeout(res, 900); } } }; }
   }),
 };
 function swapArt(name) { if (!name) return; const im = new Image(); im.src = `art/${name}.jpg`; im.className = 'art over'; $('panel').insertBefore(im, $('fx')); requestAnimationFrame(() => im.classList.add('in')); }
@@ -325,7 +343,7 @@ async function show(i) {
   const p = PANELS[i]; idx = i;
   sfx('page', 0.7);
   const page = $('page'); page.classList.remove('turn-in'); page.classList.add('turn-out'); await sleep(320);
-  clearLayer(); sparks.length = 0; drops.length = 0; rainLevel = 0; lift = 0; $('panel').onpointerdown = $('panel').onpointermove = $('panel').onpointerup = $('panel').onpointercancel = null; L.clearRect(0, 0, FW, FH);
+  clearLayer(); last = null; sparks.length = 0; drops.length = 0; rainLevel = 0; lift = 0; $('panel').onpointerdown = $('panel').onpointermove = $('panel').onpointerup = $('panel').onpointercancel = null; L.clearRect(0, 0, FW, FH);
   for (const el of document.querySelectorAll('#panel .art')) el.remove();
   const im = new Image(); im.className = 'art'; im.id = 'art'; im.src = `art/${p.img}.jpg`; await im.decode().catch(() => {});
   $('panel').style.aspectRatio = `${im.naturalWidth} / ${im.naturalHeight}`; $('panel').insertBefore(im, $('fx'));

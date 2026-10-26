@@ -94,3 +94,10 @@ button, a { font: inherit; color: inherit; background: none; border: 0; text-dec
 /* lightning: the whole panel flashes white for an instant */
 .panel.flash::after { content: ''; position: absolute; inset: 0; background: rgba(255, 255, 255, .7); z-index: 5; pointer-events: none; }
 .layer .cap { transition: opacity .4s; } .layer.dim .cap { opacity: .12; }
+/* the speaker button: hear the last line again */
+.replay { width: 48px; height: 48px; margin-left: 8px; border-radius: 50%; border: 3px solid var(--ink); background: var(--paper); box-shadow: 3px 3px 0 var(--ink); display: grid; place-items: center; padding: 0; }
+.replay svg { width: 26px; height: 26px; fill: var(--ink); stroke: var(--ink); stroke-width: 2; stroke-linecap: round; }
+.replay:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.replay.busy { background: var(--gold); }
+.replay.nod { animation: nod 0.9s ease-in-out 2; }
+@keyframes nod { 50% { transform: scale(1.18); background: var(--gold); } }

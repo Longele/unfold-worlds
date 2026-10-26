@@ -10,10 +10,16 @@ const ARC = Array.from({ length: 25 }, (_, i) => { const a = Math.PI - 0.7 - (Ma
 export const PANELS = [
   { id: 'n1', img: 'n1', amb: 'amb-meadow', lines: [{ id: 'n1a', cap: 1 }],
     act: { kind: 'hello', at: [0.42, 0.58], r: 0.13, word: { fr: 'BONJOUR !', en: 'HELLO!' }, then: [{ id: 'n1b', b: [0.6, 0.2], t: [0.5, 0.46] }] } },
+  // why the flood: people had become wicked, God's heart was sad, Noah was righteous (Genesis 6:5-9)
+  { id: 'nw', img: 'nw', amb: 'amb-calm', lines: [{ id: 'nw1', cap: 1 }, { id: 'nw2', cap: 1 }, { id: 'nw3', cap: 1 }] },
   { id: 'n2', img: 'n2', amb: 'amb-wood', lines: [{ id: 'n2a', cap: 1 }, { id: 'n2b', b: [0.5, 0.2], t: [0.5, 0.47] }, { id: 'n2c', cap: 1 }],
     act: { kind: 'trace', style: 'rope', pts: [[0.08, 0.86], [0.3, 0.855], [0.5, 0.85], [0.7, 0.845], [0.9, 0.84]], word: '135 m', then: [{ id: 'n2d', cap: 1 }] } },
   { id: 'n3', img: 'n3', amb: 'amb-wood', lines: [{ id: 'n3a', cap: 1 }, { id: 'n3b', cap: 1 }],
     act: { kind: 'taps', spots: [[0.2, 0.62], [0.47, 0.7], [0.72, 0.62]], word: { fr: 'TOC !', en: 'KNOCK!' }, then: [{ id: 'n3c', b: [0.6, 0.2], t: [0.84, 0.76] }] } },
+  // Noah warns them and nobody believes him (2 Peter 2:5, 1 Peter 3:20, Matthew 24:38)
+  { id: 'nx', img: 'nx', amb: 'amb-wood', lines: [{ id: 'nx1', cap: 1 }],
+    act: { kind: 'sounds', hint: { fr: 'Touche les gens pour les avertir', en: 'Touch the people to warn them' }, r: 0.08, spots: [{ at: [0.55, 0.64], sfx: 'tap', word: { fr: 'PLUS TARD !', en: 'LATER!' } }, { at: [0.85, 0.78], sfx: 'tap', word: { fr: 'BOF !', en: 'MEH!' } }, { at: [0.2, 0.8], sfx: 'tap', word: { fr: 'PFFF !', en: 'PFFT!' } }],
+      then: [{ id: 'nx2', b: [0.62, 0.25], t: [0.3, 0.4] }, { id: 'nx3', cap: 1 }] } },
   { id: 'n4', img: 'n4', amb: 'amb-wood', lines: [{ id: 'n4a', cap: 1 }, { id: 'n4b', cap: 1 }],
     act: { kind: 'paint', after: 'n4b', box: [0, 0.27, 1, 0.95], not: [0.45, 0.5, 0.85, 1], then: [{ id: 'n4c', b: [0.42, 0.16], t: [0.62, 0.58] }] } },
   { id: 'n5', img: 'n5', amb: 'amb-meadow', lines: [{ id: 'n5a', cap: 1 }],
