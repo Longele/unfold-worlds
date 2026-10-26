@@ -3,7 +3,7 @@
 // arrow keys), blows the moon dust off the window, jumps in low gravity, leaves footprints, lights a dark crater,
 // finds Africa with the binoculars and turns the Moon through its phases. Everything also works on a laptop:
 // every phone gesture has a mouse or keyboard twin, and the microphone always has a button to fall back on.
-import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610260700';
+import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610270200';
 
 const $ = (id) => document.getElementById(id);
 // the language: from the stories page (?lang=), else the last one chosen, else the phone's
@@ -23,7 +23,7 @@ function applyLang() {
   $('title').textContent = TITLE[lang]; document.querySelector('.kick').textContent = T.kick; document.querySelector('.back').textContent = T.back;
   for (const el of document.querySelectorAll('a[href^="../"]')) el.href = `../?lang=${lang}`;
   for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
-  fetch(`voice/${lang}/timings.json?v=202610260700`).then((r) => r.json()).then((j) => (timings = j));
+  fetch(`voice/${lang}/timings.json?v=202610270200`).then((r) => r.json()).then((j) => (timings = j));
 }
 for (const b of document.querySelectorAll('[data-lang]')) b.onclick = () => { lang = b.dataset.lang; store.set('contes-lang', lang); applyLang(); };
 
@@ -74,6 +74,7 @@ addEventListener('keydown', (e) => {
   keys.add(e.key);
   if (keyAct?.(e, true)) { e.preventDefault(); return; }
   if ([' ', 'Enter', 'ArrowRight'].includes(e.key) && idx >= 0) { e.preventDefault(); next(); }
+  else if (e.key === 'ArrowLeft' && idx >= 0) { e.preventDefault(); prev(); }
 });
 addEventListener('keyup', (e) => { keys.delete(e.key); keyAct?.(e, false); });
 
@@ -464,10 +465,11 @@ function film(name) {
 }
 
 // ---------------------------------------------------------------- reading
-async function show(i) {
-  if (busy) return; busy = true; hint(''); $('next').classList.remove('on'); keyAct = null; meter(null);
+const hist = []; // the pages already read, for the back arrow
+async function show(i, back = false) {
+  if (busy) return; busy = true; if (!back && idx >= 0 && idx !== i) hist.push(idx); hint(''); $('next').classList.remove('on'); keyAct = null; meter(null);
   for (const b of document.querySelectorAll('.alt')) b.remove();
-  const p = PANELS[i]; idx = i; gen++;
+  const p = PANELS[i]; idx = i; const my = ++gen; const gone = () => gen !== my; $('prev').classList.toggle('on', hist.length > 0);
   sfx('page', 0.7);
   const page = $('page'); page.classList.remove('turn-in'); page.classList.add('turn-out'); await sleep(320);
   clearLayer(); last = null; sparks.length = 0; $('panel').onpointerdown = $('panel').onpointermove = $('panel').onpointerup = $('panel').onpointercancel = null; L.clearRect(0, 0, FW, FH);
@@ -478,11 +480,11 @@ async function show(i) {
   page.classList.remove('turn-out'); page.classList.add('turn-in'); fitFx();
   $('dots').innerHTML = PANELS.filter((x) => !x.branch || x.id === branch).map((x) => `<i class="${x.id === p.id ? 'on' : ''}"></i>`).join('');
   ambience(p.amb);
-  await sleep(450);
-  if (p.sfx) { sfx(p.sfx); await sleep(1200); } // the panel's own sound first, then the story
+  await sleep(450); if (gone()) return;
+  if (p.sfx) { sfx(p.sfx); await sleep(1200); if (gone()) return; } // the panel's own sound first, then the story
   const early = p.act?.pre ? acts[p.act.kind](p.act) : null; // some scenes start moving while the narrator speaks
-  for (const ln of p.lines) await say(ln);
-  if (p.act) { await (early || acts[p.act.kind](p.act)); for (const ln of p.act.then || []) { if (ln.sfx) { sfx(ln.sfx); await sleep(900); } await say(ln); } }
+  for (const ln of p.lines) { await say(ln); if (gone()) return; }
+  if (p.act) { await (early || acts[p.act.kind](p.act)); if (gone()) return; for (const ln of p.act.then || []) { if (ln.sfx) { sfx(ln.sfx); await sleep(900); } await say(ln); if (gone()) return; } }
   busy = false; $('next').classList.add('on');
   if (i === PANELS.length - 1) setTimeout(end, 1800);
 }
@@ -501,6 +503,15 @@ addEventListener('contextmenu', (e) => e.preventDefault());
 document.addEventListener('touchmove', (e) => { if (e.target.closest('#panel')) e.preventDefault(); }, { passive: false });
 $('page').addEventListener('pointerdown', (e) => { if (e.target.closest('button') || busy) return; next(); });
 $('next').onclick = next;
+// back one page, even in the middle of a line or a game: the voice stops and the page before comes back
+function prev() {
+  if (!hist.length) return; voice.pause(); tok++; duck(false); hint(''); $('layer').classList.remove('dim');
+  if (typeof keyAct !== 'undefined') keyAct = null;
+  if (typeof meter === 'function') meter(null);
+  for (const b of document.querySelectorAll('.alt')) b.remove();
+  busy = false; const i = hist.pop(); if (typeof branch !== 'undefined' && PANELS[i].act?.kind === 'choice') branch = null; show(i, true);
+}
+$('prev').onclick = (e) => { e.stopPropagation(); prev(); };
 async function start(m) {
   mode = m; await initAudio(); music.play().catch(() => {});
   document.body.classList.add('reading'); $('cover').classList.add('gone');

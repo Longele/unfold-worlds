@@ -2,7 +2,7 @@
 // the page; its lines are read aloud in their bubbles with the word being said lit up; on some panels the child
 // takes Lina's magnifying glass or binoculars (a live magnified view under the finger), keeps still to reassure a
 // frightened hedgehog, or says hello to the little ones.
-import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610260400';
+import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610270200';
 
 const $ = (id) => document.getElementById(id);
 // the language: from the stories page (?lang=), else the last one chosen, else the phone's
@@ -20,11 +20,12 @@ function applyLang() {
   $('title').textContent = TITLE[lang]; document.querySelector('.kick').textContent = T.kick; document.querySelector('.back').textContent = T.back;
   for (const el of document.querySelectorAll('a[href="../"]')) el.href = `../?lang=${lang}`;
   for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
-  fetch(`voice/${lang}/timings.json?v=202610260400`).then((r) => r.json()).then((j) => (timings = j));
+  fetch(`voice/${lang}/timings.json?v=202610270200`).then((r) => r.json()).then((j) => (timings = j));
 }
 for (const b of document.querySelectorAll('[data-lang]')) b.onclick = () => { lang = b.dataset.lang; store.set('contes-lang', lang); applyLang(); };
 
 let timings = {}, mode = 'voice', idx = -1, branch = null, busy = false, ctx = null, sfxBuf = {};
+let gen = 0; // which page is showing: the games and animations of a page that is left stop by themselves
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 applyLang();
 
@@ -133,13 +134,14 @@ const toPanel = (e) => { const r = $('panel').getBoundingClientRect(); return [(
 // pixels on the page becomes plain to see exactly where the child looks, like with a real magnifying glass.
 function lensTool(kind, a) {
   return new Promise((res) => {
+    const lensGen = gen;
     hint(T[kind]); sfx(kind === 'loupe' ? 'loupe' : 'binocs');
     const art = $('art'), nw = art.naturalWidth, nh = art.naturalHeight, zoom = a.zoom || (kind === 'loupe' ? 2.4 : 3);
     let pos = a.start ? [...a.start] : [0.5, 0.62], held = 0, last = performance.now(), done = false, t0 = performance.now();
     const R = () => FW * (kind === 'loupe' ? 0.2 : 0.17);
     const centres = () => kind === 'loupe' ? [[pos[0] * FW, pos[1] * FH]] : [[pos[0] * FW - R() * 0.78, pos[1] * FH], [pos[0] * FW + R() * 0.78, pos[1] * FH]];
     const draw = () => {
-      if (done) return; requestAnimationFrame(draw);
+      if (done || lensGen !== gen) return; requestAnimationFrame(draw);
       const now = performance.now(), dt = now - last; last = now;
       L.clearRect(0, 0, FW, FH);
       if (kind === 'binocs') { L.fillStyle = 'rgba(18,12,4,0.82)'; L.fillRect(0, 0, FW, FH); }
@@ -183,7 +185,8 @@ const acts = {
     hint(T.still); const s = spot(a.at, a.r, 'soft'); let down = null, t = 0, warned = 0, sniffed = false;
     const onDown = (e) => { e.preventDefault(); down = toPanel(e); t = performance.now(); sniffed = false; };
     const onMove = (e) => { if (!down) return; const p = toPanel(e); if (Math.hypot((p[0] - down[0]) * FW, (p[1] - down[1]) * FH) > 14) { down = null; s.classList.remove('calm'); if (performance.now() - warned > 3500) { warned = performance.now(); sfx('hush'); whisper(a.warn); } } };
-    const tick = () => {
+    const g0 = gen; const tick = () => {
+      if (gen !== g0) return;
       if (down) { const k = (performance.now() - t) / a.ms; s.classList.add('calm'); s.style.setProperty('--k', Math.min(1, k)); if (k > 0.45 && !sniffed) { sniffed = true; sfx('sniff'); } if (k >= 1) { s.remove(); $('panel').onpointerdown = $('panel').onpointermove = null; sfx('uncurl'); swapArt(cur().calm); burst(a.at[0], a.at[1], 30, 30); hint(''); res(); return; } }
       else s.style.setProperty('--k', 0);
       requestAnimationFrame(tick);
@@ -207,9 +210,10 @@ function film(name, loop) {
 }
 
 // ---------------------------------------------------------------- reading
-async function show(i) {
-  if (busy) return; busy = true; hint(''); $('next').classList.remove('on');
-  const p = PANELS[i]; idx = i;
+const hist = []; // the pages already read, for the back arrow
+async function show(i, back = false) {
+  if (busy) return; busy = true; if (!back && idx >= 0 && idx !== i) hist.push(idx); hint(''); $('next').classList.remove('on');
+  const p = PANELS[i]; idx = i; const my = ++gen; const gone = () => gen !== my; $('prev').classList.toggle('on', hist.length > 0);
   sfx('page', 0.7);
   const page = $('page'); page.classList.remove('turn-in'); page.classList.add('turn-out'); await sleep(320);
   clearLayer(); last = null; sparks.length = 0; $('panel').onpointerdown = $('panel').onpointermove = null; L.clearRect(0, 0, FW, FH);
@@ -220,10 +224,10 @@ async function show(i) {
   $('dots').innerHTML = PANELS.filter((x) => !x.branch || x.id === branch).map((x) => `<i class="${x.id === p.id ? 'on' : ''}"></i>`).join('');
   ambience(p.amb);
   if (p.video) film(p.video, true);
-  await sleep(450);
-  if (p.sfx) { sfx(p.sfx); await sleep(1200); } // the panel's own sound first, then the story
-  for (const ln of p.lines) await say(ln);
-  if (p.act) { await acts[p.act.kind](p.act); for (const ln of p.act.then || []) await say(ln); }
+  await sleep(450); if (gone()) return;
+  if (p.sfx) { sfx(p.sfx); await sleep(1200); if (gone()) return; } // the panel's own sound first, then the story
+  for (const ln of p.lines) { await say(ln); if (gone()) return; }
+  if (p.act) { await acts[p.act.kind](p.act); if (gone()) return; for (const ln of p.act.then || []) { await say(ln); if (gone()) return; } }
   busy = false; $('next').classList.add('on');
   if (i === PANELS.length - 1) setTimeout(end, 1800);
 }
@@ -242,6 +246,17 @@ addEventListener('contextmenu', (e) => e.preventDefault());
 document.addEventListener('touchmove', (e) => { if (e.target.closest('#panel')) e.preventDefault(); }, { passive: false });
 $('page').addEventListener('pointerdown', (e) => { if (e.target.closest('button') || busy) return; next(); });
 $('next').onclick = next;
+// back one page, even in the middle of a line or a game: the voice stops and the page before comes back
+function prev() {
+  if (!hist.length) return; voice.pause(); tok++; duck(false); hint(''); $('layer').classList.remove('dim');
+  if (typeof keyAct !== 'undefined') keyAct = null;
+  if (typeof meter === 'function') meter(null);
+  for (const b of document.querySelectorAll('.alt')) b.remove();
+  busy = false; const i = hist.pop(); if (typeof branch !== 'undefined' && PANELS[i].act?.kind === 'choice') branch = null; show(i, true);
+}
+$('prev').onclick = (e) => { e.stopPropagation(); prev(); };
+// on a laptop: the arrow keys turn the pages
+addEventListener('keydown', (e) => { if (idx < 0) return; if (e.key === 'ArrowLeft') prev(); else if (e.key === 'ArrowRight') next(); });
 async function start(m) {
   mode = m; await initAudio(); music.play().catch(() => {});
   document.body.classList.add('reading'); $('cover').classList.add('gone');
