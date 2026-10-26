@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Unfold Worlds · Every world has a story.</title>
-<meta name="description" content="Présentations, sites et expériences immersives. Explorez librement les mondes publics.">
+<meta name="description" content="Présentations, sites et expériences immersives. Explorez librement les mondes publics. Presentations, websites and immersive experiences.">
 <meta name="theme-color" content="#07090d">
 <link rel="icon" href="icon-192.png">
 <link rel="manifest" href="site.webmanifest">
@@ -20,17 +20,17 @@
   <section class="hero">
     <div class="rise">
       <h1>UNFOLD<span>WORLDS</span></h1>
-      <p class="tag">Every world has a story.</p>
-      <p class="lead">Présentations, sites et expériences immersives, à vivre en salle ou à l’écran. Chaque monde ouvre la porte d’un nouvel univers.</p>
-      <div class="cta"><a class="btn gold" href="#mondes">Explorer les mondes</a></div>
+      <p class="tag" data-i18n="tag">Every world has a story.</p>
+      <p class="lead" data-i18n="lead">Présentations, sites et expériences immersives, à vivre en salle ou à l’écran. Chaque monde ouvre la porte d’un nouvel univers.</p>
+      <div class="cta"><a class="btn gold" href="#mondes" data-i18n="cta">Explorer les mondes</a></div>
     </div>
   </section>
   <section class="sec" id="mondes">
-    <div class="sec-h"><h2>Mondes à explorer</h2><span class="mono" id="count"></span></div>
-    <div class="grid" id="grid"><div class="empty">Chargement…</div></div>
+    <div class="sec-h"><h2 data-i18n="worlds">Mondes à explorer</h2><span class="mono" id="count"></span></div>
+    <div class="grid" id="grid"><div class="empty" data-i18n="loading">Chargement…</div></div>
   </section>
 </div>
-<footer class="mono">Unfold Worlds · every world has a story</footer>
+<footer class="mono">Unfold Worlds · <span data-i18n="foot">chaque monde a son histoire</span></footer>
 <script src="lib/supabase.js"></script>
 <script type="module">
 import { sb, esc } from './config.js';
@@ -38,21 +38,30 @@ import { setBg } from './bg.js';
 setBg({ hue: [255, 122, 26], fx: 0.5, fy: 0.3, mode: 'drift', pull: 0.5, speed: 0.5 });
 
 import { mountNav } from './nav.js';
+import { apply, onLang, withLang } from './i18n.js';
+const T = {
+  fr: { title: 'Unfold Worlds · Chaque monde a son histoire.', tag: 'Chaque monde a son histoire.', lead: 'Présentations, sites et expériences immersives, à vivre en salle ou à l’écran. Chaque monde ouvre la porte d’un nouvel univers.', cta: 'Explorer les mondes', worlds: 'Mondes à explorer', loading: 'Chargement…', foot: 'chaque monde a son histoire', error: 'Les mondes n’ont pas pu être chargés.', none: 'Aucun monde public pour l’instant.', count: (n) => `${n} monde${n > 1 ? 's' : ''}`, site: 'site immersif', deck: 'présentation' },
+  en: { title: 'Unfold Worlds · Every world has a story.', tag: 'Every world has a story.', lead: 'Presentations, websites and immersive experiences, to live in a room or on a screen. Every world opens the door to a new universe.', cta: 'Explore the worlds', worlds: 'Worlds to explore', loading: 'Loading…', foot: 'every world has a story', error: 'The worlds could not be loaded.', none: 'No public worlds yet.', count: (n) => `${n} world${n > 1 ? 's' : ''}`, site: 'immersive site', deck: 'presentation' },
+};
+apply(T);
 mountNav('explore');
 
 // only public worlds are visible without an account (Row Level Security)
-const { data, error } = await sb().from('projects').select('title, subtitle, author, slug, external_url, cover_url, updated_at').eq('visibility', 'public').order('updated_at', { ascending: false }).limit(60);
+const { data, error } = await sb().from('projects').select('title, subtitle, title_en, subtitle_en, author, slug, external_url, cover_url, updated_at').eq('visibility', 'public').order('updated_at', { ascending: false }).limit(60);
 const grid = document.getElementById('grid');
-if (error) grid.innerHTML = '<div class="empty">Les mondes n’ont pas pu être chargés.</div>';
-else if (!data.length) grid.innerHTML = '<div class="empty">Aucun monde public pour l’instant.</div>';
-else {
-  document.getElementById('count').textContent = `${data.length} monde${data.length > 1 ? 's' : ''}`;
+// the cards are drawn again in the other language; a world without an English title keeps its own
+onLang((l) => {
+  const L = T[l];
+  if (error) { grid.innerHTML = `<div class="empty">${L.error}</div>`; return; }
+  if (!data.length) { grid.innerHTML = `<div class="empty">${L.none}</div>`; return; }
+  document.getElementById('count').textContent = L.count(data.length);
+  const tt = (p) => (l === 'en' && p.title_en) || p.title, st = (p) => (l === 'en' && p.subtitle_en) || p.subtitle || '';
   // presentations play here; immersive sites open in a new tab
-  grid.innerHTML = data.map((p) => `<a class="card${p.cover_url ? ' has-cover' : ''}" href="${p.external_url ? esc(p.external_url) : `play.html?w=${encodeURIComponent(p.slug)}`}"${p.external_url ? ' target="_blank" rel="noopener"' : ''}>
+  grid.innerHTML = data.map((p) => `<a class="card${p.cover_url ? ' has-cover' : ''}" href="${p.external_url ? esc(withLang(p.external_url)) : `play.html?w=${encodeURIComponent(p.slug)}`}"${p.external_url ? ' target="_blank" rel="noopener"' : ''}>
     ${p.cover_url ? `<div class="cover" style="background-image:url('${esc(p.cover_url)}')"></div>` : ''}
-    <div class="mono org">${esc(p.author || 'Unfold Worlds')}</div><h3>${esc(p.title)}</h3><p>${esc(p.subtitle || '')}</p>
-    <div class="foot"><span class="pill public">${p.external_url ? 'site immersif' : 'présentation'}</span></div></a>`).join('');
-}
+    <div class="mono org">${esc(p.author || 'Unfold Worlds')}</div><h3>${esc(tt(p))}</h3><p>${esc(st(p))}</p>
+    <div class="foot"><span class="pill public">${p.external_url ? L.site : L.deck}</span></div></a>`).join('');
+});
 </script>
 </body>
 </html>

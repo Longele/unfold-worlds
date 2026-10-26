@@ -21,18 +21,18 @@
     <a class="logo" href="./"><i></i><b>UNFOLD WORLDS</b></a>
     <nav id="nav"></nav>
   </header>
-  <h1 class="hello" id="hello">Mes mondes</h1>
+  <h1 class="hello" id="hello" data-i18n="mine">Mes mondes</h1>
   <div class="mono" id="sub"></div>
   <div id="view"></div>
 </div>
 
 <dialog id="d-acct"><form method="dialog" id="f-acct">
-  <h3>Mon compte</h3>
+  <h3 data-i18n="acct">Mon compte</h3>
   <div class="mono" id="acct-mail" style="text-transform:none;letter-spacing:.04em;margin-bottom:16px"></div>
-  <div class="field"><label>Nom affiché</label><input class="input" name="name" maxlength="80" autocomplete="name"></div>
-  <div class="field"><label>Nouveau mot de passe (6 caractères minimum)</label><input class="input" name="pw" type="password" minlength="6" maxlength="72" required autocomplete="new-password"></div>
-  <div class="field"><label>Le retaper</label><input class="input" name="pw2" type="password" minlength="6" maxlength="72" required autocomplete="new-password"></div>
-  <div class="row"><button class="btn gold" value="ok">ENREGISTRER</button><button class="btn" value="cancel" id="acct-close" formnovalidate>FERMER</button></div>
+  <div class="field"><label data-i18n="name">Nom affiché</label><input class="input" name="name" maxlength="80" autocomplete="name"></div>
+  <div class="field"><label data-i18n="newpw">Nouveau mot de passe (6 caractères minimum)</label><input class="input" name="pw" type="password" minlength="6" maxlength="72" required autocomplete="new-password"></div>
+  <div class="field"><label data-i18n="again">Le retaper</label><input class="input" name="pw2" type="password" minlength="6" maxlength="72" required autocomplete="new-password"></div>
+  <div class="row"><button class="btn gold" value="ok" data-i18n="save">ENREGISTRER</button><button class="btn" value="cancel" id="acct-close" formnovalidate data-i18n="close">FERMER</button></div>
   <div class="msg" id="m-acct"></div>
 </form></dialog>
 <div class="toast" id="toast"></div>
@@ -41,11 +41,17 @@
 import { sb, esc, site } from './config.js';
 import { mountNav, displayName } from './nav.js';
 import { setBg } from './bg.js';
+import { apply, lang, onLang } from './i18n.js';
+const T = {
+  fr: { title: 'Mes mondes · Unfold Worlds', mine: 'Mes mondes', acct: 'Mon compte', name: 'Nom affiché', newpw: 'Nouveau mot de passe (6 caractères minimum)', again: 'Le retaper', save: 'ENREGISTRER', close: 'FERMER', hello: (n) => `Bonjour ${n}`, choose: 'Choisissez votre mot de passe.', differ: 'Les deux mots de passe ne sont pas identiques.', same: 'Choisissez un mot de passe différent du mot de passe temporaire.', weak: 'Mot de passe trop faible.', updAcct: 'compte mis à jour', updName: 'nom mis à jour', none: 'Aucun monde.', open: 'Ouvrir', present: 'Présenter', link: 'Lien', copied: 'lien copié', linkP: 'Lien :', vis: { private: 'privé', unlisted: 'par lien', public: 'public' } },
+  en: { title: 'My worlds · Unfold Worlds', mine: 'My worlds', acct: 'My account', name: 'Display name', newpw: 'New password (at least 6 characters)', again: 'Type it again', save: 'SAVE', close: 'CLOSE', hello: (n) => `Hello ${n}`, choose: 'Choose your password.', differ: 'The two passwords are not the same.', same: 'Choose a password different from the temporary one.', weak: 'Password too weak.', updAcct: 'account updated', updName: 'name updated', none: 'No worlds.', open: 'Open', present: 'Present', link: 'Link', copied: 'link copied', linkP: 'Link:', vis: { private: 'private', unlisted: 'by link', public: 'public' } },
+};
+apply(T);
+const t = (k) => T[lang][k];
 setBg({ hue: [255, 122, 26], fx: 0.75, fy: 0.15, mode: 'drift', pull: 0.3, speed: 0.4, amt: 0.6 });
 
 const $ = (id) => document.getElementById(id);
 const toast = (t) => { $('toast').textContent = t; $('toast').classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => $('toast').classList.remove('on'), 2200); };
-const VIS = { private: 'privé', unlisted: 'par lien', public: 'public' };
 
 // a password-reset e-mail lands here with #…type=recovery (read it before the client swallows the hash)
 const recovering = /type=recovery/.test(location.hash);
@@ -53,7 +59,7 @@ const { data: { session } } = await sb().auth.getSession();
 if (!session) { location.replace('login.html'); await new Promise(() => {}); } // stop here while the browser leaves
 const me = session.user;
 const { isSuper } = await mountNav('mine');
-$('hello').textContent = `Bonjour ${displayName(me)}`;
+onLang(() => ($('hello').textContent = t('hello')(displayName(me))));
 
 
 // ---- password: a temporary one (set by the admin) must be replaced at the first sign-in
@@ -63,7 +69,7 @@ function openAcct(required) {
   $('f-acct').name.value = me.user_metadata?.name || '';
   const pwReq = required || false; $('f-acct').pw.required = pwReq; $('f-acct').pw2.required = pwReq;
   $('acct-close').style.display = required ? 'none' : '';
-  $('m-acct').textContent = required ? 'Choisissez votre mot de passe.' : '';
+  $('m-acct').textContent = required ? t('choose') : '';
   $('d-acct').showModal();
 }
 $('d-acct').addEventListener('cancel', (e) => { if (mustSetPw) e.preventDefault(); });
@@ -73,31 +79,33 @@ $('f-acct').addEventListener('submit', async (e) => {
   if (e.submitter?.value !== 'ok') return;
   e.preventDefault();
   const f = e.target;
-  if (f.pw.value !== f.pw2.value) { $('m-acct').textContent = 'Les deux mots de passe ne sont pas identiques.'; $('m-acct').className = 'msg bad'; return; }
+  if (f.pw.value !== f.pw2.value) { $('m-acct').textContent = t('differ'); $('m-acct').className = 'msg bad'; return; }
   const upd = { data: { name: f.name.value.trim() } };
   if (f.pw.value) { upd.password = f.pw.value; upd.data.has_password = true; }
   const { error } = await sb().auth.updateUser(upd);
-  if (error) { $('m-acct').textContent = /same|different/i.test(error.message) ? 'Choisissez un mot de passe différent du mot de passe temporaire.' : /weak|short/i.test(error.message) ? 'Mot de passe trop faible.' : error.message; $('m-acct').className = 'msg bad'; return; }
-  mustSetPw = false; $('d-acct').close(); toast(f.pw.value ? 'compte mis à jour' : 'nom mis à jour'); setTimeout(() => location.reload(), 700);
+  if (error) { $('m-acct').textContent = /same|different/i.test(error.message) ? t('same') : /weak|short/i.test(error.message) ? t('weak') : error.message; $('m-acct').className = 'msg bad'; return; }
+  mustSetPw = false; $('d-acct').close(); toast(f.pw.value ? t('updAcct') : t('updName')); setTimeout(() => location.reload(), 700);
 });
 if (mustSetPw) openAcct(true); else fromMenu();
 
 // ---- my worlds (only the ones given to me; the admin creates and assigns them)
-const { data, error } = await sb().from('projects').select('slug, title, subtitle, author, visibility, share_token, external_url, cover_url, updated_at').eq('owner_id', me.id).order('updated_at', { ascending: false });
-if (error) $('view').innerHTML = `<div class="empty">${esc(error.message)}</div>`;
-else if (!data.length) $('view').innerHTML = '<div class="empty">Aucun monde.</div>';
-else {
+const { data, error } = await sb().from('projects').select('slug, title, subtitle, title_en, subtitle_en, author, visibility, share_token, external_url, cover_url, updated_at').eq('owner_id', me.id).order('updated_at', { ascending: false });
+// drawn again in the other language when the visitor switches
+onLang(() => {
+  if (error) { $('view').innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
+  if (!data.length) { $('view').innerHTML = `<div class="empty">${t('none')}</div>`; return; }
+  const tt = (p) => (lang === 'en' && p.title_en) || p.title, st = (p) => (lang === 'en' && p.subtitle_en) || p.subtitle || '';
   $('view').innerHTML = '<div class="grid">' + data.map((p, i) => `<div class="card${p.cover_url ? ' has-cover' : ''}">
       ${p.cover_url ? `<div class="cover" style="background-image:url('${esc(p.cover_url)}')"></div>` : ''}
-      <div class="mono org">${esc(p.author || '')}</div><h3>${esc(p.title)}</h3><p>${esc(p.subtitle || '')}</p>
-      <div class="foot"><a class="btn small gold" target="_blank" rel="noopener" href="${p.external_url ? esc(p.external_url) : `play.html?w=${encodeURIComponent(p.slug)}`}">${p.external_url ? 'Ouvrir' : 'Présenter'}</a>
-        ${p.visibility !== 'private' ? `<button class="btn small" data-i="${i}">Lien</button>` : ''}<span class="pill ${p.visibility}">${VIS[p.visibility]}</span></div></div>`).join('') + '</div>';
+      <div class="mono org">${esc(p.author || '')}</div><h3>${esc(tt(p))}</h3><p>${esc(st(p))}</p>
+      <div class="foot"><a class="btn small gold" target="_blank" rel="noopener" href="${p.external_url ? esc(p.external_url) : `play.html?w=${encodeURIComponent(p.slug)}`}">${p.external_url ? t('open') : t('present')}</a>
+        ${p.visibility !== 'private' ? `<button class="btn small" data-i="${i}">${t('link')}</button>` : ''}<span class="pill ${p.visibility}">${t('vis')[p.visibility]}</span></div></div>`).join('') + '</div>';
   $('view').querySelectorAll('[data-i]').forEach((b) => (b.onclick = async () => {
     const p = data[+b.dataset.i];
     const url = p.external_url || (p.visibility === 'public' ? `${site()}play.html?w=${p.slug}` : `${site()}play.html?t=${p.share_token}`);
-    try { await navigator.clipboard.writeText(url); toast('lien copié'); } catch { prompt('Lien :', url); }
+    try { await navigator.clipboard.writeText(url); toast(t('copied')); } catch { prompt(t('linkP'), url); }
   }));
-}
+});
 </script>
 </body>
 </html>

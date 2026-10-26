@@ -191,6 +191,8 @@ function renderWorlds() {
         <div class="field" data-site style="display:none"><label>Adresse du site</label><input class="input" name="url" type="url" placeholder="https://"></div>
         <div class="field"><label>Titre</label><input class="input" name="title" required maxlength="140"></div>
         <div class="field"><label>Sous-titre</label><input class="input" name="subtitle" maxlength="160"></div>
+        <div class="field"><label>Titre en anglais</label><input class="input" name="title_en" maxlength="140"></div>
+        <div class="field"><label>Sous-titre en anglais</label><input class="input" name="subtitle_en" maxlength="160"></div>
         <div class="field"><label>Auteur</label><input class="input" name="author" maxlength="120"></div>
         <div class="field"><label>Titulaire</label><select class="input" name="owner">${userOptions('')}</select></div>
         <div class="field"><label>Visibilité</label><select class="input" name="vis">${opts(VIS, 'private')}</select></div>
@@ -200,6 +202,7 @@ function renderWorlds() {
     <div class="list">${D.worlds.map((p) => `<div class="item" data-p="${p.id}"><div class="h"><div class="t">${esc(p.title)}${p.url ? '<span class="badge">site</span>' : ''}</div>
         <div class="row"><a class="btn small gold" target="_blank" rel="noopener" href="${esc(openHref(p))}">Ouvrir</a><button class="btn small danger" data-a="del">Supprimer</button></div></div>
         <div class="ctl"><span class="lbl">Titulaire</span><select class="sel" data-a="owner">${userOptions(p.owner_id)}</select><span class="lbl">Visibilité</span><select class="sel" data-a="vis">${opts(VIS, p.visibility)}</select></div>
+        <div class="ctl"><span class="lbl">EN</span><input class="sel" data-a="title_en" maxlength="140" placeholder="English title"><input class="sel" data-a="subtitle_en" maxlength="160" placeholder="English subtitle" style="flex:1;min-width:200px"></div>
         <div class="meta">${p.url ? esc(p.url.replace(/^https:\/\//, '')) : '/' + esc(p.slug)}</div></div>`).join('') || '<div class="empty">Aucun monde.</div>'}</div>`;
   const f = $('f-w');
   f.kind.onchange = () => { const site = f.kind.value === 'site'; f.querySelector('[data-site]').style.display = site ? '' : 'none'; f.url.required = site; };
@@ -207,16 +210,21 @@ function renderWorlds() {
     e.preventDefault();
     const title = f.title.value.trim(), site = f.kind.value === 'site';
     if (site && !/^https:\/\//.test(f.url.value)) { $('m-w').textContent = 'L’adresse doit commencer par https://'; $('m-w').className = 'msg bad'; return; }
-    const row = { org_id: home?.id, title, subtitle: f.subtitle.value.trim() || null, author: f.author.value.trim() || null, owner_id: f.owner.value || null, visibility: f.vis.value,
+    const row = { org_id: home?.id, title, subtitle: f.subtitle.value.trim() || null, title_en: f.title_en.value.trim() || null, subtitle_en: f.subtitle_en.value.trim() || null, author: f.author.value.trim() || null, owner_id: f.owner.value || null, visibility: f.vis.value,
       slug: slugify(title) + '-' + Math.random().toString(36).slice(2, 6), external_url: site ? f.url.value.trim() : null,
       content: site ? { scenes: [] } : starter({ title, subtitle: f.subtitle.value.trim(), author: f.author.value.trim() }) };
     const { error } = await sb().from('projects').insert(row);
     toast(error ? error.message : 'monde créé'); if (!error) load();
   };
+  // the English title and subtitle shown on the home page in English (not part of the overview, read here)
+  sb().from('projects').select('id, title_en, subtitle_en').in('id', D.worlds.map((p) => p.id)).then(({ data }) => {
+    for (const r of data || []) { const it = $('view').querySelector(`.item[data-p="${r.id}"]`); if (!it) continue; it.querySelector('[data-a="title_en"]').value = r.title_en || ''; it.querySelector('[data-a="subtitle_en"]').value = r.subtitle_en || ''; }
+  });
   $('view').querySelectorAll('.item[data-p]').forEach((it) => {
     const p = D.worlds.find((x) => x.id === it.dataset.p);
     it.querySelector('[data-a="owner"]').onchange = async (e) => { const { error } = await sb().from('projects').update({ owner_id: e.target.value || null }).eq('id', p.id); toast(error ? error.message : 'titulaire changé'); load(); };
     it.querySelector('[data-a="vis"]').onchange = async (e) => { const { error } = await sb().from('projects').update({ visibility: e.target.value }).eq('id', p.id); toast(error ? error.message : VIS[e.target.value]); load(); };
+    for (const k of ['title_en', 'subtitle_en']) it.querySelector(`[data-a="${k}"]`).onchange = async (e) => { const { error } = await sb().from('projects').update({ [k]: e.target.value.trim() || null }).eq('id', p.id); toast(error ? error.message : 'anglais enregistré'); };
     it.querySelector('[data-a="del"]').onclick = async () => {
       if (prompt(`Supprimer « ${p.title} » ? Tapez SUPPRIMER.`) !== 'SUPPRIMER') return;
       const { error } = await sb().from('projects').delete().eq('id', p.id); toast(error ? error.message : 'supprimé'); load();

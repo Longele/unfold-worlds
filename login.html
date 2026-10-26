@@ -24,12 +24,12 @@
   <header class="top"><a class="logo" href="./"><i></i><b>UNFOLD WORLDS</b></a><nav id="nav"></nav></header>
   <div class="center">
     <div class="panel">
-      <h1>Connexion</h1>
+      <h1 data-i18n="h">Connexion</h1>
       <form id="f">
-        <div class="field"><label for="email">Adresse e-mail</label><input class="input" id="email" type="email" autocomplete="email" required placeholder="vous@exemple.com"></div>
-        <div class="field"><label for="pw">Mot de passe</label><input class="input" id="pw" type="password" autocomplete="current-password" required></div>
-        <button class="btn gold" id="send">SE CONNECTER</button>
-        <button type="button" class="btn" id="forgot">MOT DE PASSE OUBLIÉ ?</button>
+        <div class="field"><label for="email" data-i18n="email">Adresse e-mail</label><input class="input" id="email" type="email" autocomplete="email" required placeholder="vous@exemple.com" data-i18n-ph="ph"></div>
+        <div class="field"><label for="pw" data-i18n="pw">Mot de passe</label><input class="input" id="pw" type="password" autocomplete="current-password" required></div>
+        <button class="btn gold" id="send" data-i18n="send">SE CONNECTER</button>
+        <button type="button" class="btn" id="forgot" data-i18n="forgot">MOT DE PASSE OUBLIÉ ?</button>
       </form>
       <div class="msg" id="msg"></div>
     </div>
@@ -40,6 +40,13 @@
 import { sb } from './config.js';
 import { setBg } from './bg.js';
 import { mountNav } from './nav.js';
+import { apply, lang } from './i18n.js';
+const T = {
+  fr: { title: 'Connexion · Unfold Worlds', h: 'Connexion', email: 'Adresse e-mail', ph: 'vous@exemple.com', pw: 'Mot de passe', send: 'SE CONNECTER', forgot: 'MOT DE PASSE OUBLIÉ ?', busy: 'connexion…', wrong: 'E-mail ou mot de passe incorrect.', first: 'Entrez votre e-mail d’abord.', sending: 'envoi…', later: 'Réessayez dans une minute.', sent: 'E-mail envoyé.' },
+  en: { title: 'Sign in · Unfold Worlds', h: 'Sign in', email: 'E-mail address', ph: 'you@example.com', pw: 'Password', send: 'SIGN IN', forgot: 'FORGOT YOUR PASSWORD?', busy: 'signing in…', wrong: 'Wrong e-mail or password.', first: 'Enter your e-mail first.', sending: 'sending…', later: 'Try again in a minute.', sent: 'E-mail sent.' },
+};
+apply(T);
+const t = (k) => T[lang][k];
 mountNav('login');
 setBg({ hue: [255, 122, 26], fx: 0.5, fy: 0.42, mode: 'orbit', pull: 0.6, speed: 0.5 });
 // ?next= brings you back to the page that asked you to sign in (same site only)
@@ -54,21 +61,21 @@ if (session) location.replace(back);
 document.getElementById('f').onsubmit = async (e) => {
   e.preventDefault();
   const email = document.getElementById('email').value.trim(), password = document.getElementById('pw').value;
-  const b = document.getElementById('send'); b.disabled = true; say('connexion…');
+  const b = document.getElementById('send'); b.disabled = true; say(t('busy'));
   const { error } = await sb().auth.signInWithPassword({ email, password });
   b.disabled = false;
-  if (error) say(/invalid/i.test(error.message) ? 'E-mail ou mot de passe incorrect.' : error.message, 'bad');
+  if (error) say(/invalid/i.test(error.message) ? t('wrong') : error.message, 'bad');
   else location.replace(back);
 };
 // a reset link signs you in and opens "choose your password" (it never creates an account)
 document.getElementById('forgot').onclick = async () => {
   const email = document.getElementById('email').value.trim();
-  if (!email) { say('Entrez votre e-mail d’abord.', 'bad'); return; }
-  const b = document.getElementById('forgot'); b.disabled = true; say('envoi…');
+  if (!email) { say(t('first'), 'bad'); return; }
+  const b = document.getElementById('forgot'); b.disabled = true; say(t('sending'));
   const { error } = await sb().auth.resetPasswordForEmail(email, { redirectTo: new URL('app.html', location.href).href });
   b.disabled = false;
-  if (error) say(/rate|security|seconds/i.test(error.message) ? 'Réessayez dans une minute.' : error.message, 'bad');
-  else say('E-mail envoyé.', 'ok');
+  if (error) say(/rate|security|seconds/i.test(error.message) ? t('later') : error.message, 'bad');
+  else say(t('sent'), 'ok');
 };
 </script>
 </body>

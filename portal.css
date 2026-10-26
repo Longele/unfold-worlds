@@ -119,3 +119,7 @@ footer { position: relative; z-index: 1; padding: 30px 16px 40px; text-align: ce
 .card .cover { margin: 0 -22px 18px; aspect-ratio: 16 / 9; background: #0b0d12 center / cover no-repeat; border-bottom: 1px solid var(--line); transition: transform .6s var(--ease); }
 a.card:hover .cover { transform: scale(1.03); }
 .card.has-cover::before { display: none; }
+/* the FR / EN switch at the end of the menu */
+.lng { display: flex; gap: 2px; margin-left: 6px; padding: 3px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); }
+.lng button { font-family: var(--mono); font-size: 10px; letter-spacing: .16em; color: var(--dim); background: none; border: 0; padding: 7px 9px; border-radius: 999px; cursor: pointer; }
+.lng button.on { color: var(--bg, #07090d); background: var(--fg); }
