@@ -3,63 +3,34 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Noé · Unfold Worlds</title>
-<meta name="description" content="Noé et l’arche. Une histoire de la Bible pour les enfants, à écouter et à toucher.">
-<meta name="theme-color" content="#1a0d06">
-<meta property="og:title" content="Noé et l’arche">
-<meta property="og:description" content="Une histoire de la Bible pour les enfants, à écouter et à toucher.">
-<meta property="og:image" content="https://unfoldworlds.com/covers/noe.jpg">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%227%22 fill=%22%23f2b36b%22/%3E%3Cpath d=%22M5 12c0-3 1-5 3-6 0-2 1-4 2-4-1 2-1 3 0 4 1 1 1 4 0 6z%22 fill=%22%232a140a%22/%3E%3C/svg%3E">
-<link rel="stylesheet" href="style.css?v=202610240300">
+<title>Noé et l’arche</title>
+<meta name="description" content="Une BD interactive pour les 4 à 8 ans : construis l’arche avec Noé, et découvre pourquoi un bateau flotte et comment naît l’arc-en-ciel.">
+<meta name="theme-color" content="#1f2630">
+<link rel="stylesheet" href="style.css?v=202610260300">
 </head>
 <body>
-<div id="world">
-  <div id="ambient"></div>
-  <div id="stage">
-    <div id="cam">
-      <div id="bg" class="bg"></div><div id="bg2" class="bg"></div>
-      <div id="sky" class="sky"></div>
-      <svg id="rainbow" viewBox="0 0 1920 1080" width="1920" height="1080"><path d="M 120 1000 A 840 840 0 0 1 1800 1000" pathLength="1" stroke="#e9837a"/><path d="M 160 1000 A 800 800 0 0 1 1760 1000" pathLength="1" stroke="#f1a86b"/><path d="M 200 1000 A 760 760 0 0 1 1720 1000" pathLength="1" stroke="#f2d27a"/><path d="M 240 1000 A 720 720 0 0 1 1680 1000" pathLength="1" stroke="#9cc98a"/><path d="M 280 1000 A 680 680 0 0 1 1640 1000" pathLength="1" stroke="#7fb2cf"/><path d="M 320 1000 A 640 640 0 0 1 1600 1000" pathLength="1" stroke="#a493c9"/></svg>
-      <div id="actors"></div>
-      <div id="front"></div>
-      <canvas id="fx" width="1920" height="1080"></canvas>
-      <div id="light"></div>
-      <div id="flash"></div>
-    </div>
-    <div id="hot"></div>
-    <div id="iris"></div>
+<section id="cover" class="cover">
+  <div class="cimg"></div>
+  <div class="ctx">
+    <p class="kick">Une BD à toucher</p>
+    <h1 id="title"></h1>
+    <div class="langs"><button data-lang="fr">Français</button><button data-lang="en">English</button></div>
+    <button id="readMe" class="btn main" data-t="readMe"></button>
+    <button id="readSelf" class="btn" data-t="readSelf"></button>
+    <a class="back" href="../">← Les contes</a>
   </div>
-</div>
-<div id="vig"></div>
-
-<main id="cover">
-  <p class="tale" data-t="tale"></p>
-  <h1><span data-t="title"></span><em data-t="sub"></em></h1>
-  <button id="go" class="go"><span data-t="start"></span><small data-t="starts"></small></button>
-  <p class="hp"><svg viewBox="0 0 24 24"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 010 7M18.5 5.5a9 9 0 010 13"/></svg><span data-t="hp"></span></p>
+</section>
+<main id="page" class="page">
+  <div id="panel" class="panel"><canvas id="fx"></canvas><canvas id="lens"></canvas><div id="spots" class="spots"></div><div id="layer" class="layer"></div></div>
+  <div id="meter" class="meter"><i></i></div>
+  <p id="hint" class="hint"></p>
+  <div class="foot"><a class="home" href="../" aria-label="Les contes">←</a><div id="dots" class="dots"></div><button id="next" class="next" aria-label="Suivant">→</button></div>
 </main>
-
-<header>
-  <a class="brand" href="../" aria-label="Unfold Worlds">UNFOLD WORLDS</a>
-  <div class="langs"><button data-lang="fr">FR</button><button data-lang="en">EN</button></div>
-</header>
-
-<div id="cap" class="cap"></div>
-
-<nav id="bar">
-  <button id="b-prev" aria-label="prev"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
-  <div id="dots"></div>
-  <button id="b-next" aria-label="next"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
-  <span class="sep"></span>
-  <button id="b-cap" class="tg"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 11h4M13 11h4M7 14h7"/></svg><span data-t="cap"></span></button>
-  <button id="b-music" class="tg"><svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span data-t="music"></span></button>
-  <button id="b-pause" aria-label="pause"><svg viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></svg></button>
-</nav>
-
-<div id="open"><p class="tale" data-t="tale"></p><h2 class="gold" id="open-t"></h2><p class="osub" data-t="sub"></p><i class="rule"></i></div>
-<div id="end"><div class="in"><h2 class="gold" id="end-t"></h2><i class="rule"></i><p data-t="soon"></p><button id="again" class="go"><span data-t="again"></span></button><a class="home" href="../" data-t="home"></a></div></div>
-<div id="pause"><div class="pz"><svg viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></svg></div><p class="pt" data-t="pause"></p><p class="ps" data-t="resume"></p></div>
-<div id="rotate"><div class="ph"><i></i></div><p class="rt" data-t="turn"></p><p class="rs" data-t="turnS"></p><button id="rot-stay" data-t="stay"></button></div>
-<script type="module" src="app.js?v=202610240300"></script>
+<section id="endcard" class="endcard">
+  <p class="fin" data-t="end"></p>
+  <button id="again" class="btn main" data-t="again"></button>
+  <a class="btn" href="../" data-t="more"></a>
+</section>
+<script type="module" src="app.js?v=202610260300"></script>
 </body>
 </html>

@@ -1,213 +1,364 @@
-// Noé: the book around the stage. Language, the read-along caption, page navigation, pause, the end card.
-import { Stage, Audio, sleep } from './engine.js?v=202610240300';
-import { makeStory, SPEAKER } from './story.js?v=202610240300';
+// Noé et l'arche: the comic reader of Lina, with Noah's tools. One panel fills the page; its lines are read aloud
+// in their bubbles with the word being said lit up; on most panels the child does the work with Noah: pulls the
+// measuring rope, taps with the mallet, brushes on the pitch, gathers the pairs, makes it rain, presses the ark
+// into the water and feels it come back up, lights the dark hold with the lamp, sends the dove, draws the rainbow
+// and looks into a raindrop with a magnifying glass.
+import { PANELS, TITLE, WHO } from './story.js?v=202610260300';
 
 const $ = (id) => document.getElementById(id);
-const T = {
-  fr: { title: 'Noé', sub: 'et l’arche', tale: 'Une histoire de la Bible', start: 'Commencer l’histoire', starts: 'environ six minutes, à écouter et à toucher', hp: 'meilleur avec le son', end: 'Fin', again: 'Relire l’histoire', home: 'Tous les contes', soon: 'Genèse 6 à 9', pause: 'En pause', resume: 'Touchez pour reprendre', turn: 'Tournez votre téléphone', turnS: 'l’histoire se lit en largeur', stay: 'Continuer ainsi', cap: 'Texte', music: 'Musique' },
-  en: { title: 'Noah', sub: 'and the ark', tale: 'A Bible story', start: 'Start the story', starts: 'about six minutes, to listen and to touch', hp: 'best with sound on', end: 'The End', again: 'Read it again', home: 'All the stories', soon: 'Genesis 6 to 9', pause: 'Paused', resume: 'Tap to continue', turn: 'Turn your phone', turnS: 'the story is told sideways', stay: 'Continue like this', cap: 'Text', music: 'Music' },
-};
+// the language: from the stories page (?lang=), else the last one chosen, else the phone's
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
-let lang = new URLSearchParams(location.search).get('lang') || store.get('noe-lang') || ((navigator.language || '').startsWith('fr') ? 'fr' : 'en');
-if (!T[lang]) lang = 'fr';
-const t = (k) => T[lang][k];
-
-const rig = await (await fetch('art/rig.json')).json();
-const timings = {};
-const loadTimings = async (l) => (timings[l] ||= await (await fetch(`voice/${l}/timings.json`)).json());
-const stage = new Stage($('stage'), rig);
-const audio = new Audio();
-
-// ------------------------------------------------------------------ read-along caption
-const cap = $('cap');
-let capOn = store.get('noe-cap') !== '0', paused = false;
-function showLine(id) {
-  const tm = timings[lang][id]; if (!tm) return () => {};
-  cap.innerHTML = tm.words.map((w, i) => `<span data-i="${i}">${w.w}</span>`).join(' ');
-  cap.className = 'cap on who-' + tm.who + (capOn ? '' : ' hidden');
-  const spans = [...cap.children];
-  const actor = stage.actors[SPEAKER[tm.who]];
-  if (actor) actor.talk = 1;
-  stage.focus = actor && tm.who !== 'n' ? SPEAKER[tm.who] : null;
-  return (time) => {
-    let open = 0;
-    tm.words.forEach((w, i) => { const on = time >= w.s - 0.02; spans[i].classList.toggle('lit', on); if (time >= w.s && time <= w.e) open = 1; });
-    if (actor) actor.mouth = open ? 0.6 + 0.4 * Math.abs(Math.sin(time * 18)) : 0;
-    if (time > 1e8) { if (actor) { actor.talk = 0; actor.mouth = 0; } stage.focus = null; }
-  };
-}
-async function say(id) {
-  const upd = showLine(id);
-  await audio.say(`voice/${lang}/${id}.mp3`, upd);
-  await sleep(250);
-}
-
-// ------------------------------------------------------------------ pages
-const api = { stage, audio, say, t, ui: { end: () => endCard() } };
-const pages = makeStory(api);
-let page = -1, run = 0;
-const dots = $('dots');
-function check(r) { return () => { if (r !== run) throw new Error('abort'); }; }
-async function go(i) {
-  const r = ++run;
-  if (page >= 0) pages[page].leave?.();
-  audio.stopVoice(); stage.hot.innerHTML = ''; stage.onFrame = null; stage.fx.setFireflies(0);
-  page = Math.max(0, Math.min(pages.length - 1, i));
-  const P = pages[page];
-  // only this page's and the next page's voices stay decoded (an iPhone tab dies past ~a hundred MB of sound)
-  const near = (u) => [`/p${page + 1}`, `/p${page + 2}`].some((k) => u.includes(k));
-  audio.trim((u) => (u.includes('voice/') ? near(u) || u.endsWith('/fin.mp3') : !u.includes('/amb-') || u.endsWith(`/${P.amb}.mp3`)));
-  for (const id of Object.keys(timings[lang] || {})) if (near(`/${id}`)) audio.load(`voice/${lang}/${id}.mp3`);
-  dots.innerHTML = pages.map((_, k) => `<i class="${k < page ? 'done' : k === page ? 'on' : ''}"></i>`).join('');
-  $('end').classList.remove('on'); document.body.classList.remove('ended'); ember(false);
-  document.body.classList.toggle('night', !!P.night);
-  cap.className = 'cap';
-  stage.root.classList.add('turning'); stage.turnPage(); stage.focus = null; if (page > 0 || i > 0) audio.sfx('sfx/sunrise.mp3', 0.28, 0.9);
-  await sleep(520); if (r !== run) return; // the lamp is down
-  await stage.setBg(P.bg, 260);
-  if (r !== run) return;
-  stage.clearActors(); stage.clearProps(); stage.sky.className = 'sky';
-  P.setup?.();
-  stage.root.classList.remove('turning');
-  audio.loop('amb', `sfx/${P.amb}.mp3`, 'amb', 1);
-  if (audio.musicOn) audio.loop('music', 'sfx/theme.mp3', 'music', 0.55, 3);
-  try {
-    await P.run(check(r));
-    if (r === run && page < pages.length - 1) { await sleep(900); if (r === run) go(page + 1); }
-  } catch (e) { if (e.message !== 'abort') console.error(e); }
-}
-// golden letters that rise one by one out of the dark
-function goldLetters(el, text) { el.innerHTML = [...text].map((c, i) => `<span style="--i:${i}">${c === ' ' ? '&nbsp;' : c}</span>`).join(''); }
-let embers = 0;
-function ember(on) { clearInterval(embers); if (on) embers = setInterval(() => stage.fx.burst(0, 0, 'gold', 3), 260); }
-function endCard() {
-  goldLetters($('end-t'), t('end'));
-  $('end').classList.add('on'); cap.className = 'cap'; document.body.classList.add('ended'); ember(true);
-  audio.loop('music', 'sfx/theme.mp3', 'music', 1, 2);
-  audio.sfx('sfx/chime.mp3', 0.45, 0.8);
-  setTimeout(() => { if ($('end').classList.contains('on')) audio.say(`voice/${lang}/fin.mp3`); }, 1600);
-  setTimeout(() => ember(false), 14000);
-}
-// the opening: the lamp is lit, the title rises in gold, the storyteller invites the child in
-async function opening() {
-  const o = $('open'); goldLetters($('open-t'), t('title'));
-  stage.fx.setFireflies(0); ember(true);
-  o.classList.add('on'); audio.sfx('sfx/sunrise.mp3', 0.35, 0.8);
-  if (audio.musicOn) audio.loop('music', 'sfx/theme.mp3', 'music', 0.8, 3);
-  let skip; const skipped = new Promise((r) => { skip = r; o.onpointerdown = r; });
-  await Promise.race([(async () => { await sleep(1400); await audio.say(`voice/${lang}/op.mp3`); await sleep(700); })(), skipped]);
-  o.onpointerdown = null; ember(false);
-  o.classList.remove('on');
-}
-
-// fireflies answer the finger on the last page
-$('stage').addEventListener('pointerdown', (e) => {
-  if (!api.fireflyTaps) return;
-  const p = stage.pt(e);
-  for (const f of stage.fx.fireflies) if (Math.hypot(f.x - p.x, f.y - p.y) < 140) { f.b = 1; audio.sfx('sfx/chime.mp3', 0.5, 0.8 + Math.random() * 0.6); }
-});
-
-// ------------------------------------------------------------------ the page never moves under the finger
-// (iOS lets a drag bounce the whole page and a quick double tap zoom it, whatever touch-action says)
-document.addEventListener('touchmove', (e) => { if (e.touches.length > 1 || !e.target.closest('button, a')) e.preventDefault(); }, { passive: false });
-let lastTouch = 0;
-document.addEventListener('touchend', (e) => { const n = performance.now(); if (n - lastTouch < 350 && !e.target.closest('button, a')) e.preventDefault(); lastTouch = n; }, { passive: false });
-for (const g of ['gesturestart', 'gesturechange']) document.addEventListener(g, (e) => e.preventDefault(), { passive: false });
-
-// ------------------------------------------------------------------ keep the screen awake
-let wakeLock = null, wakeVid = null;
-async function stayAwake() {
-  try { if ('wakeLock' in navigator) { if (wakeLock && !wakeLock.released) return; wakeLock = await navigator.wakeLock.request('screen'); return; } } catch {}
-  try {
-    if (!wakeVid) { wakeVid = document.createElement('video'); Object.assign(wakeVid, { muted: true, loop: true, playsInline: true }); wakeVid.setAttribute('playsinline', ''); wakeVid.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none'; for (const [src, type] of [['../../lib/wake.webm', 'video/webm'], ['../../lib/wake.mp4', 'video/mp4']]) { const so = document.createElement('source'); so.src = src; so.type = type; wakeVid.append(so); } document.body.append(wakeVid); }
-    await wakeVid.play();
-  } catch {}
-}
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && document.body.classList.contains('in')) stayAwake(); });
-addEventListener('pointerdown', () => { if (document.body.classList.contains('in')) stayAwake(); }, { capture: true });
-
-// ------------------------------------------------------------------ the characters answer a touch, any time
-let lastPoke = 0;
-$('stage').addEventListener('pointerdown', (e) => {
-  if (!document.body.classList.contains('in') || performance.now() - lastPoke < 1400) return;
-  const p = stage.pt(e);
-  for (const [n, a] of Object.entries(stage.actors)) {
-    const w = a.rig.w * a.s, h = a.rig.feet * a.s;
-    if (p.x > a.x - w / 2 && p.x < a.x + w / 2 && p.y > a.y - h && p.y < a.y) {
-      lastPoke = performance.now();
-      if (a.tween) break; // never interrupt a move the story is waiting for
-      const k = n.split('#')[0];
-      if (k === 'noe') { if (a.mode === 'idle') { a.mode = 'wave'; setTimeout(() => { if (a.mode === 'wave') a.mode = 'idle'; }, 1400); } audio.sfx('sfx/glass.mp3', 0.7, 1.2); stage.fx.burst(p.x, p.y, 'spark', 10); }
-      else if (!a.tween) { const y = a.y; a.to({ y }, 520, { hop: 1 }); audio.sfx(`sfx/${({ elephant: 'trumpet', lion: 'roar', sheep: 'baa', camel: 'hooves', zebra: 'hooves', giraffe: 'hooves' })[k] || 'glass'}.mp3`, 0.5, 1.1); }
-      break;
-    }
-  }
-});
-
-// ------------------------------------------------------------------ chrome
-let idleT = 0;
-function wake() { document.body.classList.remove('idle'); clearTimeout(idleT); idleT = setTimeout(() => document.body.classList.add('idle'), 3500); }
-addEventListener('pointerdown', wake, { capture: true });
-// phones: back from another app or from portrait, the browser leaves fullscreen; the next touch restores it
-const small = () => Math.min(screen.width, screen.height) < 700 && matchMedia('(pointer: coarse)').matches;
-function full() {
-  if (!small() || document.fullscreenElement || document.webkitFullscreenElement) return;
-  try { const el = document.documentElement, r = (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el, { navigationUI: 'hide' }); r?.then?.(() => screen.orientation?.lock?.('landscape')?.catch?.(() => {}), () => {}); } catch {}
-}
-addEventListener('pointerdown', () => { if (document.body.classList.contains('in')) full(); }, { capture: true });
-// turned upright in the middle of the story: pause and ask to turn back
-addEventListener('resize', () => {
-  if (!document.body.classList.contains('in') || !small()) return;
-  if (portrait()) { if (!paused) { pause(true); turnedAway = true; } $('rotate').classList.add('on'); }
-  else if (turnedAway) { $('rotate').classList.remove('on'); turnedAway = false; }
-});
-let turnedAway = false;
-$('rot-stay').onclick = () => $('rotate').classList.remove('on');
-function texts() {
-  document.documentElement.lang = lang;
-  for (const el of document.querySelectorAll('[data-t]')) el.textContent = t(el.dataset.t);
-  for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
-}
-async function setLang(l) {
-  if (!T[l] || l === lang) return;
-  lang = l; store.set('noe-lang', l); texts(); await loadTimings(lang);
-  if (page >= 0) go(page);
-}
-for (const b of document.querySelectorAll('[data-lang]')) b.addEventListener('click', () => setLang(b.dataset.lang));
-function pause(on) { paused = on; stage.paused = on; audio.pause(on); $('pause').classList.toggle('on', on); }
-$('b-pause').onclick = () => pause(true);
-$('pause').onclick = () => { full(); pause(false); };
-$('b-prev').onclick = () => go(page - 1);
-$('b-next').onclick = () => go(page + 1);
-$('b-cap').onclick = () => { capOn = !capOn; store.set('noe-cap', capOn ? '1' : '0'); cap.classList.toggle('hidden', !capOn); $('b-cap').classList.toggle('on', capOn); };
-$('b-music').onclick = () => { const on = !audio.musicOn; audio.setMusic(on); $('b-music').classList.toggle('on', on); if (on) audio.loop('music', 'sfx/theme.mp3', 'music', 1, 2); };
-$('again').onclick = () => go(0);
-document.addEventListener('visibilitychange', () => { if (document.hidden && page >= 0) pause(true); });
-addEventListener('keydown', (e) => { if (e.code === 'ArrowRight') go(page + 1); if (e.code === 'ArrowLeft') go(page - 1); if (e.code === 'Space' || e.code === 'Escape') pause(!paused); });
-
-// start: inside the tap (sound unlock, fullscreen + landscape on phones), then ask to turn the phone if needed
-const portrait = () => innerWidth < innerHeight;
-function rotateGate() {
-  const o = $('rotate'); o.classList.add('on');
-  return new Promise((res) => { const done = () => { removeEventListener('resize', chk); o.classList.remove('on'); res(); }; const chk = () => { if (!portrait()) setTimeout(done, 300); }; addEventListener('resize', chk); $('rot-stay').onclick = done; });
-}
-$('go').onclick = async () => {
-  audio.unlock(); audio.setMusic(store.get('noe-music') !== '0'); $('b-music').classList.toggle('on', audio.musicOn); $('b-cap').classList.toggle('on', capOn);
-  full(); wake(); stayAwake();
-  document.body.classList.add('in');
-  audio.stopLoop('music', 1.5);
-  await loadTimings(lang);
-  if (small() && portrait()) await rotateGate();
-  for (const n of ['op', 'p1a', 'p1b']) audio.load(`voice/${lang}/${n}.mp3`);
-  await opening();
-  go(0);
+let lang = new URLSearchParams(location.search).get('lang') || store.get('contes-lang') || ((navigator.language || '').startsWith('fr') ? 'fr' : 'en');
+if (!['fr', 'en'].includes(lang)) lang = 'fr';
+const TT = {
+  fr: { readMe: 'Lis-moi l’histoire', readSelf: 'Je lis tout seul', again: 'Relire l’histoire', more: 'D’autres contes', end: 'Fin', kick: 'Une BD à toucher', back: '← Les contes', hello: 'Touche Noé', rope: 'Tire la corde jusqu’au piquet', rainbow: 'Dessine l’arc d’un bout à l’autre', taps: 'Tape sur les planches', paint: 'Frotte la coque avec ton doigt', pairs: 'Touche deux animaux pareils', rain: 'Glisse ton doigt vers le bas', press: 'Appuie sur l’arche, puis lâche', lamp: 'Promène la lampe dans le noir', fly: 'Glisse la colombe vers le ciel', sounds: 'Touche les animaux', loupe: 'Glisse la loupe sur les gouttes', two: 'DEUX !' },
+  en: { readMe: 'Read it to me', readSelf: 'I’ll read it myself', again: 'Read it again', more: 'More stories', end: 'The End', kick: 'A comic to touch', back: '← Stories', hello: 'Touch Noah', rope: 'Pull the rope to the post', rainbow: 'Draw the arc from end to end', taps: 'Tap the planks', paint: 'Rub the hull with your finger', pairs: 'Touch two animals that match', rain: 'Slide your finger downwards', press: 'Press the ark, then let go', lamp: 'Move the lamp through the dark', fly: 'Slide the dove up to the sky', sounds: 'Touch the animals', loupe: 'Slide the glass over the drops', two: 'TWO!' },
 };
+let T = TT[lang];
+function applyLang() {
+  T = TT[lang]; document.documentElement.lang = lang;
+  for (const el of document.querySelectorAll('[data-t]')) el.textContent = T[el.dataset.t];
+  $('title').textContent = TITLE[lang]; document.querySelector('.kick').textContent = T.kick; document.querySelector('.back').textContent = T.back;
+  for (const el of document.querySelectorAll('a[href^="../"]')) el.href = `../?lang=${lang}`;
+  for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
+  fetch(`voice/${lang}/timings.json?v=202610260300`).then((r) => r.json()).then((j) => (timings = j));
+}
+for (const b of document.querySelectorAll('[data-lang]')) b.onclick = () => { lang = b.dataset.lang; store.set('contes-lang', lang); applyLang(); };
 
-// the cover: the night-to-dawn theme plays softly once the reader touches anything
-texts();
-stage.setBg('bg-1-dawn', 10);
-stage.actor('noe').place({ x: 1480, y: 975, s: 0.72, flip: true, mode: 'idle' });
-loadTimings(lang);
-// warm the cache for the first pages
-for (const n of ['amb-hills', 'sunrise', 'glass', 'theme']) audio.load(`sfx/${n}.mp3`);
-window.__noe = window.__kalulu = { stage, audio, go, pages, api };
+let timings = {}, mode = 'voice', idx = -1, busy = false, ctx = null, sfxBuf = {};
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+applyLang();
+
+// ---------------------------------------------------------------- sound: decoded effects, streamed ambience, voices and theme
+const SFX = ['page', 'pop', 'found', 'tap', 'loupe', 'rope', 'hammer', 'brush', 'roar', 'hooves', 'trumpet', 'chime', 'rainstart', 'thunder', 'push', 'splash', 'lamp', 'squeak', 'flutter', 'coo', 'tweet', 'rainbow'];
+async function initAudio() {
+  ctx = new (window.AudioContext || window.webkitAudioContext)(); await ctx.resume();
+  SFX.forEach(async (n) => { try { const r = await fetch(`sfx/${n}.mp3`); sfxBuf[n] = await ctx.decodeAudioData(await r.arrayBuffer()); } catch {} });
+}
+// the mix: the storyteller always on top. Effects sit about 12 dB under the voice and dip further while
+// someone speaks; the theme and the ambience duck under every line and come back between lines.
+const SFX_GAIN = 0.3; let speaking = false;
+function sfx(n, vol = 1) { const b = sfxBuf[n]; if (!ctx || !b) return; const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; g.gain.value = vol * SFX_GAIN * (speaking ? 0.55 : 1); s.connect(g).connect(ctx.destination); s.start(); }
+const music = new Audio('sfx/theme.mp3'); music.loop = true; music.volume = 0.22;
+const amb = new Audio(); amb.loop = true; amb.volume = 0.35;
+const AMB = { 'amb-meadow': 0.35, 'amb-wood': 0.45, 'amb-calm': 0.4, 'amb-storm': 0.45, 'amb-sea': 0.4, 'amb-ark': 0.4, 'amb-hills': 0.4, 'amb-land': 0.4 }; let ambLevel = 0.35;
+function ambience(n) { const src = `sfx/${n}.mp3`; ambLevel = AMB[n] ?? 0.35; if (!amb.src.endsWith(src)) { amb.src = src; amb.play().catch(() => {}); } fade(amb, ambLevel * (speaking ? 0.45 : 1)); }
+const fades = new Map();
+function fade(el, to, ms = 350) { clearInterval(fades.get(el)); const from = el.volume, t0 = performance.now(); fades.set(el, setInterval(() => { const k = Math.min(1, (performance.now() - t0) / ms); el.volume = Math.max(0, Math.min(1, from + (to - from) * k)); if (k >= 1) clearInterval(fades.get(el)); }, 30)); }
+function duck(on) { speaking = on; fade(music, on ? 0.08 : 0.22); fade(amb, ambLevel * (on ? 0.45 : 1)); }
+const voice = new Audio(); voice.preload = 'auto';
+
+// ---------------------------------------------------------------- the panel
+function wordsOf(id) { return timings[id]?.words || []; }
+function showLine(ln) {
+  const words = wordsOf(ln.id), el = document.createElement('div');
+  if (ln.cap) for (const c of $('layer').querySelectorAll('.cap')) c.remove(); // one narration box at a time
+  else { const old = [...$('layer').querySelectorAll('.bubble')]; if (old.length >= 2) { old[0]._tail?.remove(); old[0].remove(); } } // two bubbles at most, the oldest leaves first
+  el.className = ln.cap ? 'cap' : 'bubble ' + (WHO[timings[ln.id]?.who] || '');
+  // a lone ! ? : ; stays on the line of the word before it (French puts a space before them)
+  el.innerHTML = words.map((w, i) => (i && /^[!?:;»]+$/.test(w.w) ? '&nbsp;' : i ? ' ' : '') + `<span data-i="${i}">${w.w}</span>`).join('');
+  if (!ln.cap) { el.style.left = ln.b[0] * 100 + '%'; el.style.top = ln.b[1] * 100 + '%'; }
+  $('layer').append(el);
+  if (!ln.cap) requestAnimationFrame(() => tail(el, ln.t));
+  sfx('pop', 0.45);
+  return el;
+}
+// the bubble's tail: a curved wedge from the bubble towards the one who speaks
+function tail(el, t) {
+  const P = $('panel').getBoundingClientRect(), r = el.getBoundingClientRect();
+  const cx = r.left + r.width / 2 - P.left, cy = r.top + r.height / 2 - P.top, tx = t[0] * P.width, ty = t[1] * P.height;
+  const dx = tx - cx, dy = ty - cy, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+  const edge = Math.min(r.width / 2 / Math.max(0.01, Math.abs(ux)), r.height / 2 / Math.max(0.01, Math.abs(uy))) - 4;
+  const bx = cx + ux * edge, by = cy + uy * edge, tip = Math.min(len - edge - 12, 70), px = bx + ux * tip, py = by + uy * tip, w = 13;
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('class', 'tail'); s.setAttribute('viewBox', `0 0 ${P.width} ${P.height}`);
+  s.innerHTML = `<path d="M${bx - uy * w},${by + ux * w} Q${(bx + px) / 2 + uy * 4},${(by + py) / 2 - ux * 4} ${px},${py} Q${(bx + px) / 2 - uy * 2},${(by + py) / 2 + ux * 2} ${bx + uy * w},${by - ux * w} Z"/>`;
+  $('layer').insertBefore(s, el); el._tail = s;
+}
+async function say(ln) {
+  const el = showLine(ln);
+  if (mode !== 'voice') { await sleep(300); return el; }
+  voice.src = `voice/${lang}/${ln.id}.mp3`; duck(true);
+  try { await voice.play(); } catch { duck(false); return el; }
+  const words = wordsOf(ln.id), spans = el.querySelectorAll('span');
+  await new Promise((res) => {
+    const tick = () => {
+      const t = voice.currentTime;
+      spans.forEach((s, i) => s.classList.toggle('on', words[i] && t >= words[i].s - 0.03 && t < (words[i + 1]?.s ?? 99)));
+      if (voice.ended || voice.paused) { spans.forEach((s) => s.classList.remove('on')); duck(false); res(); } else requestAnimationFrame(tick);
+    };
+    tick();
+  });
+  await sleep(250);
+  return el;
+}
+function clearLayer() { $('layer').innerHTML = ''; $('spots').innerHTML = ''; }
+
+// ---------------------------------------------------------------- effects: sparkles, rain and the push of the water
+const fx = $('fx'), g = fx.getContext('2d'), lens = $('lens'), L = lens.getContext('2d'); let FW = 0, FH = 0; const sparks = [], drops = [];
+let rainLevel = 0, lift = 0; // how hard it rains (0 to 1); how strongly the water pushes the ark back up (0 to 1)
+// the layout size of the panel, not the box of a page still turning in 3D
+function fitFx() { const d = Math.min(devicePixelRatio || 1, 2); FW = $('panel').clientWidth; FH = $('panel').clientHeight; for (const [c, k] of [[fx, g], [lens, L]]) { c.width = FW * d; c.height = FH * d; k.setTransform(d, 0, 0, d, 0, 0); } }
+function burst(x, y, n = 26, hue = 45) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, v = 1 + Math.random() * 3.5; sparks.push({ x: x * FW, y: y * FH, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 1, life: 1, hue: hue + Math.random() * 30 }); } }
+function drawFx() {
+  requestAnimationFrame(drawFx); g.clearRect(0, 0, FW, FH);
+  // rain: slanted streaks, more of them the harder it rains
+  if (rainLevel > 0) for (let i = 0; i < rainLevel * 9; i++) drops.push({ x: Math.random() * FW * 1.2, y: -20, v: 14 + Math.random() * 8 });
+  g.strokeStyle = 'rgba(210,225,240,0.55)'; g.lineWidth = 1.6; g.beginPath();
+  for (const d of drops) { d.x -= d.v * 0.25; d.y += d.v; g.moveTo(d.x, d.y); g.lineTo(d.x + 4, d.y - 16); }
+  g.stroke(); for (let i = drops.length - 1; i >= 0; i--) if (drops[i].y > FH + 20) drops.splice(i, 1);
+  // the water pushing up under the hull: rising arrows while the ark is pressed down
+  if (lift > 0.02) {
+    g.save(); g.globalAlpha = Math.min(1, lift); g.fillStyle = '#ffd24a'; g.strokeStyle = '#121212'; g.lineWidth = 3;
+    const t = performance.now() / 400;
+    for (const x of [0.28, 0.42, 0.58, 0.72]) {
+      const y = FH * (0.7 - ((t + x * 3) % 1) * 0.06), s = FW * 0.035;
+      g.beginPath(); g.moveTo(x * FW, y - s * 1.6); g.lineTo(x * FW + s, y - s * 0.4); g.lineTo(x * FW + s * 0.4, y - s * 0.4); g.lineTo(x * FW + s * 0.4, y + s); g.lineTo(x * FW - s * 0.4, y + s); g.lineTo(x * FW - s * 0.4, y - s * 0.4); g.lineTo(x * FW - s, y - s * 0.4); g.closePath(); g.fill(); g.stroke();
+    }
+    g.restore();
+  }
+  g.globalCompositeOperation = 'lighter';
+  for (const s of sparks) { s.x += s.vx; s.y += s.vy; s.vy += 0.05; s.life -= 0.02; g.fillStyle = `hsla(${s.hue},100%,72%,${Math.max(0, s.life)})`; g.beginPath(); g.arc(s.x, s.y, 2.4 * s.life + 0.6, 0, 7); g.fill(); }
+  for (let i = sparks.length - 1; i >= 0; i--) if (sparks[i].life <= 0) sparks.splice(i, 1);
+  g.globalCompositeOperation = 'source-over';
+}
+requestAnimationFrame(drawFx);
+function word(text, at) { const el = document.createElement('div'); el.className = 'pow'; el.textContent = text; el.style.left = at[0] * 100 + '%'; el.style.top = at[1] * 100 + '%'; el.style.setProperty('--r', (Math.random() * 16 - 8).toFixed(1) + 'deg'); $('layer').append(el); setTimeout(() => el.remove(), 1600); }
+function hint(text) { $('hint').textContent = text || ''; $('hint').classList.toggle('on', !!text); }
+function spot(at, r, cls = '') { const el = document.createElement('button'); el.className = 'spot ' + cls; el.style.left = at[0] * 100 + '%'; el.style.top = at[1] * 100 + '%'; el.style.width = el.style.height = (r * 2 * 100) + '%'; $('spots').append(el); return el; }
+const toPanel = (e) => { const r = $('panel').getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]; };
+const near = (p, q, r) => Math.hypot((p[0] - q[0]) * FW, (p[1] - q[1]) * FH) < r * FW;
+// one finger on the panel: down, move and up handlers, removed when the interaction ends
+function drag(on) {
+  const P = $('panel'); let down = false;
+  P.onpointerdown = (e) => { e.preventDefault(); down = true; try { P.setPointerCapture(e.pointerId); } catch {} on.down?.(toPanel(e), e); };
+  P.onpointermove = (e) => { if (down || (on.hover && e.pointerType === 'mouse')) on.move?.(toPanel(e), down); };
+  P.onpointerup = P.onpointercancel = (e) => { if (!down) return; down = false; on.up?.(toPanel(e)); };
+  return () => { P.onpointerdown = P.onpointermove = P.onpointerup = P.onpointercancel = null; };
+}
+// a circle that draws itself around what was found
+function ring(at) { const el = document.createElement('div'); el.className = 'foundring'; el.style.left = at[0] * 100 + '%'; el.style.top = at[1] * 100 + '%'; $('layer').append(el); setTimeout(() => el.remove(), 2600); }
+
+// ---------------------------------------------------------------- the tools
+// The magnifying glass and the lamp: the picture drawn enlarged inside the glass, or lit only where the lamp is,
+// so what the child looks for appears exactly under the finger.
+function lensTool(kind, a) {
+  return new Promise((res) => {
+    hint(T[kind]); sfx(kind === 'loupe' ? 'loupe' : 'lamp');
+    const art = $('art'), nw = art.naturalWidth, nh = art.naturalHeight, zoom = kind === 'loupe' ? 2.6 : 1;
+    let pos = a.start ? [...a.start] : [0.5, 0.62], held = 0, last = performance.now(), done = false, t0 = performance.now();
+    const R = () => FW * (kind === 'loupe' ? 0.2 : 0.24);
+    const draw = () => {
+      if (done) return; requestAnimationFrame(draw);
+      const now = performance.now(), dt = now - last, x = pos[0] * FW, y = pos[1] * FH; last = now;
+      L.clearRect(0, 0, FW, FH);
+      if (kind === 'lamp') {
+        // the dark hold, with a warm pool of lamplight that flickers a little
+        L.fillStyle = 'rgba(6,4,12,0.94)'; L.fillRect(0, 0, FW, FH);
+        const r = R() * (1 + Math.sin(now / 90) * 0.03), gr = L.createRadialGradient(x, y, r * 0.15, x, y, r);
+        gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.65, 'rgba(0,0,0,0.85)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+        L.globalCompositeOperation = 'destination-out'; L.fillStyle = gr; L.beginPath(); L.arc(x, y, r, 0, 7); L.fill(); L.globalCompositeOperation = 'source-over';
+        L.fillStyle = 'rgba(255,170,60,0.12)'; L.beginPath(); L.arc(x, y, r * 0.8, 0, 7); L.fill();
+        L.fillStyle = '#ffd27a'; L.beginPath(); L.ellipse(x, y - 4, 5, 9, 0, 0, 7); L.fill(); L.fillStyle = '#8a4b1f'; L.beginPath(); L.ellipse(x, y + 9, 13, 6, 0, 0, 7); L.fill();
+      } else {
+        L.save(); L.beginPath(); L.arc(x, y, R(), 0, 7); L.clip();
+        const sx = pos[0] * nw, sy = pos[1] * nh, sw = (FW / zoom) * (nw / FW), sh = (FH / zoom) * (nh / FH);
+        L.drawImage(art, sx - sw * pos[0], sy - sh * pos[1], sw, sh, 0, 0, FW, FH);
+        L.restore();
+        L.lineWidth = 9; L.strokeStyle = '#b5862f'; L.beginPath(); L.arc(x, y, R(), 0, 7); L.stroke();
+        L.lineWidth = 2; L.strokeStyle = 'rgba(255,240,200,0.6)'; L.beginPath(); L.arc(x, y, R() - 5, 3.6, 4.6); L.stroke();
+        const ang = 0.75; L.lineCap = 'round'; L.lineWidth = 16; L.strokeStyle = '#5a3a1c'; L.beginPath(); L.moveTo(x + Math.cos(ang) * (R() + 6), y + Math.sin(ang) * (R() + 6)); L.lineTo(x + Math.cos(ang) * (R() + 70), y + Math.sin(ang) * (R() + 70)); L.stroke();
+      }
+      // found: what was hidden stays in the light (or under the glass) for a moment
+      held = near(pos, a.at, a.r) ? held + dt : 0;
+      if (now - t0 > 9000 && Math.random() < 0.06) burst(a.at[0], a.at[1], 2, 50); // a little help after a while
+      if (held > 380) { done = true; stop(); L.clearRect(0, 0, FW, FH); sfx('found'); if (kind === 'lamp') sfx('squeak'); burst(a.at[0], a.at[1], 46); ring(a.at); hint(''); res(); }
+    };
+    requestAnimationFrame(draw);
+    const stop = drag({ hover: true, down: (p) => (pos = p), move: (p) => (pos = p) });
+  });
+}
+
+// a path to follow with the finger (the measuring rope, the rainbow): it is drawn as far as the finger has come
+function trace(a) {
+  return new Promise((res) => {
+    hint(T[a.style]); const pts = a.pts; let k = 0, active = false;
+    if (a.style === 'rainbow') $('layer').classList.add('dim'); // the narration box steps back so the whole sky shows
+    const start = spot(pts[0], 0.06, 'soft start');
+    const draw = () => {
+      L.clearRect(0, 0, FW, FH);
+      // the faint guide
+      L.setLineDash([6, 10]); L.lineWidth = 3; L.strokeStyle = 'rgba(255,255,255,0.55)'; L.beginPath(); pts.forEach(([x, y], i) => (i ? L.lineTo(x * FW, y * FH) : L.moveTo(x * FW, y * FH))); L.stroke(); L.setLineDash([]);
+      if (k < 1) return;
+      const line = (w, c, off = 0) => { L.lineWidth = w; L.strokeStyle = c; L.beginPath(); for (let i = 0; i <= k; i++) { const [x, y] = pts[i], ny = (a.style === 'rainbow' ? off : 0); i ? L.lineTo(x * FW, y * FH + ny) : L.moveTo(x * FW, y * FH + ny); } L.stroke(); };
+      L.lineCap = 'round'; L.lineJoin = 'round';
+      if (a.style === 'rope') { line(9, '#3b2610'); line(5, '#b98a4a'); }
+      else { const C = ['#e8413c', '#f39a2b', '#f6d531', '#5cbf4a', '#3a8fd8', '#4b4fb3', '#8a49b8']; C.forEach((c, i) => line(7, c, (i - 3) * 6.5)); }
+    };
+    draw();
+    const stop = drag({
+      down: (p) => { active = near(p, pts[0], 0.1) || k > 0; if (active && k === 0) { start.remove(); sfx(a.style === 'rope' ? 'rope' : 'rainbow', 0.7); } },
+      move: (p, down) => {
+        if (!down || !active) return;
+        // the finger moves the drawn part forward point by point, if it stays close to the path
+        while (k < pts.length - 1 && near(p, pts[k + 1], 0.09)) { k++; if (k % 4 === 0) burst(pts[k][0], pts[k][1], 4, a.style === 'rope' ? 30 : 200); }
+        if (k < pts.length - 1 && near(p, pts[Math.min(k + 2, pts.length - 1)], 0.09)) k++;
+        draw();
+        if (k >= pts.length - 1) {
+          stop(); sfx('found'); const end = pts[pts.length - 1]; burst(end[0], end[1], 40);
+          if (a.word) word(a.word, [0.5, pts[2][1] - 0.08]);
+          if (a.after) { swapArt(a.after); setTimeout(() => L.clearRect(0, 0, FW, FH), 900); }
+          hint(''); setTimeout(() => { $('layer').classList.remove('dim'); res(); }, 700);
+        }
+      },
+    });
+  });
+}
+
+const acts = {
+  loupe: (a) => lensTool('loupe', a),
+  lamp: (a) => lensTool('lamp', a),
+  trace,
+  hello: (a) => new Promise((res) => {
+    hint(T.hello); const s = spot(a.at, a.r, 'soft');
+    s.onpointerdown = (e) => { e.stopPropagation(); s.remove(); sfx('chime'); word(a.word[lang], [a.at[0], a.at[1] - 0.16]); burst(a.at[0], a.at[1] - 0.1, 24); hint(''); setTimeout(res, 700); };
+  }),
+  // the mallet: each plank gets its knock
+  taps: (a) => new Promise((res) => {
+    hint(T.taps); let n = 0;
+    for (const at of a.spots) { const s = spot(at, 0.08, 'soft'); s.onpointerdown = (e) => { e.stopPropagation(); sfx('hammer'); word(a.word[lang], [at[0], at[1] - 0.06]); burst(at[0], at[1], 16, 28); $('art').classList.remove('shake'); void $('art').offsetWidth; $('art').classList.add('shake'); if (!s.done) { s.done = true; s.classList.add('done'); if (++n === a.spots.length) { hint(''); setTimeout(res, 700); } } }; }
+  }),
+  // the pitch brush: the coated hull appears under the finger, the rest stays bare until most of it is covered
+  paint: (a) => new Promise((res) => {
+    hint(T.paint); const after = new Image(); after.src = `art/${a.after}.jpg`;
+    const M = document.createElement('canvas'); M.width = 60; M.height = Math.round(60 * FH / FW); const m = M.getContext('2d');
+    let last = 0, done = false;
+    const cover = () => {
+      const d = m.getImageData(0, 0, M.width, M.height).data; let on = 0, all = 0;
+      for (let y = 0; y < M.height; y++) for (let x = 0; x < M.width; x++) {
+        const u = x / M.width, v = y / M.height;
+        if (u < a.box[0] || u > a.box[2] || v < a.box[1] || v > a.box[3] || (u > a.not[0] && u < a.not[2] && v > a.not[1] && v < a.not[3])) continue;
+        all++; if (d[(y * M.width + x) * 4 + 3] > 100) on++;
+      }
+      return on / all;
+    };
+    const brush = (p) => {
+      m.fillStyle = '#000'; m.beginPath(); m.arc(p[0] * M.width, p[1] * M.height, M.width * 0.09, 0, 7); m.fill();
+      L.clearRect(0, 0, FW, FH); L.drawImage(after, 0, 0, FW, FH); L.globalCompositeOperation = 'destination-in'; L.imageSmoothingEnabled = true; L.drawImage(M, 0, 0, FW, FH); L.globalCompositeOperation = 'source-over';
+      const now = performance.now(); if (now - last > 380) { last = now; sfx('brush', 0.6); }
+      if (!done && cover() > 0.6) { done = true; stop(); sfx('found'); swapArt(a.after); burst(0.4, 0.5, 40, 30); setTimeout(() => L.clearRect(0, 0, FW, FH), 900); hint(''); setTimeout(res, 800); }
+    };
+    const stop = drag({ down: brush, move: (p, down) => down && brush(p) });
+  }),
+  // two by two: touch one animal, then the one that goes with it
+  pairs: (a) => new Promise((res) => {
+    hint(T.pairs); let pick = null, left = a.spots.length / 2;
+    for (const p of a.spots) {
+      const s = spot(p.at, 0.075, 'soft'); s._p = p;
+      s.onpointerdown = (e) => {
+        e.stopPropagation(); if (s.done) return;
+        if (!pick) { pick = s; s.classList.add('pick'); sfx('tap'); return; }
+        if (pick === s) { s.classList.remove('pick'); pick = null; return; }
+        if (pick._p.k === p.k) {
+          for (const x of [pick, s]) { x.done = true; x.classList.remove('pick'); x.classList.add('done'); burst(x._p.at[0], x._p.at[1], 20); }
+          sfx(a.sound[p.k]); word(T.two, [(pick._p.at[0] + p.at[0]) / 2, Math.min(pick._p.at[1], p.at[1]) - 0.08]); pick = null;
+          if (--left === 0) { hint(''); setTimeout(res, 900); }
+        } else { sfx('tap', 0.5); pick.classList.remove('pick'); pick = s; s.classList.add('pick'); }
+      };
+    }
+  }),
+  // the finger brings the rain down; at the last stroke the flood comes
+  rain: (a) => new Promise((res) => {
+    hint(T.rain); let n = 0, from = null;
+    const stop = drag({
+      down: (p) => (from = p),
+      move: (p, down) => {
+        if (!down || !from || p[1] - from[1] < 0.14) return;
+        from = null; n++; rainLevel = Math.min(1, n / a.n + 0.1); sfx(n === 1 ? 'rainstart' : 'tap', 0.6);
+        if (n === 2) { sfx('thunder'); $('panel').classList.add('flash'); setTimeout(() => $('panel').classList.remove('flash'), 300); }
+        if (n === 1) ambience('amb-storm');
+        if (n >= a.n) { stop(); sfx('thunder'); swapArt(a.after); hint(''); setTimeout(res, 1200); }
+      },
+      up: () => (from = null),
+    });
+  }),
+  // press the ark down: it sinks a little and the water pushes it back up when the finger lets go
+  press: (a) => new Promise((res) => {
+    hint(T.press); const s = spot(a.at, a.r, 'soft'); let n = 0, t = 0, over = null, raf = 0;
+    const grow = () => { lift = Math.min(1, (performance.now() - t) / 500); raf = requestAnimationFrame(grow); };
+    s.onpointerdown = (e) => {
+      e.stopPropagation(); e.preventDefault(); t = performance.now(); sfx('push');
+      over = new Image(); over.src = `art/${a.down}.jpg`; over.className = 'art over'; $('panel').insertBefore(over, $('fx')); requestAnimationFrame(() => over.classList.add('in'));
+      grow();
+    };
+    const release = () => {
+      if (!over) return; cancelAnimationFrame(raf); const long = performance.now() - t > 350, o = over; over = null;
+      o.classList.remove('in'); setTimeout(() => o.remove(), 900); sfx('splash'); burst(a.at[0], a.at[1] + 0.06, 22, 190);
+      const fall = () => { lift = Math.max(0, lift - 0.03); if (lift > 0) requestAnimationFrame(fall); }; setTimeout(fall, 500);
+      if (long && ++n >= a.n) { s.remove(); hint(''); setTimeout(res, 1100); }
+    };
+    s.onpointerup = s.onpointercancel = s.onpointerleave = release;
+  }),
+  // flick the dove up into the sky
+  fly: (a) => new Promise((res) => {
+    hint(T.fly); const s = spot(a.at, a.r, 'soft'); let from = null;
+    s.onpointerdown = (e) => { e.stopPropagation(); e.preventDefault(); from = toPanel(e); try { s.setPointerCapture(e.pointerId); } catch {} };
+    s.onpointermove = (e) => {
+      if (!from) return; const p = toPanel(e);
+      if (from[1] - p[1] > 0.1) {
+        from = null; s.remove(); sfx('flutter'); hint('');
+        for (let i = 0; i < 12; i++) setTimeout(() => burst(a.at[0] + i * 0.04, a.at[1] - i * 0.03, 5, 200), i * 60);
+        setTimeout(() => { sfx('coo'); swapArt(a.after); }, 1400); setTimeout(res, 2400);
+      }
+    };
+    s.onpointerup = s.onpointercancel = () => (from = null);
+  }),
+  sounds: (a) => new Promise((res) => {
+    hint(T.sounds); let n = 0;
+    for (const p of a.spots) { const s = spot(p.at, 0.09, 'soft'); s.onpointerdown = (e) => { e.stopPropagation(); sfx(p.sfx); word(p.word[lang], [p.at[0], p.at[1] - 0.09]); burst(p.at[0], p.at[1], 14, 100); if (!s.done) { s.done = true; s.classList.add('done'); if (++n === a.spots.length) { hint(''); setTimeout(res, 900); } } }; }
+  }),
+};
+function swapArt(name) { if (!name) return; const im = new Image(); im.src = `art/${name}.jpg`; im.className = 'art over'; $('panel').insertBefore(im, $('fx')); requestAnimationFrame(() => im.classList.add('in')); }
+
+// ---------------------------------------------------------------- reading
+async function show(i) {
+  if (busy) return; busy = true; hint(''); $('next').classList.remove('on');
+  const p = PANELS[i]; idx = i;
+  sfx('page', 0.7);
+  const page = $('page'); page.classList.remove('turn-in'); page.classList.add('turn-out'); await sleep(320);
+  clearLayer(); sparks.length = 0; drops.length = 0; rainLevel = 0; lift = 0; $('panel').onpointerdown = $('panel').onpointermove = $('panel').onpointerup = $('panel').onpointercancel = null; L.clearRect(0, 0, FW, FH);
+  for (const el of document.querySelectorAll('#panel .art')) el.remove();
+  const im = new Image(); im.className = 'art'; im.id = 'art'; im.src = `art/${p.img}.jpg`; await im.decode().catch(() => {});
+  $('panel').style.aspectRatio = `${im.naturalWidth} / ${im.naturalHeight}`; $('panel').insertBefore(im, $('fx'));
+  page.classList.remove('turn-out'); page.classList.add('turn-in'); fitFx();
+  $('dots').innerHTML = PANELS.map((x) => `<i class="${x.id === p.id ? 'on' : ''}"></i>`).join('');
+  ambience(p.amb);
+  await sleep(450);
+  if (p.sfx) { sfx(p.sfx); await sleep(1200); } // the panel's own sound first, then the story
+  for (const ln of p.lines) await say(ln);
+  if (p.act) { await acts[p.act.kind](p.act); for (const ln of p.act.then || []) await say(ln); }
+  busy = false; $('next').classList.add('on');
+  if (i === PANELS.length - 1) setTimeout(end, 1800);
+}
+function next() {
+  if (busy || idx < 0) return;
+  if (idx === PANELS.length - 1) return end();
+  show(idx + 1);
+}
+function end() { $('endcard').classList.add('on'); music.volume = 0.35; }
+// no long-press menu or text selection anywhere in the book (Android Chrome opens one on a held image)
+addEventListener('contextmenu', (e) => e.preventDefault());
+document.addEventListener('touchmove', (e) => { if (e.target.closest('#panel')) e.preventDefault(); }, { passive: false });
+$('page').addEventListener('pointerdown', (e) => { if (e.target.closest('button') || busy) return; next(); });
+$('next').onclick = next;
+async function start(m) {
+  mode = m; await initAudio(); music.play().catch(() => {});
+  document.body.classList.add('reading'); $('cover').classList.add('gone');
+  try { await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); } catch {}
+  show(0);
+}
+$('readMe').onclick = () => start('voice');
+$('readSelf').onclick = () => start('self');
+$('again').onclick = () => { $('endcard').classList.remove('on'); show(0); };
+addEventListener('resize', () => { if (idx >= 0) fitFx(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { music.pause(); amb.pause(); voice.pause(); } else if (idx >= 0) { music.play().catch(() => {}); amb.play().catch(() => {}); } });
+window.__noe = { get idx() { return idx; }, get busy() { return busy; }, next, show };

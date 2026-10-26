@@ -80,7 +80,7 @@ const SERIES = [
   { id: 'afrique', fr: { name: 'Contes d’Afrique', d: 'Les grands contes de la tradition orale, en ombres chinoises.' }, en: { name: 'Tales from Africa', d: 'Great tales from the oral tradition, as shadow puppets.' },
     tales: [{ url: 'kalulu/', img: 'kalulu/art/cover.jpg', min: 6, fr: { t: 'Kalulu', s: 'et le grand tir à la corde', m: 'Conte bantou' }, en: { t: 'Kalulu', s: 'and the great tug of war', m: 'Bantu folk tale' } }] },
   { id: 'bible', fr: { name: 'Histoires de la Bible', d: 'Les grands récits de la Bible, racontés aux plus petits.' }, en: { name: 'Bible stories', d: 'The great stories of the Bible, told for little ones.' },
-    tales: [{ url: 'noe/', img: 'noe/art/cover.jpg', min: 6, fr: { t: 'Noé', s: 'et l’arche', m: 'Genèse 6 à 9' }, en: { t: 'Noah', s: 'and the ark', m: 'Genesis 6 to 9' } }] },
+    tales: [{ url: 'noe/', img: 'noe/art/n5.jpg', min: 4, fr: { t: 'Noé', s: 'et l’arche', m: 'BD interactive · Genèse 6 à 9' }, en: { t: 'Noah', s: 'and the ark', m: 'Interactive comic · Genesis 6 to 9' } }] },
 ];
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
 let lang = new URLSearchParams(location.search).get('lang') || store.get('contes-lang') || ((navigator.language || '').startsWith('fr') ? 'fr' : 'en');
