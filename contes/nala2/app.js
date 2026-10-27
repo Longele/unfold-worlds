@@ -553,8 +553,6 @@ const acts = {
     const live = () => { if (gen !== g0) { stopCam(); return; } if (done || !vid) return; L.clearRect(0, 0, FW, FH); drawKid(L, FW, FH); requestAnimationFrame(live); };
     // the camera button, only where there is a camera to use
     let cam = null;
-    const devs = navigator.mediaDevices?.getUserMedia ? await navigator.mediaDevices.enumerateDevices().catch(() => []) : [];
-    if (gen !== g0) return;
     const startCam = async () => {
       if (!cam || cam.disabled) return; cam.disabled = true;
       try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 720 } }, audio: false }); }
@@ -563,10 +561,6 @@ const acts = {
       vid = document.createElement('video'); vid.muted = true; vid.playsInline = true; vid.srcObject = stream; await vid.play().catch(() => {});
       cam.remove(); cam = null; b.classList.remove('side'); hint(T.inHelmet); sfx('pop'); burst(S.x, S.y - S.h * 0.75, 24, 40); live();
     };
-    if (devs.some((d) => d.kind === 'videoinput')) {
-      cam = document.createElement('button'); cam.className = 'cambtn'; cam.textContent = T.meToo; $('spots').append(cam); b.classList.add('side');
-      cam.onpointerdown = (e) => { e.stopPropagation(); startCam(); };
-    }
     const shoot = () => {
       if (done) return; done = true; stop(); keyAct = null; sfx('shutter'); buzz(40); vf.remove(); b.remove(); cam?.remove();
       // the photo: the panel at full size, with the child in the suit when the camera is on
@@ -593,6 +587,12 @@ const acts = {
     b.onpointerdown = (e) => { e.stopPropagation(); press(); };
     const stop = drag({ down: () => { if (!cam) press(); } });
     keyAct = (e, down) => { if (!down) return; if (e.key === ' ') { press(); return true; } if (e.key === 'c' || e.key === 'C') { startCam(); return true; } };
+    // the camera button appears once we know there is a camera (the shutter already works meanwhile)
+    const devs = navigator.mediaDevices?.getUserMedia ? await navigator.mediaDevices.enumerateDevices().catch(() => []) : [];
+    if (gen === g0 && !done && devs.some((d) => d.kind === 'videoinput')) {
+      cam = document.createElement('button'); cam.className = 'cambtn'; cam.textContent = T.meToo; $('spots').append(cam); b.classList.add('side');
+      cam.onpointerdown = (e) => { e.stopPropagation(); startCam(); };
+    }
   }),
   choice: (a) => new Promise((res) => {
     hint(T.choice);
