@@ -1,0 +1,17 @@
+{
+ "name": "Jonas et le grand poisson",
+ "short_name": "Jonas",
+ "start_url": "./",
+ "scope": "./",
+ "display": "fullscreen",
+ "orientation": "portrait",
+ "background_color": "#1f2630",
+ "theme_color": "#1f2630",
+ "icons": [
+  {
+   "src": "../../icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  }
+ ]
+}
