@@ -4,9 +4,9 @@
 // (tilt, finger, mouse or arrow keys), blows the dust off the solar panels, grows Olympus Mons next to Everest, finds
 // the two moons and brings the blue sunset down. Every phone gesture has a mouse or keyboard twin, and the
 // microphone always has a button to fall back on.
-import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610270400';
+import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610270300';
 
-import { goFull, keepFull, iosTip } from '../fs.js?v=202610270400';
+import { goFull, keepFull, iosTip } from '../fs.js?v=202610270300';
 const $ = (id) => document.getElementById(id);
 // the language: from the stories page (?lang=), else the last one chosen, else the phone's
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
@@ -14,11 +14,11 @@ let lang = new URLSearchParams(location.search).get('lang') || store.get('contes
 if (!['fr', 'en'].includes(lang)) lang = 'fr';
 const TT = {
   fr: { readMe: 'Lis-moi l’histoire', readSelf: 'Je lis tout seul', again: 'Relire l’histoire', more: 'D’autres contes', end: 'Fin', kick: 'Une BD à vivre', back: '← Les contes', parents: 'Pour les parents : cette histoire peut utiliser le micro, pour crier et souffler. Rien n’est enregistré. Sans micro, un bouton fait la même chose.', keys: 'Espace ou → : suivant',
-    wheels: 'Glisse les roues sur le rover', vroom: 'VROUM !', binocs: 'Glisse les jumelles dans le ciel', loupe: 'Glisse la loupe sur la poussière', shout: 'Crie « décollage ! »', shoutBtn: 'Appuie longtemps ici', trace: 'Trace la route avec ton doigt, de la Terre à Mars', tooHot: 'Trop chaud !', months: (n) => n === 1 ? '1 mois' : `${n} mois`,
+    wheels: 'Glisse les roues sur le rover', vroom: 'VROUM !', binocs: 'Glisse les jumelles dans le ciel', scope: 'Glisse le télescope vers le point rouge', loupe: 'Glisse la loupe sur la poussière', shout: 'Crie « décollage ! »', shoutBtn: 'Appuie longtemps ici', trace: 'Trace la route avec ton doigt, de la Terre à Mars', tooHot: 'Trop chaud !', months: (n) => n === 1 ? '1 mois' : `${n} mois`,
     retro: 'Appuie pour freiner, lâche pour descendre', retroBtn: 'Appuie ici pour freiner', steer: 'Penche, glisse ou utilise les flèches', blow: 'Souffle sur les panneaux', blowBtn: 'ou frotte avec ton doigt', grow: 'Glisse vers le haut pour faire grandir le volcan', km: (v) => `${v.toFixed(1).replace('.', ',')} km`,
     sunset: 'Fais descendre le soleil', choice: 'Choisis ton souvenir', pebble: 'Touche le caillou', photo: 'Touche le bouton pour prendre la photo', pebble2: 'Touche le caillou de Mars' },
   en: { readMe: 'Read it to me', readSelf: 'I’ll read it myself', again: 'Read it again', more: 'More stories', end: 'The End', kick: 'A comic to live', back: '← Stories', parents: 'For parents: this story can use the microphone, to shout and to blow. Nothing is recorded. Without a microphone, a button does the same.', keys: 'Space or →: next',
-    wheels: 'Slide the wheels onto the rover', vroom: 'VROOM!', binocs: 'Slide the binoculars across the sky', loupe: 'Slide the glass over the dust', shout: 'Shout “lift-off!”', shoutBtn: 'Press and hold here', trace: 'Draw the route with your finger, from the Earth to Mars', tooHot: 'Too hot!', months: (n) => n === 1 ? '1 month' : `${n} months`,
+    wheels: 'Slide the wheels onto the rover', vroom: 'VROOM!', binocs: 'Slide the binoculars across the sky', scope: 'Slide the telescope to the red dot', loupe: 'Slide the glass over the dust', shout: 'Shout “lift-off!”', shoutBtn: 'Press and hold here', trace: 'Draw the route with your finger, from the Earth to Mars', tooHot: 'Too hot!', months: (n) => n === 1 ? '1 month' : `${n} months`,
     retro: 'Press to brake, let go to go down', retroBtn: 'Press here to brake', steer: 'Tilt, slide or use the arrow keys', blow: 'Blow on the panels', blowBtn: 'or rub with your finger', grow: 'Slide up to make the volcano grow', km: (v) => `${v.toFixed(1)} km`,
     sunset: 'Bring the sun down', choice: 'Choose your souvenir', pebble: 'Touch the pebble', photo: 'Touch the button to take the photo', pebble2: 'Touch the pebble from Mars' },
 };
@@ -29,7 +29,7 @@ function applyLang() {
   $('title').textContent = TITLE[lang]; document.querySelector('.kick').textContent = T.kick; document.querySelector('.back').textContent = T.back;
   for (const el of document.querySelectorAll('a[href^="../"]')) el.href = `../?lang=${lang}`;
   for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
-  fetch(`voice/${lang}/timings.json?v=202610270400`).then((r) => r.json()).then((j) => (timings = j));
+  fetch(`voice/${lang}/timings.json?v=202610270300`).then((r) => r.json()).then((j) => (timings = j));
 }
 for (const b of document.querySelectorAll('[data-lang]')) b.onclick = () => { lang = b.dataset.lang; store.set('contes-lang', lang); applyLang(); };
 
@@ -164,36 +164,45 @@ function drag(on) {
 // a circle that draws itself around what was found
 function ring(at) { const el = document.createElement('div'); el.className = 'foundring'; el.style.left = at[0] * 100 + '%'; el.style.top = at[1] * 100 + '%'; $('layer').append(el); setTimeout(() => el.remove(), 2600); }
 
-// ---------------------------------------------------------------- the binoculars and the magnifying glass
+// ---------------------------------------------------------------- the telescope, the binoculars and the magnifying glass
 // The picture drawn enlarged inside the round views, so what the child looks for appears exactly under the finger.
-// a.ats lists what to find, one after the other (the two moons).
+// a.ats lists what to find, one after the other (the two moons). In the telescope, the red dot once found grows into
+// the planet itself: an orange ball with its dark patches and its white polar cap.
 function lensTool(kind, a) {
   return new Promise((res) => {
-    hint(T[kind]); sfx(kind);
-    const art = $('art'), nw = art.naturalWidth, nh = art.naturalHeight, zoom = kind === 'binocs' ? 3 : 2.4;
-    let pos = a.start ? [...a.start] : [0.5, 0.62], held = 0, last = performance.now(), done = false, t0 = performance.now(), n = 0; const g0 = gen;
-    const R = () => FW * (kind === 'binocs' ? 0.17 : 0.2);
+    hint(T[kind]); sfx(kind === 'scope' ? 'binocs' : kind);
+    const art = $('art'), nw = art.naturalWidth, nh = art.naturalHeight, zoom = { binocs: 3, scope: 3.6, loupe: 2.4 }[kind];
+    let pos = a.start ? [...a.start] : [0.5, 0.62], held = 0, last = performance.now(), done = false, t0 = performance.now(), n = 0, reveal = 0; const g0 = gen;
+    const R = () => FW * { binocs: 0.17, scope: 0.27, loupe: 0.2 }[kind];
     // the binoculars show two round views side by side
     const centres = () => kind === 'binocs' ? [[pos[0] * FW - R() * 0.78, pos[1] * FH], [pos[0] * FW + R() * 0.78, pos[1] * FH]] : [[pos[0] * FW, pos[1] * FH]];
     const draw = () => {
       if (done || gen !== g0) return; requestAnimationFrame(draw);
       const now = performance.now(), dt = now - last; last = now; const at = a.ats[n];
       L.clearRect(0, 0, FW, FH);
-      L.fillStyle = kind === 'binocs' ? 'rgba(4,6,14,0.85)' : 'rgba(20,8,4,0.45)'; L.fillRect(0, 0, FW, FH);
+      L.fillStyle = kind === 'loupe' ? 'rgba(20,8,4,0.45)' : 'rgba(4,6,14,0.88)'; L.fillRect(0, 0, FW, FH);
       L.save(); L.beginPath(); for (const [cx, cy] of centres()) { L.moveTo(cx + R(), cy); L.arc(cx, cy, R(), 0, 7); } L.clip(); L.clearRect(0, 0, FW, FH);
       const sx = pos[0] * nw, sy = pos[1] * nh, sw = (FW / zoom) * (nw / FW), sh = (FH / zoom) * (nh / FH);
       L.drawImage(art, sx - sw * pos[0], sy - sh * pos[1], sw, sh, 0, 0, FW, FH);
       // under the glass, the dust shows its grains of rust, glinting
       if (kind === 'loupe' && near(pos, at, 0.25)) for (let i = 0; i < 6; i++) { const [cx, cy] = centres()[0], an = (i * 2.4 + now / 900) % 6.28, rr = R() * (0.2 + (i % 3) * 0.22); L.fillStyle = `rgba(255,${120 + i * 15},60,${0.5 + Math.sin(now / 200 + i) * 0.3})`; L.beginPath(); L.arc(cx + Math.cos(an) * rr, cy + Math.sin(an) * rr, 2.5, 0, 7); L.fill(); }
+      // the planet appears in the eyepiece, growing and turning slowly
+      if (reveal) { const [cx, cy] = centres()[0], k = Math.min(1, (now - reveal) / 1400), pr = R() * 0.62 * (1 - Math.pow(1 - k, 3)), g = L.createRadialGradient(cx - pr * 0.3, cy - pr * 0.3, pr * 0.1, cx, cy, pr);
+        g.addColorStop(0, '#f2a066'); g.addColorStop(0.7, '#c4552c'); g.addColorStop(1, '#6e2412'); L.fillStyle = 'rgba(4,6,14,0.9)'; L.fillRect(cx - R(), cy - R(), R() * 2, R() * 2);
+        L.fillStyle = `rgba(255,120,70,${0.25 * k})`; L.beginPath(); L.arc(cx, cy, pr * 1.25, 0, 7); L.fill();
+        L.fillStyle = g; L.beginPath(); L.arc(cx, cy, pr, 0, 7); L.fill(); L.save(); L.beginPath(); L.arc(cx, cy, pr, 0, 7); L.clip();
+        L.fillStyle = 'rgba(90,30,15,0.45)'; for (const [u, v, w] of [[-0.3, 0.1, 0.35], [0.25, -0.15, 0.22], [0.1, 0.4, 0.28]]) { L.beginPath(); L.ellipse(cx + (u + Math.sin(now / 3000) * 0.1) * pr, cy + v * pr, w * pr, w * pr * 0.5, 0.3, 0, 7); L.fill(); }
+        L.fillStyle = 'rgba(255,255,255,0.9)'; L.beginPath(); L.ellipse(cx, cy - pr * 0.9, pr * 0.32, pr * 0.14, 0, 0, 7); L.fill(); L.restore(); }
       L.restore();
-      for (const [cx, cy] of centres()) { L.lineWidth = kind === 'loupe' ? 9 : 7; L.strokeStyle = kind === 'loupe' ? '#b5862f' : '#1c1c1c'; L.beginPath(); L.arc(cx, cy, R(), 0, 7); L.stroke(); L.lineWidth = 2; L.strokeStyle = 'rgba(255,240,200,0.6)'; L.beginPath(); L.arc(cx, cy, R() - 5, 3.6, 4.6); L.stroke(); }
+      for (const [cx, cy] of centres()) { L.lineWidth = { loupe: 9, scope: 14, binocs: 7 }[kind]; L.strokeStyle = kind === 'binocs' ? '#1c1c1c' : '#b5862f'; L.beginPath(); L.arc(cx, cy, R(), 0, 7); L.stroke(); L.lineWidth = 2; L.strokeStyle = 'rgba(255,240,200,0.6)'; L.beginPath(); L.arc(cx, cy, R() - 5, 3.6, 4.6); L.stroke(); }
       if (kind === 'loupe') { const [x, y] = centres()[0], ang = 0.75; L.lineCap = 'round'; L.lineWidth = 16; L.strokeStyle = '#5a3a1c'; L.beginPath(); L.moveTo(x + Math.cos(ang) * (R() + 6), y + Math.sin(ang) * (R() + 6)); L.lineTo(x + Math.cos(ang) * (R() + 70), y + Math.sin(ang) * (R() + 70)); L.stroke(); }
       // found: a ring and a sparkle, then the next one (or the end)
+      if (reveal) { if (now - reveal > 2600) { done = true; stop(); keyAct = null; L.clearRect(0, 0, FW, FH); hint(''); res(); } return; }
       held = near(pos, at, a.r) ? held + dt : 0;
       if (now - t0 > 9000 && Math.random() < 0.06) burst(at[0], at[1], 2, 50); // a little help after a while
       if (held > 380) {
         sfx('found'); burst(at[0], at[1], 46); ring(at); held = 0; t0 = now;
-        if (++n >= a.ats.length) { done = true; stop(); keyAct = null; L.clearRect(0, 0, FW, FH); hint(''); res(); }
+        if (++n >= a.ats.length) { if (kind === 'scope') { reveal = now; pos = [...at]; sfx('sparkle'); return; } done = true; stop(); keyAct = null; L.clearRect(0, 0, FW, FH); hint(''); res(); }
       }
     };
     requestAnimationFrame(draw);
@@ -226,6 +235,7 @@ function altButton(label) { const b = document.createElement('button'); b.classN
 // ---------------------------------------------------------------- the tools
 const acts = {
   binocs: (a) => lensTool('binocs', a),
+  scope: (a) => lensTool('scope', a),
   loupe: (a) => lensTool('loupe', a),
   // touch each spot once (the pebble)
   taps: (a) => new Promise((res) => {
@@ -309,23 +319,28 @@ const acts = {
     // laptop: the space bar draws a curved route around the Sun, the way real rockets go
     keyAct = (e, down) => { if (down && e.key === ' ' && !flying) { pts = []; for (let i = 0; i <= 40; i++) { const u = i / 40; pts.push([a.earth[0] + (a.mars[0] - a.earth[0]) * u + Math.sin(u * Math.PI) * 0.32, a.earth[1] + (a.mars[1] - a.earth[1]) * u + Math.sin(u * Math.PI) * 0.02]); } fly(); return true; } };
   }),
-  // the landing on Mars: the air is too thin for parachutes, so the lander brakes with its rockets. Press (finger,
-  // mouse button or space bar) to fire them, let go to fall; touch down slowly or bounce and try again. The gauge
-  // next to the lander turns green when the speed is safe. After a miss the next try is a little easier.
+  // the landing on Mars, the way real landers do it: the lander comes down under its parachute, but the air is too
+  // thin for the parachute alone (it still lands too fast). The first press lets the parachute go and lights the
+  // braking rockets. Press (finger, mouse button or space bar) to fire them, let go to fall; touch down slowly or
+  // bounce and try again. The gauge next to the lander turns green when the speed is safe. After a miss the next try
+  // is a little easier.
   retro: (a) => new Promise(async (res) => {
-    const cap = await img('art/capsule.png'); const g0 = gen;
-    let y, v, held = false, last, phase = 'fly', tries = 0, landT = 0, src = null, srcT = 0; const parts = [];
-    const reset = () => { y = -0.1; v = 0.16; phase = 'fly'; last = performance.now(); hint(T.retro); };
+    const [cap, chute] = await Promise.all([img('art/capsule.png'), img('art/chute.png')]); const g0 = gen;
+    let y, v, held = false, last, phase = 'fly', tries = 0, landT = 0, src = null, srcT = 0, ch0; const parts = [];
+    const reset = () => { y = -0.02; v = 0.16; phase = 'fly'; last = performance.now(); ch0 = { on: 1, x: 0, y: 0, vx: 0, vy: 0, r: 0, a: 1 }; hint(T.retro); };
     const SAFE = () => 0.11 + tries * 0.03, cw = () => FW * 0.26;
-    const on = (h) => { held = h; if (h && phase === 'fly') { buzz(30); } };
+    const on = (h) => { held = h; if (h && phase === 'fly') { buzz(30); if (ch0.on === 1 && y > 0.46) { ch0.on = 0; ch0.vx = 90; ch0.vy = -260; sfx('whoosh', 0.7); } } };
     const stop = drag({ down: () => on(true), up: () => on(false) });
     const alt = altButton(T.retroBtn); alt.onpointerdown = (e) => { e.stopPropagation(); on(true); }; alt.onpointerup = alt.onpointerleave = alt.onpointercancel = () => on(false);
     keyAct = (e, down) => { if (e.key === ' ' || e.key === 'ArrowUp') { on(down); return true; } };
     reset();
     const frame = async (now) => {
       if (gen !== g0) { src?.stop?.(); return; } const dt = Math.min(0.05, (now - last) / 1000); last = now;
-      const thrust = held && phase === 'fly'; window.__dbg = { y, v, phase };
-      if (phase === 'fly') { v += (thrust ? -0.32 : 0.14) * dt; v = Math.max(-0.05, Math.min(0.4, v)); y += v * dt; }
+      const thrust = held && phase === 'fly' && ch0.on === 0; // the rockets light once the parachute is gone
+      window.__dbg = { y, v, phase }; // read by the automated landing test
+      // under the parachute the fall is slower, but never slow enough: v settles at 0.16, above the safe speed. The
+      // parachute can only be let go once the lander is well in view, so the child always sees it open.
+      if (phase === 'fly') { if (ch0.on === 1 && held && y > 0.46) on(true); if (ch0.on === 1) v += (0.16 - v) * dt * 2; else v += (thrust ? -0.32 : 0.14) * dt; v = Math.max(-0.05, Math.min(0.4, v)); y += v * dt; }
       if (thrust && now - srcT > 2600) { srcT = now; src = sfx('thrust', 0.8); } if (!thrust && src) { try { src.stop(); } catch {} src = null; srcT = 0; }
       L.clearRect(0, 0, FW, FH);
       const ch = cw() * cap.height / cap.width, cx = a.x * FW, cy = y * FH, gy = a.ground * FH;
@@ -336,6 +351,14 @@ const acts = {
       }
       for (const p of parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 30 * dt; p.life -= dt * 0.9; L.fillStyle = `rgba(196,98,58,${Math.max(0, p.life) * 0.6})`; L.beginPath(); L.arc(p.x, p.y, p.s * (1.6 - p.life), 0, 7); L.fill(); }
       for (let i = parts.length - 1; i >= 0; i--) if (parts[i].life <= 0) parts.splice(i, 1);
+      // the parachute: open above the lander with its lines, then cut free, it flies up and away
+      { const pw = cw() * 1.1, ph = pw * chute.height / chute.width, sway = Math.sin(now / 500) * 0.05;
+        if (ch0.on === 0) { ch0.x += ch0.vx * dt; ch0.y += ch0.vy * dt; ch0.vy += 60 * dt; ch0.r += dt * 0.6; ch0.a = Math.max(0, ch0.a - dt * 0.7); }
+        if (ch0.a > 0) {
+          // the picture's lines meet at its bottom point, which hangs from the ring on top of the lander
+          const px = cx + ch0.x, py = cy - ch * 0.47 + ch0.y; L.globalAlpha = ch0.a;
+          L.save(); L.translate(px, py); L.rotate(sway + ch0.r); L.drawImage(chute, -pw / 2, -ph, pw, ph); L.restore(); L.globalAlpha = 1;
+        } }
       L.save(); L.translate(cx, cy); L.drawImage(cap, -cw() / 2, -ch / 2, cw(), ch); L.restore();
       // the speed gauge: a bar beside the lander, green when slow enough to land
       if (phase === 'fly') {
@@ -352,7 +375,7 @@ const acts = {
         } else {
           phase = 'bounce'; tries++; sfx('bonk'); shake(); buzz(120); meter(null); hint('');
           for (let i = 0; i < 30; i++) parts.push({ x: cx + (Math.random() - 0.5) * cw(), y: gy, vx: (Math.random() - 0.5) * 340, vy: -60 - Math.random() * 160, life: 1, s: 7 });
-          $('layer').classList.remove('dim'); await say({ id: 'r5w', cap: 1 }); if (gen !== g0) return; $('layer').classList.add('dim'); reset();
+          await say({ id: 'r5w', cap: 1 }); if (gen !== g0) return; reset();
         }
       }
       if (phase === 'landed' && now - landT > 1800) { stop(); keyAct = null; alt.remove(); L.clearRect(0, 0, FW, FH); swapLanded(); res(); return; }
@@ -400,7 +423,7 @@ const acts = {
       for (let i = rocks.length - 1; i >= 0; i--) if (rocks[i].z < 0.45) rocks.splice(i, 1);
       // the rover from behind, rocking on the bumps, red dust curling up behind its wheels
       hop = Math.max(0, hop - dt * 1.8);
-      const w = FW * 0.56, h = w * rv.height / rv.width, cx = FW / 2 + rx * FW * 0.3, cy = FH * 0.84 - h / 2 + Math.sin(now / 70) * 1.5 - Math.sin(hop * Math.PI) * FH * 0.07;
+      const w = FW * 0.46, h = w * rv.height / rv.width, cx = FW / 2 + rx * FW * 0.3, cy = FH * 0.84 - h / 2 + Math.sin(now / 70) * 1.5 - Math.sin(hop * Math.PI) * FH * 0.07;
       if (Math.random() < 0.6) for (const s of [-0.38, 0.38]) puffs.push({ x: s * w, y: h * 0.45, vx: s * 60 + (Math.random() - 0.5) * 40, vy: -20 - Math.random() * 40, life: 1 });
       for (const p of puffs) { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt * 1.3; if (p.life <= 0) continue; L.fillStyle = `rgba(200,110,70,${p.life * 0.45})`; L.beginPath(); L.arc(cx + p.x, cy + p.y, 10 * (1.5 - p.life), 0, 7); L.fill(); }
       for (let i = puffs.length - 1; i >= 0; i--) if (puffs[i].life <= 0) puffs.splice(i, 1);
@@ -457,24 +480,51 @@ const acts = {
     const stop = drag({ down: (p) => (lastY = p[1]), move: (p, down) => { if (!down || lastY == null) return; grow((lastY - p[1]) * 1.6); lastY = p[1]; }, up: () => (lastY = null) });
     keyAct = (e, down) => { if (down && ['ArrowUp', ' '].includes(e.key)) { grow(0.07); return true; } };
   }),
-  // the sunset: drag the Sun down to the horizon; the dusty sky darkens and a blue glow grows around the Sun
-  sunset: (a) => new Promise((res) => {
-    hint(T.sunset); const g0 = gen; let y = a.top, lastY = null, done = false;
-    const draw = () => {
-      const k = (y - a.top) / (a.horizon - a.top), sx = a.x * FW, sy = y * FH, r = FW * 0.035;
+  // the sunset: the child brings the Sun down with a finger (mouse, down arrow or space bar too). As it sinks, the
+  // afternoon melts into the painted dusk (a second painting of the same scene), the Sun turns cold white and the
+  // blue glow of a real Martian sunset spreads around it, fine dust drifts in the light and the first stars come
+  // out. At the horizon the glow pulses and the dusk painting stays.
+  sunset: (a) => new Promise(async (res) => {
+    hint(T.sunset); const dusk = await img(`art/${a.after}.jpg`); const g0 = gen;
+    let y = a.top, goal = a.top, lastY = null, done = false, endT = 0, last = performance.now(), lastS = 0;
+    const stars = Array.from({ length: 46 }, () => ({ x: Math.random(), y: Math.random() * 0.42, r: 0.6 + Math.random() * 1.6, p: Math.random() * 6.28, k: 0.55 + Math.random() * 0.4 }));
+    const motes = Array.from({ length: 60 }, () => ({ x: Math.random(), y: 0.2 + Math.random() * 0.6, v: 0.004 + Math.random() * 0.012, r: 0.8 + Math.random() * 1.8 }));
+    const ease = (t) => t * t * (3 - 2 * t);
+    const frame = (now) => {
+      if (gen !== g0) return; const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      y += (goal - y) * Math.min(1, dt * 8);
+      const k = Math.max(0, Math.min(1, (y - a.top) / (a.horizon - a.top))), e = ease(k), sx = a.x * FW, sy = y * FH, r = FW * (0.04 - k * 0.012);
       L.clearRect(0, 0, FW, FH);
-      L.save(); L.beginPath(); L.rect(0, 0, FW, a.horizon * FH); L.clip();
-      L.fillStyle = `rgba(60,40,45,${k * 0.55})`; L.fillRect(0, 0, FW, FH); // the sky dims
-      const blue = L.createRadialGradient(sx, sy, r, sx, sy, FW * (0.12 + k * 0.32)); blue.addColorStop(0, `rgba(150,200,255,${0.25 + k * 0.6})`); blue.addColorStop(0.5, `rgba(110,160,235,${k * 0.4})`); blue.addColorStop(1, 'rgba(90,140,220,0)');
-      L.fillStyle = blue; L.beginPath(); L.arc(sx, sy, FW * 0.5, 0, 7); L.fill();
-      const sun = L.createRadialGradient(sx, sy, 0, sx, sy, r * 1.6); sun.addColorStop(0, '#fffdf2'); sun.addColorStop(0.6, k > 0.6 ? '#e6f0ff' : '#fff3cc'); sun.addColorStop(1, 'rgba(255,255,255,0)');
-      L.fillStyle = sun; L.beginPath(); L.arc(sx, sy, r * 1.6, 0, 7); L.fill(); L.restore();
-      L.fillStyle = `rgba(20,10,20,${k * 0.35})`; L.fillRect(0, a.horizon * FH, FW, FH); // the ground in the dusk
+      // the dusk painting comes through as the Sun goes down
+      L.globalAlpha = Math.pow(e, 1.3); L.drawImage(dusk, 0, 0, FW, FH); L.globalAlpha = 1;
+      // the first stars, high in the sky, twinkling
+      if (k > 0.55) for (const s of stars) { const al = Math.min(1, (k - s.k) / 0.25) * (0.6 + Math.sin(now / 400 + s.p) * 0.4); if (al <= 0) continue; L.fillStyle = `rgba(235,240,255,${al})`; L.beginPath(); L.arc(s.x * FW, s.y * FH, s.r, 0, 7); L.fill(); }
+      L.save(); L.beginPath(); L.rect(0, 0, FW, (a.ground ?? a.horizon) * FH); L.clip(); // nothing shines in front of the ground
+      // the glow: warm and wide while the Sun is high, then a cold blue halo that tightens and brightens near the horizon
+      const warm = L.createRadialGradient(sx, sy, r, sx, sy, FW * 0.45); warm.addColorStop(0, `rgba(255,235,190,${0.5 * (1 - e)})`); warm.addColorStop(1, 'rgba(255,200,140,0)');
+      L.fillStyle = warm; L.fillRect(0, 0, FW, FH);
+      const pulse = endT ? 1 + Math.sin((now - endT) / 260) * 0.08 : 1, bw = FW * (0.1 + e * 0.34) * pulse;
+      const blue = L.createRadialGradient(sx, sy, r * 0.8, sx, sy, bw); blue.addColorStop(0, `rgba(210,235,255,${0.2 + e * 0.75})`); blue.addColorStop(0.35, `rgba(120,175,245,${e * 0.55})`); blue.addColorStop(1, 'rgba(70,120,210,0)');
+      L.fillStyle = blue; L.beginPath(); L.arc(sx, sy, bw, 0, 7); L.fill();
+      // soft rays turning slowly around the Sun
+      L.save(); L.translate(sx, sy); L.rotate(now / 9000); L.globalAlpha = 0.12 + e * 0.12;
+      for (let i = 0; i < 10; i++) { L.rotate(Math.PI / 5); const g = L.createLinearGradient(0, 0, bw * 1.2, 0); g.addColorStop(0, e > 0.5 ? 'rgba(200,225,255,0.9)' : 'rgba(255,240,210,0.9)'); g.addColorStop(1, 'rgba(255,255,255,0)'); L.fillStyle = g; L.beginPath(); L.moveTo(0, 0); L.lineTo(bw * 1.2, -bw * 0.05); L.lineTo(bw * 1.2, bw * 0.05); L.closePath(); L.fill(); }
+      L.restore();
+      // the Sun itself, smaller on Mars than from the Earth, warm white turning cold white
+      const sun = L.createRadialGradient(sx, sy, 0, sx, sy, r * 1.5); sun.addColorStop(0, '#ffffff'); sun.addColorStop(0.55, e > 0.5 ? '#eaf3ff' : '#fff4d6'); sun.addColorStop(1, 'rgba(255,255,255,0)');
+      L.fillStyle = sun; L.beginPath(); L.arc(sx, sy, r * 1.5, 0, 7); L.fill(); L.restore();
+      // fine dust drifting through the light, glinting blue near the Sun at dusk
+      for (const m of motes) { m.x += m.v * dt; if (m.x > 1.02) m.x = -0.02; const d = Math.hypot((m.x - a.x) * FW, (m.y - y) * FH) / FW, gl = Math.max(0, 1 - d * 3); L.fillStyle = `rgba(${Math.round(255 - e * gl * 90)},${Math.round(220 + e * gl * 20)},${Math.round(190 + e * gl * 65)},${0.15 + gl * 0.5})`; L.beginPath(); L.arc(m.x * FW, m.y * FH + Math.sin(now / 900 + m.r * 9) * 3, m.r, 0, 7); L.fill(); }
+      if (!done && k >= 0.985) {
+        done = true; endT = now; stop(); keyAct = null; hint(''); sfx('chime'); buzz([40, 60, 120]); burst(a.x, a.horizon - 0.02, 50, 200); word(lang === 'fr' ? 'Bleu !' : 'Blue!', [0.42, 0.3]);
+        setTimeout(() => { if (gen !== g0) return; swapArt(a.after); setTimeout(() => { L.clearRect(0, 0, FW, FH); }, 900); res(); }, 2200);
+      }
+      if (!done || now - endT < 2400) requestAnimationFrame(frame);
     };
-    const move = (d) => { if (done) return; y = Math.max(a.top, Math.min(a.horizon + 0.01, y + d)); draw(); if (Math.random() < 0.2) burst(a.x, y, 2, 210); if (y >= a.horizon - 0.005) { done = true; stop(); keyAct = null; sfx('chime'); hint(''); setTimeout(() => { if (gen === g0) res(); }, 900); } };
-    draw();
+    const move = (d) => { if (done) return; goal = Math.max(a.top, Math.min(a.horizon, goal + d)); const now = performance.now(); if (d > 0 && now - lastS > 900) { lastS = now; sfx('gust', 0.35); } };
+    requestAnimationFrame(frame);
     const stop = drag({ down: (p) => (lastY = p[1]), move: (p, down) => { if (!down || lastY == null) return; move(p[1] - lastY); lastY = p[1]; }, up: () => (lastY = null) });
-    keyAct = (e, down) => { if (down && ['ArrowDown', ' '].includes(e.key)) { move(0.04); return true; } };
+    keyAct = (e, down) => { if (down && ['ArrowDown', ' '].includes(e.key)) { move(0.05); return true; } };
   }),
   // the photo: a viewfinder over the picture; touch the camera button (or anywhere, or the space bar): a flash, the
   // shutter, and the photo pops out as a printed picture that stays in the corner
@@ -527,8 +577,7 @@ async function show(i, back = false) {
   if (p.sfx) { sfx(p.sfx); await sleep(1200); if (gone()) return; } // the panel's own sound first, then the story
   const early = p.act?.pre ? acts[p.act.kind](p.act) : null; // some scenes start moving while the narrator speaks
   for (const ln of p.lines) { await say(ln); if (gone()) return; }
-  // during a game the narration box steps back, so nothing the child needs hides behind it
-  if (p.act) { if (p.act.kind !== 'choice') $('layer').classList.add('dim'); await (early || acts[p.act.kind](p.act)); $('layer').classList.remove('dim'); if (gone()) return; for (const ln of p.act.then || []) { if (ln.sfx) { sfx(ln.sfx); await sleep(900); } await say(ln); if (gone()) return; } }
+  if (p.act) { await (early || acts[p.act.kind](p.act)); if (gone()) return; for (const ln of p.act.then || []) { if (ln.sfx) { sfx(ln.sfx); await sleep(900); } await say(ln); if (gone()) return; } }
   busy = false; $('next').classList.add('on');
   if (i === PANELS.length - 1) setTimeout(end, 1800);
 }
