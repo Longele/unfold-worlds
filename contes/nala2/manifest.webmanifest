@@ -1,0 +1,17 @@
+{
+ "name": "Nala et la planète rouge",
+ "short_name": "Nala 2",
+ "start_url": "./",
+ "scope": "./",
+ "display": "fullscreen",
+ "orientation": "portrait",
+ "background_color": "#3a1a12",
+ "theme_color": "#3a1a12",
+ "icons": [
+  {
+   "src": "../../icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  }
+ ]
+}
