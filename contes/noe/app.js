@@ -74,6 +74,7 @@ function tail(el, t) {
   const bx = cx + ux * edge, by = cy + uy * edge, tip = Math.min(len - edge - 12, 70), px = bx + ux * tip, py = by + uy * tip, w = 13;
   const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('class', 'tail'); s.setAttribute('viewBox', `0 0 ${P.width} ${P.height}`);
   s.innerHTML = `<path d="M${bx - uy * w},${by + ux * w} Q${(bx + px) / 2 + uy * 4},${(by + py) / 2 - ux * 4} ${px},${py} Q${(bx + px) / 2 - uy * 2},${(by + py) / 2 + ux * 2} ${bx + uy * w},${by - ux * w} Z"/>`;
+  if (el.parentNode !== $('layer')) return; // the bubble left before its tail was drawn
   $('layer').insertBefore(s, el); el._tail = s;
 }
 // the last line read on this panel, so the child can hear an instruction again
@@ -110,13 +111,23 @@ async function replay() {
 }
 let replaying = false;
 $('replay').onclick = (e) => { e.stopPropagation(); replay(); };
+function clearTexts() { for (const el of $('layer').querySelectorAll('.cap, .bubble, .tail')) { el.classList.add('gone'); setTimeout(() => el.remove(), 450); } } // when a game starts, the texts already read fly away so they never hide it
 function clearLayer() { $('layer').innerHTML = ''; $('spots').innerHTML = ''; }
 
 // ---------------------------------------------------------------- effects: sparkles, rain and the push of the water
 const fx = $('fx'), g = fx.getContext('2d'), lens = $('lens'), L = lens.getContext('2d'); let FW = 0, FH = 0; const sparks = [], drops = [];
 let rainLevel = 0, lift = 0; // how hard it rains (0 to 1); how strongly the water pushes the ark back up (0 to 1)
 // the layout size of the panel, not the box of a page still turning in 3D
-function fitFx() { const d = Math.min(devicePixelRatio || 1, 2); FW = $('panel').clientWidth; FH = $('panel').clientHeight; for (const [c, k] of [[fx, g], [lens, L]]) { c.width = FW * d; c.height = FH * d; k.setTransform(d, 0, 0, d, 0, 0); } }
+// the panel takes the height left on the screen once the hint, the key tip and the buttons are in, never more
+// than its own shape allows in the width; measured, because phones differ in bars, notches and fonts
+function fitPanel() {
+  const pg = $('page'), pn = $('panel'), cs = getComputedStyle(pg), gap = parseFloat(cs.rowGap) || 10;
+  let used = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + 14; // 14: the panel's white edge and shadow
+  for (const el of pg.children) { if (el === pn) continue; const s = getComputedStyle(el); if (s.display === 'none' || s.position === 'absolute') continue; used += el.offsetHeight + gap; }
+  const [w, h] = (pn.style.aspectRatio || '1000 / 1778').split('/').map(Number), maxW = pg.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 22;
+  pn.style.height = Math.max(200, Math.min(pg.clientHeight - used, maxW * h / w)) + 'px';
+}
+function fitFx() { fitPanel(); const d = Math.min(devicePixelRatio || 1, 2); FW = $('panel').clientWidth; FH = $('panel').clientHeight; for (const [c, k] of [[fx, g], [lens, L]]) { c.width = FW * d; c.height = FH * d; k.setTransform(d, 0, 0, d, 0, 0); } }
 function burst(x, y, n = 26, hue = 45) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, v = 1 + Math.random() * 3.5; sparks.push({ x: x * FW, y: y * FH, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 1, life: 1, hue: hue + Math.random() * 30 }); } }
 function drawFx() {
   requestAnimationFrame(drawFx); g.clearRect(0, 0, FW, FH);
@@ -357,7 +368,7 @@ async function show(i, back = false) {
   await sleep(450); if (gone()) return;
   if (p.sfx) { sfx(p.sfx); await sleep(1200); if (gone()) return; } // the panel's own sound first, then the story
   for (const ln of p.lines) { await say(ln); if (gone()) return; }
-  if (p.act) { await acts[p.act.kind](p.act); if (gone()) return; for (const ln of p.act.then || []) { await say(ln); if (gone()) return; } }
+  if (p.act) { clearTexts(); await acts[p.act.kind](p.act); if (gone()) return; for (const ln of p.act.then || []) { await say(ln); if (gone()) return; } }
   busy = false; $('next').classList.add('on');
   if (i === PANELS.length - 1) setTimeout(end, 1800);
 }
@@ -394,5 +405,6 @@ $('readMe').onclick = () => start('voice');
 $('readSelf').onclick = () => start('self');
 $('again').onclick = () => { $('endcard').classList.remove('on'); show(0); };
 addEventListener('resize', () => { if (idx >= 0) fitFx(); });
+visualViewport?.addEventListener('resize', () => { if (idx >= 0) fitFx(); }); // the phone's address bar coming and going
 document.addEventListener('visibilitychange', () => { if (document.hidden) { music.pause(); amb.pause(); voice.pause(); } else if (idx >= 0) { music.play().catch(() => {}); amb.play().catch(() => {}); } });
 window.__noe = { get idx() { return idx; }, get busy() { return busy; }, next, show };

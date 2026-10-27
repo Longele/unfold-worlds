@@ -113,3 +113,19 @@ button, a { font: inherit; color: inherit; background: none; border: 0; text-dec
 .iostip button { flex: none; padding: 6px 12px; border-radius: 999px; border: 2px solid var(--ink); background: var(--paper); color: var(--ink); font-weight: 700; }
 /* the reading page always fills the visible screen, browser bars or not */
 .page { height: 100dvh; }
+
+/* the buttons always fit under the panel, whatever the screen: the panel's height is measured in app.js, the hint
+   keeps room for two lines, the dots shrink first, the progress bar sits in its own space at the very bottom */
+.panel { flex: none; }
+.hint { min-height: 0; height: 2.5em; line-height: 1.25; display: flex; align-items: center; justify-content: center; font-size: clamp(15px, 4.4vw, 19px); padding: 0 6px; }
+.page { padding-bottom: calc(max(10px, env(safe-area-inset-bottom)) + 22px); }
+.meter { bottom: calc(max(4px, env(safe-area-inset-bottom)) + 2px); height: 12px; }
+.foot { gap: 8px; }
+.foot > * { flex: none; }
+.dots { flex: 1 1 auto; min-width: 0; gap: 4px; overflow: hidden; } .dots i { flex: 0 1 7px; min-width: 3px; }
+.next { width: 60px; height: 60px; opacity: .55; font-size: 28px; }
+.next.on { opacity: 1; box-shadow: 3px 3px 0 var(--ink), 0 0 0 6px rgba(255, 201, 74, .35), 0 0 22px rgba(255, 201, 74, .8); }
+
+/* when a game starts, the texts already read fly up and away so they never hide the game */
+.cap.gone, .bubble.gone, .tail.gone { opacity: 0; transform: translateY(-40px); transition: opacity .35s, transform .35s; pointer-events: none; }
+.bubble.gone { transform: translate(-50%, -40px); }
