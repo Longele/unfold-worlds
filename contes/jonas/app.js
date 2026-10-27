@@ -4,7 +4,7 @@
 // rows, calms the sea, steers the great fish, counts the three nights, tickles the fish, walks across Nineveh, shouts
 // with him (microphone or a button), dresses the king, grows the plant, finds the worm and lights up the city.
 // Every phone gesture has a mouse or keyboard twin, and the microphone always has a button to fall back on.
-import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610271400';
+import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610271800';
 
 import { goFull, keepFull, iosTip } from '../fs.js?v=202610270300';
 const $ = (id) => document.getElementById(id);
@@ -432,23 +432,44 @@ const acts = {
     const stop = drag({ down: brush, move: (p, down) => down && brush(p) });
     keyAct = (e, down) => { if (down && e.key === ' ') { const y = a.box[1] + Math.random() * (a.box[3] - a.box[1]); for (let x = 0; x <= 1; x += 0.08) brush([x, y]); return true; } };
   }),
-  // the great fish follows the finger (or the arrow keys) through the water; its mouth on Jonah: gulp!
+  // the great fish follows the finger (or the arrow keys) through the water, as if in 3D: it turns round in depth when
+  // it changes direction, tilts its nose up and down, grows a little when it comes closer, swishes its tail faster the
+  // faster it swims and leaves a trail of bubbles; touched, it wiggles. Its mouth on Jonah: it lunges, gulp!
   fish: (a) => new Promise(async (res) => {
-    hint(T.fish); const g0 = gen; const el = document.createElement('img'); el.src = 'art/fish.png'; el.className = 'fish'; el.style.width = '88%'; $('spots').append(el);
-    let pos = [...a.start], goal = [...a.start], face = 1, last = performance.now(), done = false, gone = 0, lastB = 0;
-    const stop = drag({ hover: true, down: (p) => (goal = p), move: (p) => (goal = p) });
-    keyAct = (e, down) => { if (!down) return; if (e.key === ' ') { goal = [a.at[0] - 0.38, a.at[1]]; return true; } const d = { ArrowLeft: [-0.06, 0], ArrowRight: [0.06, 0], ArrowUp: [0, -0.04], ArrowDown: [0, 0.04] }[e.key]; if (!d) return; goal = [Math.max(0, Math.min(1, goal[0] + d[0])), Math.max(0.1, Math.min(0.95, goal[1] + d[1]))]; return true; };
+    hint(T.fish); const g0 = gen;
+    const box = document.createElement('div'); box.className = 'fishbox'; $('spots').append(box);
+    const body = document.createElement('img'), tail = document.createElement('img'); body.src = tail.src = 'art/fish.png'; body.className = 'fbody'; tail.className = 'ftail'; box.append(tail, body);
+    let pos = [...a.start], goal = [...a.start], vel = [0, 0], face = 1, turn = 0, pitch = 0, wag = 0, last = performance.now(), done = false, gone = 0, lunge = 0, wiggle = 0, lastB = 0; const bub = [];
+    const stop = drag({ hover: true, down: (p) => { goal = p; if (Math.hypot(p[0] - pos[0], p[1] - pos[1]) < 0.2) { wiggle = 1; sfx('bloop', 0.6); } }, move: (p) => (goal = p) });
+    keyAct = (e, down) => { if (!down) return; if (e.key === ' ') { goal = [a.at[0] - 0.42, a.at[1]]; return true; } const d = { ArrowLeft: [-0.07, 0], ArrowRight: [0.07, 0], ArrowUp: [0, -0.05], ArrowDown: [0, 0.05] }[e.key]; if (!d) return; goal = [Math.max(-0.1, Math.min(1.1, goal[0] + d[0])), Math.max(0.12, Math.min(0.92, goal[1] + d[1]))]; return true; };
     const frame = (now) => {
       if (gen !== g0) return; const dt = Math.min(0.05, (now - last) / 1000); last = now;
-      if (gone) { pos[0] += dt * 0.5; el.style.opacity = String(Math.max(0, 1 - (now - gone) / 1500)); }
-      else { const dx = goal[0] - pos[0], dy = goal[1] - pos[1]; pos[0] += dx * Math.min(1, dt * 2.2); pos[1] += dy * Math.min(1, dt * 2.2); if (Math.abs(dx) > 0.02) face = dx > 0 ? 1 : -1; }
-      const bob = Math.sin(now / 400) * 0.008, mouth = [pos[0] + face * 0.38, pos[1] + 0.01];
-      el.style.left = pos[0] * 100 + '%'; el.style.top = (pos[1] + bob) * 100 + '%'; el.style.transform = `translate(-50%,-50%) scaleX(${face}) rotate(${Math.sin(now / 300) * 3}deg)`;
-      if (now - lastB > 300) { lastB = now; burst(pos[0] - face * 0.4, pos[1] - 0.03, 3, 190); }
-      if (!done && near(mouth, a.at, 0.11)) {
-        done = true; stop(); keyAct = null; hint(''); sfx('gulp'); buzz([60, 30, 120]); swapArt(a.after); burst(a.at[0], a.at[1], 50, 190); word(lang === 'fr' ? 'GLOUPS !' : 'GULP!', [a.at[0], a.at[1] - 0.15]);
-        setTimeout(() => { sfx('bubbles'); gone = performance.now(); face = 1; }, 900); setTimeout(() => { if (gen === g0) { el.remove(); res(); } }, 2600);
+      if (gone) goal = [pos[0] + 1, pos[1] - 0.05];
+      // a soft spring towards the finger, so it glides and overshoots a little, like swimming
+      const ax = (goal[0] - pos[0]) * 7 - vel[0] * 3.2, ay = (goal[1] - pos[1]) * 7 - vel[1] * 3.2;
+      vel[0] += ax * dt; vel[1] += ay * dt; pos[0] += vel[0] * dt; pos[1] += vel[1] * dt;
+      const sp = Math.hypot(vel[0], vel[1]);
+      if (Math.abs(vel[0]) > 0.05) face = vel[0] > 0 ? 1 : -1;
+      turn += ((face > 0 ? 0 : 180) - turn) * Math.min(1, dt * 7); // the turn in depth, through the side view
+      pitch += (Math.max(-28, Math.min(28, Math.atan2(vel[1], Math.abs(vel[0]) + 0.05) * 57)) - pitch) * Math.min(1, dt * 5);
+      wag += dt * (5 + sp * 22); wiggle = Math.max(0, wiggle - dt * 1.8); lunge = Math.max(0, lunge - dt * 2.5);
+      const depth = 0.9 + pos[1] * 0.25, stretch = 1 + Math.min(0.08, sp * 0.12) + lunge * 0.18, bob = Math.sin(now / 420) * 0.01;
+      const rz = pitch * (face > 0 ? 1 : -1) + Math.sin(now / 160) * wiggle * 9;
+      box.style.left = pos[0] * 100 + '%'; box.style.top = (pos[1] + bob) * 100 + '%';
+      box.style.transform = `translate(-50%,-50%) perspective(900px) rotateY(${turn.toFixed(1)}deg) rotateZ(${(face > 0 ? rz : -rz).toFixed(1)}deg) scale(${(depth * stretch).toFixed(3)}, ${(depth * (1 - lunge * 0.06)).toFixed(3)})`;
+      tail.style.transform = `perspective(500px) rotateY(${(Math.sin(wag) * (18 + sp * 30)).toFixed(1)}deg)`;
+      // bubbles from the gills, rising and wobbling
+      const mouthOff = 0.42 * depth, ang = pitch * Math.PI / 180, mouth = [pos[0] + face * mouthOff * Math.cos(ang), pos[1] + mouthOff * Math.sin(ang) * 0.56];
+      if (now - lastB > (sp > 0.2 ? 90 : 260)) { lastB = now; bub.push({ x: pos[0] + face * 0.18, y: pos[1] - 0.02, r: 2 + Math.random() * 5, t: now, s: Math.random() * 6 }); }
+      L.clearRect(0, 0, FW, FH); L.lineWidth = 1.5;
+      for (const b of bub) { const k = (now - b.t) / 1800; b.y -= dt * 0.08; const x = (b.x + Math.sin(now / 300 + b.s) * 0.01) * FW; L.strokeStyle = `rgba(235,250,255,${0.8 * (1 - k)})`; L.fillStyle = `rgba(255,255,255,${0.15 * (1 - k)})`; L.beginPath(); L.arc(x, b.y * FH, b.r, 0, 7); L.fill(); L.stroke(); L.fillStyle = `rgba(255,255,255,${0.7 * (1 - k)})`; L.beginPath(); L.arc(x - b.r * 0.35, b.y * FH - b.r * 0.35, b.r * 0.3, 0, 7); L.fill(); }
+      for (let i = bub.length - 1; i >= 0; i--) if (now - bub[i].t > 1800) bub.splice(i, 1);
+      if (!done && (near(mouth, a.at, 0.15) || near([pos[0] + face * 0.3 * depth, pos[1]], a.at, 0.12))) { // the mouth, or the big head, on Jonah
+        done = true; stop(); keyAct = null; hint(''); lunge = 1; sfx('gulp'); buzz([60, 30, 120]); swapArt(a.after); burst(a.at[0], a.at[1], 50, 190); word(lang === 'fr' ? 'GLOUPS !' : 'GULP!', [a.at[0], a.at[1] - 0.18]);
+        setTimeout(() => { wiggle = 1; sfx('bubbles'); for (let i = 0; i < 14; i++) bub.push({ x: a.at[0] + (Math.random() - 0.5) * 0.1, y: a.at[1], r: 3 + Math.random() * 7, t: performance.now(), s: Math.random() * 6 }); }, 700);
+        setTimeout(() => { gone = performance.now(); }, 1400); setTimeout(() => { if (gen === g0) { box.remove(); L.clearRect(0, 0, FW, FH); res(); } }, 3200);
       }
+      if (gone) box.style.opacity = String(Math.max(0, 1 - (now - gone) / 1400));
       requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);
@@ -548,7 +569,7 @@ const acts = {
     const go = () => { if (t0) return; t0 = performance.now(); s.remove(); keyAct = null; hint(''); sfx('leap'); requestAnimationFrame(frame); };
     const frame = (now) => {
       if (gen !== g0) return; const k = Math.min(1, (now - t0) / 1800); L.clearRect(0, 0, FW, FH);
-      const x = (a.at[0] - 0.15 + k * 0.3) * FW, y = a.at[1] * FH - Math.sin(k * Math.PI) * FH * 0.22, w = FW * 0.62, h = w * fish.height / fish.width;
+      const x = (a.at[0] - 0.15 + k * 0.3) * FW, y = a.at[1] * FH - Math.sin(k * Math.PI) * FH * 0.22, w = FW * 0.75, h = w * fish.height / fish.width;
       L.save(); L.translate(x, y); L.rotate(-0.9 + k * 1.8); L.drawImage(fish, -w / 2, -h / 2, w, h); L.restore();
       if (k > 0.05 && k < 0.15) burst(a.at[0] - 0.12, a.at[1], 6, 195);
       if (k >= 1) { L.clearRect(0, 0, FW, FH); sfx('splash'); burst(a.at[0] + 0.15, a.at[1], 50, 195); word(a.word[lang], [0.45, 0.4]); setTimeout(() => { if (gen === g0) res(); }, 1400); return; }

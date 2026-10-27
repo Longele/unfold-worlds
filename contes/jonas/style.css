@@ -191,3 +191,8 @@ body.reading .ambient { opacity: 1; }
 .vign.on { box-shadow: inset 0 0 60px 18px rgba(220, 40, 30, .55); }
 .phase.count { font-size: clamp(30px, 9vw, 46px); color: var(--gold); }
 .choice { white-space: nowrap; max-width: none; }
+/* the great fish: its body and its tail are the same picture cut in two, so the tail can swish in depth */
+.fishbox { position: absolute; width: 100%; aspect-ratio: 900 / 398; pointer-events: none; z-index: 5; filter: drop-shadow(0 14px 14px rgba(0, 30, 50, .35)); will-change: transform; }
+.fishbox img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.fbody { clip-path: inset(0 0 0 26%); }
+.ftail { clip-path: inset(0 72% 0 0); transform-origin: 28% 50%; }
