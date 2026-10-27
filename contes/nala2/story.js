@@ -32,8 +32,10 @@ export const PANELS = [
     act: { kind: 'choice', opts: [{ at: [0.28, 0.2], fr: 'Un caillou rouge', en: 'A red pebble', go: 'm12p' }, { at: [0.68, 0.3], fr: 'Une photo', en: 'A photo', go: 'm12q' }] } },
   { id: 'm12p', img: 'm12p', amb: 'amb-mars', branch: 1, lines: [{ id: 'r12p', cap: 1 }],
     act: { kind: 'taps', hint: 'pebble', sfx: 'pick', r: 0.1, spots: [[0.44, 0.49]], word: { fr: 'HOP !', en: 'GOT IT!' }, hue: 10, then: [{ id: 'r12c', b: [0.42, 0.68], t: [0.82, 0.76] }] } },
-  { id: 'm12q', img: 'm12', amb: 'amb-mars', branch: 1, lines: [{ id: 'r12q', cap: 1 }],
-    act: { kind: 'photo', then: [{ id: 'r12c', b: [0.42, 0.2], t: [0.72, 0.36] }] } },
+  { id: 'm12q', img: 'm12q', amb: 'amb-mars', branch: 1, lines: [{ id: 'r12q', cap: 1 }],
+    // suit: where the child's own astronaut stands (feet x, y and height, fractions of the panel) and the visor
+    // ellipse inside the suit picture (centre and radii, fractions of the suit picture, printed by build_art.py)
+    act: { kind: 'photo', suit: { x: 0.81, y: 0.705, h: 0.37, visor: [0.535, 0.226, 0.342, 0.174] }, then: [{ id: 'r12c', b: [0.36, 0.2], t: [0.48, 0.38] }] } },
   { id: 'm13', img: 'm13', amb: 'amb-morning', sfx: 'yawn', lines: [{ id: 'r13a', cap: 1 }, { id: 'r13b', b: [0.62, 0.17], t: [0.86, 0.38] }, { id: 'r13c', b: [0.36, 0.28], t: [0.44, 0.48] }],
     act: { kind: 'taps', hint: 'pebble2', sfx: 'sparkle', r: 0.07, spots: [[0.215, 0.64]], word: { fr: 'Mars !', en: 'Mars!' }, hue: 10 } },
 ];

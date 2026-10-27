@@ -13,14 +13,14 @@ const store = { get: (k) => { try { return localStorage.getItem(k); } catch { re
 let lang = new URLSearchParams(location.search).get('lang') || store.get('contes-lang') || ((navigator.language || '').startsWith('fr') ? 'fr' : 'en');
 if (!['fr', 'en'].includes(lang)) lang = 'fr';
 const TT = {
-  fr: { readMe: 'Lis-moi l’histoire', readSelf: 'Je lis tout seul', again: 'Relire l’histoire', more: 'D’autres contes', end: 'Fin', kick: 'Une BD à vivre', back: '← Les contes', parents: 'Pour les parents : cette histoire peut utiliser le micro, pour crier et souffler. Rien n’est enregistré. Sans micro, un bouton fait la même chose.', keys: 'Espace ou → : suivant',
+  fr: { readMe: 'Lis-moi l’histoire', readSelf: 'Je lis tout seul', again: 'Relire l’histoire', more: 'D’autres contes', end: 'Fin', kick: 'Une BD à vivre', back: '← Les contes', parents: 'Pour les parents : cette histoire peut utiliser le micro, pour crier et souffler, et la caméra si vous le voulez, pour mettre l’enfant sur la photo souvenir. Rien n’est enregistré ni envoyé : la photo reste sur l’appareil. Sans micro, un bouton fait la même chose.', keys: 'Espace ou → : suivant',
     wheels: 'Glisse les roues sur le rover', vroom: 'VROUM !', binocs: 'Glisse les jumelles dans le ciel', scope: 'Glisse le télescope vers le point rouge', loupe: 'Glisse la loupe sur la poussière', shout: 'Crie « décollage ! »', shoutBtn: 'Appuie longtemps ici', trace: 'Trace la route avec ton doigt, de la Terre à Mars', tooHot: 'Trop chaud !', months: (n) => n === 1 ? '1 mois' : `${n} mois`,
     retro: 'Appuie pour freiner, lâche pour descendre', retroBtn: 'Appuie ici pour freiner', steer: 'Penche, glisse ou utilise les flèches', blow: 'Souffle sur les panneaux', blowBtn: 'ou frotte avec ton doigt', grow: 'Glisse vers le haut pour faire grandir le volcan', km: (v) => `${v.toFixed(1).replace('.', ',')} km`,
-    sunset: 'Fais descendre le soleil', choice: 'Choisis ton souvenir', pebble: 'Touche le caillou', photo: 'Touche le bouton pour prendre la photo', pebble2: 'Touche le caillou de Mars' },
-  en: { readMe: 'Read it to me', readSelf: 'I’ll read it myself', again: 'Read it again', more: 'More stories', end: 'The End', kick: 'A comic to live', back: '← Stories', parents: 'For parents: this story can use the microphone, to shout and to blow. Nothing is recorded. Without a microphone, a button does the same.', keys: 'Space or →: next',
+    sunset: 'Fais descendre le soleil', choice: 'Choisis ton souvenir', pebble: 'Touche le caillou', photo: 'Touche le bouton pour prendre la photo', meToo: 'Moi aussi sur la photo !', noCam: 'Pas de caméra, pas grave !', inHelmet: 'Mets ta tête dans le casque, puis touche le bouton rouge', save: 'Garder la photo', pebble2: 'Touche le caillou de Mars' },
+  en: { readMe: 'Read it to me', readSelf: 'I’ll read it myself', again: 'Read it again', more: 'More stories', end: 'The End', kick: 'A comic to live', back: '← Stories', parents: 'For parents: this story can use the microphone, to shout and to blow, and the camera if you wish, to put your child in the souvenir photo. Nothing is recorded or sent: the photo stays on the device. Without a microphone, a button does the same.', keys: 'Space or →: next',
     wheels: 'Slide the wheels onto the rover', vroom: 'VROOM!', binocs: 'Slide the binoculars across the sky', scope: 'Slide the telescope to the red dot', loupe: 'Slide the glass over the dust', shout: 'Shout “lift-off!”', shoutBtn: 'Press and hold here', trace: 'Draw the route with your finger, from the Earth to Mars', tooHot: 'Too hot!', months: (n) => n === 1 ? '1 month' : `${n} months`,
     retro: 'Press to brake, let go to go down', retroBtn: 'Press here to brake', steer: 'Tilt, slide or use the arrow keys', blow: 'Blow on the panels', blowBtn: 'or rub with your finger', grow: 'Slide up to make the volcano grow', km: (v) => `${v.toFixed(1)} km`,
-    sunset: 'Bring the sun down', choice: 'Choose your souvenir', pebble: 'Touch the pebble', photo: 'Touch the button to take the photo', pebble2: 'Touch the pebble from Mars' },
+    sunset: 'Bring the sun down', choice: 'Choose your souvenir', pebble: 'Touch the pebble', photo: 'Touch the button to take the photo', meToo: 'Me in the photo too!', noCam: 'No camera, never mind!', inHelmet: 'Put your face in the helmet, then touch the red button', save: 'Keep the photo', pebble2: 'Touch the pebble from Mars' },
 };
 let T = TT[lang];
 function applyLang() {
@@ -526,21 +526,73 @@ const acts = {
     const stop = drag({ down: (p) => (lastY = p[1]), move: (p, down) => { if (!down || lastY == null) return; move(p[1] - lastY); lastY = p[1]; }, up: () => (lastY = null) });
     keyAct = (e, down) => { if (down && ['ArrowDown', ' '].includes(e.key)) { move(0.05); return true; } };
   }),
-  // the photo: a viewfinder over the picture; touch the camera button (or anywhere, or the space bar): a flash, the
-  // shutter, and the photo pops out as a printed picture that stays in the corner
-  photo: (a) => new Promise((res) => {
-    hint(T.photo); const g0 = gen; let done = false;
+  // the photo: a viewfinder over the picture and a red shutter button (or the space bar). Where the device has a
+  // camera, a second button puts the child in the photo too: their face, live and mirrored, appears in the helmet of
+  // a space suit standing next to Nala and Bip, and the shutter then counts down 3, 2, 1. The camera stops the
+  // moment the photo is taken (or the page changes) and nothing leaves the device. Either way, the printed photo
+  // can be kept: shared to the photo library on a phone, downloaded on a computer.
+  photo: (a) => new Promise(async (res) => {
+    hint(T.photo); const g0 = gen; let done = false, stream = null, vid = null, counting = false;
+    const suit = await img('art/kid-suit.png'); const S = a.suit;
     const vf = document.createElement('div'); vf.className = 'viewfinder'; $('layer').append(vf);
     const b = document.createElement('button'); b.className = 'shutter'; b.setAttribute('aria-label', 'photo'); $('spots').append(b);
+    const stopCam = () => { stream?.getTracks().forEach((t) => t.stop()); stream = null; };
+    // the child in the suit: the face fills the visor, the painted helmet rim goes over its edge
+    const drawKid = (k, W, H) => {
+      const sh = S.h * H, sw = sh * suit.width / suit.height, sx = S.x * W - sw / 2, sy = S.y * H - sh;
+      const cx = sx + S.visor[0] * sw, cy = sy + S.visor[1] * sh, rx = S.visor[2] * sw, ry = S.visor[3] * sh;
+      if (vid?.videoWidth) {
+        const vw = vid.videoWidth, vh = vid.videoHeight, c = Math.min(vw, vh) * 0.7, d = Math.max(rx, ry) * 2.15;
+        k.save(); k.beginPath(); k.ellipse(cx, cy, rx * 1.03, ry * 1.03, 0, 0, 7); k.clip();
+        k.save(); k.translate(cx, cy); k.scale(-1, 1); k.drawImage(vid, (vw - c) / 2, (vh - c) / 2, c, c, -d / 2, -d / 2, d, d); k.restore();
+        const gl = k.createLinearGradient(cx - rx, cy - ry, cx + rx, cy + ry); gl.addColorStop(0, 'rgba(255,255,255,0.35)'); gl.addColorStop(0.35, 'rgba(255,255,255,0)'); gl.addColorStop(1, 'rgba(255,170,120,0.12)');
+        k.fillStyle = gl; k.fillRect(cx - rx, cy - ry, rx * 2, ry * 2); k.restore();
+      }
+      k.drawImage(suit, sx, sy, sw, sh);
+    };
+    const live = () => { if (gen !== g0) { stopCam(); return; } if (done || !vid) return; L.clearRect(0, 0, FW, FH); drawKid(L, FW, FH); requestAnimationFrame(live); };
+    // the camera button, only where there is a camera to use
+    let cam = null;
+    const devs = navigator.mediaDevices?.getUserMedia ? await navigator.mediaDevices.enumerateDevices().catch(() => []) : [];
+    if (gen !== g0) return;
+    const startCam = async () => {
+      if (!cam || cam.disabled) return; cam.disabled = true;
+      try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 720 } }, audio: false }); }
+      catch { cam.textContent = T.noCam; setTimeout(() => { cam?.remove(); cam = null; b.classList.remove('side'); }, 1800); return; }
+      if (gen !== g0 || done) { stopCam(); return; }
+      vid = document.createElement('video'); vid.muted = true; vid.playsInline = true; vid.srcObject = stream; await vid.play().catch(() => {});
+      cam.remove(); cam = null; b.classList.remove('side'); hint(T.inHelmet); sfx('pop'); burst(S.x, S.y - S.h * 0.75, 24, 40); live();
+    };
+    if (devs.some((d) => d.kind === 'videoinput')) {
+      cam = document.createElement('button'); cam.className = 'cambtn'; cam.textContent = T.meToo; $('spots').append(cam); b.classList.add('side');
+      cam.onpointerdown = (e) => { e.stopPropagation(); startCam(); };
+    }
     const shoot = () => {
-      if (done) return; done = true; stop(); keyAct = null; sfx('shutter'); buzz(40); vf.remove(); b.remove();
+      if (done) return; done = true; stop(); keyAct = null; sfx('shutter'); buzz(40); vf.remove(); b.remove(); cam?.remove();
+      // the photo: the panel at full size, with the child in the suit when the camera is on
+      const art = $('art'), c = document.createElement('canvas'); c.width = art.naturalWidth; c.height = art.naturalHeight; const k = c.getContext('2d');
+      k.drawImage(art, 0, 0); if (vid) drawKid(k, c.width, c.height); stopCam(); L.clearRect(0, 0, FW, FH);
+      const url = c.toDataURL('image/jpeg', 0.9); window.__photo = url.length; // read by the automated test
       const fl = document.createElement('div'); fl.className = 'flash'; $('layer').append(fl); setTimeout(() => fl.remove(), 700);
-      const pic = document.createElement('div'); pic.className = 'polaroid'; pic.innerHTML = `<img src="${$('art').src}" alt="">`; $('layer').append(pic);
+      const pic = document.createElement('div'); pic.className = 'polaroid'; pic.innerHTML = `<img src="${url}" alt="">`;
+      const sv = document.createElement('button'); sv.className = 'save'; sv.textContent = T.save; pic.append(sv);
+      sv.onpointerdown = async (e) => {
+        e.stopPropagation(); sfx('tap'); const name = lang === 'fr' ? 'nala-sur-mars.jpg' : 'nala-on-mars.jpg';
+        // on a phone the share sheet offers "save image"; on a computer the photo is downloaded
+        if (matchMedia('(pointer: coarse)').matches) { try { const f = new File([await (await fetch(url)).blob()], name, { type: 'image/jpeg' }); if (navigator.canShare?.({ files: [f] })) { await navigator.share({ files: [f] }); return; } } catch (er) { if (er.name === 'AbortError') return; } }
+        const l = document.createElement('a'); l.href = url; l.download = name; document.body.append(l); l.click(); l.remove();
+      };
+      $('layer').append(pic);
       requestAnimationFrame(() => pic.classList.add('in')); hint(''); setTimeout(() => { if (gen === g0) res(); }, 1500);
     };
-    b.onpointerdown = (e) => { e.stopPropagation(); shoot(); };
-    const stop = drag({ down: shoot });
-    keyAct = (e, down) => { if (down && e.key === ' ') { shoot(); return true; } };
+    // with the camera on, a 3, 2, 1 countdown gives the child time to smile
+    const press = () => {
+      if (done || counting) return; if (!vid) return shoot(); counting = true; let n = 3;
+      const tick = () => { if (gen !== g0) { stopCam(); return; } if (n === 0) return shoot(); word(String(n), [0.5, 0.45]); sfx('tap'); n--; setTimeout(tick, 900); }; tick();
+    };
+    b.onpointerdown = (e) => { e.stopPropagation(); press(); };
+    const stop = drag({ down: () => { if (!cam) press(); } });
+    keyAct = (e, down) => { if (!down) return; if (e.key === ' ') { press(); return true; } if (e.key === 'c' || e.key === 'C') { startCam(); return true; } };
   }),
   choice: (a) => new Promise((res) => {
     hint(T.choice);
