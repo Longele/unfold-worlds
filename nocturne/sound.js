@@ -139,10 +139,10 @@ export class Sound {
     const c = this.ctx, src = c.createBufferSource(); src.buffer = b;
     src.connect(this.voiceBus);
     const t = c.currentTime + 0.05;
-    this.ambBus.gain.setTargetAtTime(this.rainOn ? 0.28 : 0, t, 0.4);
+    this.ambBus.gain.setTargetAtTime(this.rainOn ? 0.14 : 0, t, 0.4);
     return new Promise((res) => {
       this.cur = { src, res };
-      src.onended = () => { if (this.cur?.src === src) { this.cur = null; this.ambBus.gain.setTargetAtTime(this.rainOn ? 0.55 : 0, c.currentTime, 0.8); } res(); };
+      src.onended = () => { if (this.cur?.src === src) { this.cur = null; this.ambBus.gain.setTargetAtTime(this.rainOn ? 0.3 : 0, c.currentTime, 0.8); } res(); };
       src.start(t);
     });
   }
@@ -158,7 +158,7 @@ export class Sound {
       s.connect(this.ambBus); s.start(t, 0.06); this.rainSrc = s;
     }
     this.ambBus.gain.cancelScheduledValues(t);
-    this.ambBus.gain.setTargetAtTime(on ? (this.cur ? 0.28 : 0.55) : 0, t, on ? 1.2 : 0.5);
+    this.ambBus.gain.setTargetAtTime(on ? (this.cur ? 0.14 : 0.3) : 0, t, on ? 1.2 : 0.5);
   }
 
   // a soft bell for "well done": two partials, no sample needed

@@ -431,7 +431,7 @@ async function begin(which) {
   started = true;
   document.body.classList.add('in');
   piano.setView('play');
-  sound.rain(store.get('nocturne-rain') !== '0'); $('b-rain').classList.toggle('on', sound.rainOn);
+  sound.rain(store.get('nocturne-rain2') === '1'); $('b-rain').classList.toggle('on', sound.rainOn);
   await sound.loadLines(lang, IDS);
   if (small && portrait()) await rotateGate();
   if (which === 'lesson') toLesson(); else toFree(false);
@@ -494,7 +494,7 @@ on('b-notes', () => {
   $('b-notes').classList.toggle('on', labelMode !== 'none'); toast(T[lang].labels[labelMode]);
 });
 on('b-pedal', () => { pedalLatched = !pedalLatched; setPedal(pedalLatched); });
-on('b-rain', () => { sound.rain(!sound.rainOn); store.set('nocturne-rain', sound.rainOn ? '1' : '0'); $('b-rain').classList.toggle('on', sound.rainOn); });
+on('b-rain', () => { sound.rain(!sound.rainOn); store.set('nocturne-rain2', sound.rainOn ? '1' : '0'); $('b-rain').classList.toggle('on', sound.rainOn); });
 if (navigator.requestMIDIAccess) {
   on('b-midi', () => midi());
   on('midi-hint', () => midi());
