@@ -65,7 +65,7 @@ nav { position: fixed; left: 50%; bottom: max(22px, env(safe-area-inset-bottom))
 nav button { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); transition: color .3s, background .3s; white-space: nowrap; }
 nav button:hover { color: var(--fg); }
 nav button.on { color: var(--ink); background: var(--acc); }
-body[data-mode="lesson"] #lessonbar, body[data-mode="free"] #freebar, body[data-mode="song"] #songbar { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; transition-delay: 1s; }
+body[data-mode="lesson"] #lessonbar, body[data-mode="coach"] #lessonbar, body[data-mode="free"] #freebar, body[data-mode="song"] #songbar { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; transition-delay: 1s; }
 
 #toast { position: fixed; left: 50%; bottom: calc(max(22px, env(safe-area-inset-bottom)) + 70px); transform: translateX(-50%); z-index: 6; padding: 9px 16px; border-radius: 999px;
   font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; background: rgba(239, 230, 214, .92); color: var(--ink); opacity: 0; transition: opacity .4s; pointer-events: none; }
@@ -140,3 +140,6 @@ body.in footer { opacity: 0; }
 .midihint svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; }
 @media (pointer: fine) { .midihint { display: inline-flex; } }
 body.midi .midihint { color: #9dffc8; border-color: rgba(157, 255, 200, .5); }
+
+/* the coach decides: in a session, only pause and back to free play */
+body[data-mode="coach"] #b-prev, body[data-mode="coach"] #b-next, body[data-mode="coach"] #b-replay { display: none; }
