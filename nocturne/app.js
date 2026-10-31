@@ -7,7 +7,7 @@ import { SONGS, timeline, notesOf } from './songs.js';
 const $ = (id) => document.getElementById(id);
 const T = {
   en: { tag: 'Piano, simply.', learn: 'Learn the basics', learnS: 'ten minutes, guided by voice', free: 'Just play', freeS: 'there are no wrong notes', tuning: 'tuning the piano', ready: 'best with headphones',
-    replay: 'Replay', next: 'Next', prev: 'Back', exit: 'Free play', notes: 'Notes', pedal: 'Pedal', rain: 'Rain', lesson: 'Lesson', midi: 'MIDI', midiOn: 'MIDI keyboard connected', midiNo: 'No MIDI keyboard found',
+    replay: 'Replay', next: 'Next', prev: 'Back', exit: 'Free play', notes: 'Notes', pedal: 'Pedal', rain: 'Rain', lesson: 'Lesson', midi: 'MIDI', midiOn: 'MIDI piano connected', midiNo: 'No MIDI keyboard found', midiOff: 'MIDI piano unplugged', midiHint: 'A MIDI piano? Plug it into the computer and connect it here',
     songs: 'Songs', kids: 'Nursery songs', classic: 'Classical', listen: 'Listen', play: 'Play', bravo: 'Well played',
     pause: 'Pause', paused: 'Paused', resume: 'Tap to continue', restart: 'Restart', back: 'Rewind', show: 'Show me', lh: 'Left hand', stop: 'Stop', speed: 'Speed',
     titles: { lune: 'Au clair de la lune', mary: 'Mary Had a Little Lamb', jacques: 'Frère Jacques', twinkle: 'Twinkle, Twinkle, Little Star', jingle: 'Jingle Bells',
@@ -15,7 +15,7 @@ const T = {
     by: { Petzold: 'Petzold (attr. Bach)' },
     labels: { none: 'Notes off', names: 'Note names', keys: 'Computer keys' }, turn: 'Turn your phone sideways', turnS: 'for the whole keyboard', stay: 'Continue upright', done: 'The piano is yours', credit: 'Piano: Salamander Grand Piano by Alexander Holm, CC BY 3.0' },
   fr: { tag: 'Le piano, simplement.', learn: 'Apprendre les bases', learnS: 'dix minutes, guidé par la voix', free: 'Jouer librement', freeS: 'il n’y a pas de fausse note', tuning: 'accordage du piano', ready: 'meilleur avec un casque',
-    replay: 'Réécouter', next: 'Suivant', prev: 'Précédent', exit: 'Jeu libre', notes: 'Notes', pedal: 'Pédale', rain: 'Pluie', lesson: 'Leçon', midi: 'MIDI', midiOn: 'Clavier MIDI connecté', midiNo: 'Aucun clavier MIDI trouvé',
+    replay: 'Réécouter', next: 'Suivant', prev: 'Précédent', exit: 'Jeu libre', notes: 'Notes', pedal: 'Pédale', rain: 'Pluie', lesson: 'Leçon', midi: 'MIDI', midiOn: 'Piano MIDI branché', midiNo: 'Aucun clavier MIDI trouvé', midiOff: 'Piano MIDI débranché', midiHint: 'Un piano MIDI ? Branchez-le à l’ordinateur et connectez-le ici',
     songs: 'Chansons', kids: 'Comptines', classic: 'Classique', listen: 'Écouter', play: 'Jouer', bravo: 'Bien joué',
     pause: 'Pause', paused: 'En pause', resume: 'Touchez pour reprendre', restart: 'Début', back: 'Reculer', show: 'Montre-moi', lh: 'Main gauche', stop: 'Arrêter', speed: 'Vitesse',
     titles: { lune: 'Au clair de la lune', mary: 'Mary avait un petit agneau', jacques: 'Frère Jacques', twinkle: 'Ah ! vous dirai-je, maman', jingle: 'Vive le vent',
@@ -41,7 +41,8 @@ function quietSound() {
 const sound = (() => { try { return new Sound('.'); } catch { return quietSound(); } })();
 const portrait = () => innerWidth < innerHeight;
 let span = null; // the notes a song needs, so the keyboard grows to fit it
-const range = () => { const b = portrait() ? [60, 74] : [48, 76]; return span ? [Math.min(b[0], span[0]), Math.max(b[1], span[1])] : b; };
+let midiLive = false; // a MIDI piano is connected: show more of the keyboard
+const range = () => { const b = portrait() ? [60, 74] : midiLive ? [36, 84] : [48, 76]; return span ? [Math.min(b[0], span[0]), Math.max(b[1], span[1])] : b; };
 function setSpan(id) {
   if (id) { const ms = notesOf(id); let lo = Math.min(...ms), hi = Math.max(...ms); if ([1, 3, 6, 8, 10].includes(lo % 12)) lo--; if ([1, 3, 6, 8, 10].includes(hi % 12)) hi++; span = [lo, hi]; } else span = null;
   piano.setRange(...range()); applyLabels();
@@ -60,18 +61,20 @@ function applyLabels() { piano.setLabels(labelMode, nameOf, (m) => keyLetter[m] 
 
 const held = new Map(); // midi -> count of sources holding it
 const pressedAt = new Map();
-function noteOn(m, vel = 0.75) {
+// real: the key actually struck (a MIDI piano may play a note in another octave than the one shown)
+function noteOn(m, vel = 0.75, real = m) {
   if (paused) return;
   sound.unlock();
   held.set(m, (held.get(m) || 0) + 1);
-  sound.noteOn(m, vel); piano.press(m, vel);
+  sound.noteOn(real, vel); piano.press(m, vel);
   pressedAt.set(m, performance.now());
   lesson.onNote(m); songs.onNote(m);
 }
-function noteOff(m) {
+function noteOff(m, real = m) {
+  if (real !== m) sound.noteOff(real);
   const n = (held.get(m) || 0) - 1;
   if (n > 0) { held.set(m, n); return; }
-  held.delete(m); sound.noteOff(m); piano.release(m);
+  held.delete(m); if (real === m) sound.noteOff(m); piano.release(m);
 }
 
 // pointers: each finger holds one key and can slide across keys (glissando)
@@ -115,18 +118,46 @@ addEventListener('blur', () => { for (const c of kdown) noteOff(KEYMAP[c]); kdow
 let pedalLatched = false;
 function setPedal(on) { sound.setSustain(on); $('b-pedal').classList.toggle('on', on); }
 
-// MIDI keyboards
-async function midi() {
+// MIDI pianos (Chrome, Edge, Opera; Firefox asks first; Safari has no MIDI). Once allowed, the piano is found again
+// on the next visit, and plugging or unplugging it is noticed. A real piano has more octaves than the screen: the
+// key struck sounds as it is, but for the lesson and the songs the right note in any octave counts, and it lights
+// up the key it stands for on screen.
+let midiAcc = null, midiNames = '';
+async function midi(quiet = false) {
   try {
-    const acc = await navigator.requestMIDIAccess();
-    const bind = () => { let n = 0; for (const inp of acc.inputs.values()) { n++; inp.onmidimessage = onMidi; } toast(n ? T[lang].midiOn : T[lang].midiNo); $('b-midi').classList.toggle('on', n > 0); };
-    acc.onstatechange = bind; bind();
-  } catch { toast(T[lang].midiNo); }
+    midiAcc = midiAcc || await navigator.requestMIDIAccess();
+    store.set('nocturne-midi', '1');
+    const bind = () => {
+      const ins = [...midiAcc.inputs.values()].filter((i) => i.state !== 'disconnected'); for (const inp of ins) inp.onmidimessage = onMidi;
+      const names = ins.map((i) => i.name).join(', '), was = midiLive; midiLive = ins.length > 0;
+      if (names !== midiNames || !quiet) toast(midiLive ? `${T[lang].midiOn} : ${ins[0].name || 'MIDI'}` : was ? T[lang].midiOff : T[lang].midiNo);
+      midiNames = names; quiet = true;
+      $('b-midi').classList.toggle('on', midiLive); document.body.classList.toggle('midi', midiLive); const hs = $('midi-hint')?.querySelector('span'); if (hs) hs.textContent = midiLive ? `${T[lang].midiOn} : ${ins[0].name || 'MIDI'}` : T[lang].midiHint;
+      if (midiLive !== was) { piano.setRange(...range()); applyLabels(); if (lesson.step) lesson.refresh(); if (songs.cur) songs.show(); }
+    };
+    midiAcc.onstatechange = bind; bind();
+  } catch { if (!quiet) toast(T[lang].midiNo); }
 }
+// the notes the lesson or the song waits for right now
+function wanted() {
+  if (mode === 'song' && songs.cur && songs.seq?.[songs.idx]) return [songs.seq[songs.idx].m];
+  const w = lesson.w; if (mode !== 'lesson' || !w) return [];
+  if (w.seq) return [w.seq[w.idx]];
+  if (w.chords) return w.chords[w.ch] || [];
+  if (w.all) return w.all().filter((c) => !w.got.has(c));
+  if (w.pc != null) return cs();
+  return [];
+}
+// the key on screen a MIDI note stands for: the awaited note of the same name, else the same note brought into view
+function shownFor(m) {
+  const w = wanted().find((n) => n % 12 === m % 12); if (w != null) return w;
+  const [lo, hi] = range(); let s = m; while (s < lo) s += 12; while (s > hi) s -= 12; return s;
+}
+const midiHeld = new Map();
 function onMidi(ev) {
   const [st, a, b] = ev.data, cmd = st & 0xf0;
-  if (cmd === 0x90 && b > 0) noteOn(a, b / 127);
-  else if (cmd === 0x80 || (cmd === 0x90 && b === 0)) noteOff(a);
+  if (cmd === 0x90 && b > 0) { if (!started) return; const s = shownFor(a); midiHeld.set(a, s); noteOn(s, Math.max(0.2, b / 127), a); }
+  else if (cmd === 0x80 || (cmd === 0x90 && b === 0)) { const s = midiHeld.get(a); if (s == null) return; midiHeld.delete(a); noteOff(s, a); }
   else if (cmd === 0xb0 && a === 64) setPedal(b >= 64 || pedalLatched);
 }
 
@@ -424,7 +455,7 @@ function texts() {
   $('t-free').textContent = t.free; $('s-free').textContent = t.freeS;
   $('hp').textContent = document.body.classList.contains('loaded') ? t.ready : t.tuning;
   set('b-replay', t.replay); set('b-next', t.next); set('b-prev', t.prev); set('b-exit', t.exit); set('b-pause', t.pause);
-  set('b-notes', t.notes); set('b-pedal', t.pedal); set('b-rain', t.rain); set('b-lesson', t.lesson); set('b-songs', t.songs); set('b-midi', t.midi);
+  set('b-notes', t.notes); set('b-pedal', t.pedal); set('b-rain', t.rain); set('b-lesson', t.lesson); set('b-songs', t.songs); set('b-midi', t.midi); if ($('midi-hint')) $('midi-hint').querySelector('span').textContent = t.midiHint;
   set('b-s-restart', t.restart); set('b-s-back', t.back); set('b-s-pause', t.pause); set('b-s-show', t.show); set('b-s-lh', t.lh); set('b-s-stop', t.stop);
   $('songs-h').textContent = t.songs; songs.list(); songs.bar();
   $('pause-t').textContent = t.paused; $('pause-s').textContent = t.resume;
@@ -464,7 +495,12 @@ on('b-notes', () => {
 });
 on('b-pedal', () => { pedalLatched = !pedalLatched; setPedal(pedalLatched); });
 on('b-rain', () => { sound.rain(!sound.rainOn); store.set('nocturne-rain', sound.rainOn ? '1' : '0'); $('b-rain').classList.toggle('on', sound.rainOn); });
-if (navigator.requestMIDIAccess) on('b-midi', midi); else $('b-midi').remove();
+if (navigator.requestMIDIAccess) {
+  on('b-midi', () => midi());
+  on('midi-hint', () => midi());
+  // allowed on an earlier visit: connect again without asking
+  if (store.get('nocturne-midi') === '1') navigator.permissions?.query({ name: 'midi' }).then((p) => { if (p.state === 'granted') midi(true); }).catch(() => {});
+} else { $('b-midi').remove(); $('midi-hint').remove(); }
 // leaving the tab: pause, so nothing plays on in the background
 document.addEventListener('visibilitychange', () => { if (document.hidden && started) pause(true); });
 
@@ -479,4 +515,4 @@ document.fonts?.ready.then(() => applyLabels());
   if (piano.keys.has(m)) { piano.press(m, 0.4); setTimeout(() => piano.release(m), 500); }
   setTimeout(ghost, 1400 + Math.random() * 1800);
 })();
-window.__nocturne = { piano, sound, lesson, songs, noteOn, noteOff };
+window.__nocturne = { piano, sound, lesson, songs, noteOn, noteOff, toLesson: () => toLesson(), get mode() { return mode; } };
