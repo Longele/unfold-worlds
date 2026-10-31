@@ -24,12 +24,9 @@ export const CAPTIONS = {
   "twinkle": "One more. This one asks your hand to reach a little further... up to A, and back. Twinkle, twinkle, little star.",
   "twinkle_done": "Beautiful. That tune was first published in France, more than two hundred and fifty years ago. Listen.",
   "outro": "That's the heart of it. Keys, names, melodies, chords. Everything else... is just play. The piano is yours.",
-  "c_hello": "Hello. Here's today's session: a short warm-up, a piece to revisit, then one step further.",
-  "c_first": "Hello. Here's your first session with me: a short warm-up, then a real piece.",
+  "c_first": "Here's your session. A short warm-up, then pieces, from the simplest to the hardest. I'll listen to how you play, and adapt.",
   "c_warm": "Warm-up. Right hand on C, D, E, F, G. Up we go, then back down... nicely in time, with the tick.",
-  "c_review": "First, let's revisit a piece you've already worked on. At full speed.",
   "c_new": "And now, a new piece.",
-  "c_cont": "Now, back to your piece, one step further.",
   "c_notes": "First, find the notes. Take your time: the light will wait for you.",
   "c_time": "Now, in time. Listen to the four ticks... then play each note as it lights up.",
   "c_tempo": "The same piece, at full speed. Four ticks, and off we go.",
@@ -44,8 +41,7 @@ export const CAPTIONS = {
   "c_star1": "One star. A good start.",
   "c_star2": "Two stars. Very nice.",
   "c_star3": "Three stars. Perfect!",
-  "c_done": "That's all for today. Come back tomorrow: we'll keep going, one step at a time.",
-  "c_all": "You've played every piece on the path. Play your favourites again, to earn all the stars."
+  "c_done": "That's all for this session. Well done! The piano is yours: play freely."
  },
  "fr": {
   "welcome": "Bienvenue. Installez-vous confortablement... rien ne presse. Dans quelques minutes, vous jouerez votre première mélodie.",
@@ -71,12 +67,9 @@ export const CAPTIONS = {
   "twinkle": "Encore une. Celle-ci demande à la main d'aller un peu plus loin... jusqu'au La, puis de revenir. Ah ! vous dirai-je, maman.",
   "twinkle_done": "Magnifique. Cet air a été publié en France, il y a plus de deux cent cinquante ans. Écoutez.",
   "outro": "Voilà l'essentiel. Les touches, les noms, des mélodies, des accords. Tout le reste... c'est du jeu. Le piano est à vous.",
-  "c_hello": "Bonjour. Voici votre séance du jour : un petit échauffement, un morceau à revoir, puis un pas de plus.",
-  "c_first": "Bonjour. Voici votre première séance avec moi : un petit échauffement, puis un vrai morceau.",
+  "c_first": "Voici votre séance. Un petit échauffement, puis des morceaux, du plus simple au plus difficile. J'écoute votre jeu, et je m'adapte.",
   "c_warm": "Échauffement. La main droite sur Do, Ré, Mi, Fa, Sol. On monte, puis on redescend... bien en mesure, avec le tic-tac.",
-  "c_review": "D'abord, on revoit un morceau déjà travaillé. À la vraie vitesse.",
   "c_new": "Et maintenant, un nouveau morceau.",
-  "c_cont": "Maintenant, on reprend votre morceau, un cran plus loin.",
   "c_notes": "D'abord, trouvez les notes. Prenez votre temps : la lumière vous attend.",
   "c_time": "Maintenant, en mesure. Écoutez les quatre tic-tac... puis jouez chaque note quand elle s'allume.",
   "c_tempo": "Le même morceau, à la vraie vitesse. Quatre tic-tac, et c'est parti.",
@@ -91,7 +84,6 @@ export const CAPTIONS = {
   "c_star1": "Une étoile. C'est un bon début.",
   "c_star2": "Deux étoiles. Très joli.",
   "c_star3": "Trois étoiles. Parfait !",
-  "c_done": "C'est tout pour aujourd'hui. Revenez demain : on continuera, un pas après l'autre.",
-  "c_all": "Vous avez joué tous les morceaux du parcours. Rejouez vos préférés, pour gagner toutes les étoiles."
+  "c_done": "C'est tout pour cette séance. Bravo ! Le piano est à vous : jouez librement."
  }
 };

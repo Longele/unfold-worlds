@@ -397,43 +397,44 @@ $('songs-l').addEventListener('click', (e) => {
 // then in time at 70 %, then at full speed with the left hand playing along). Played in time, every note is timed
 // against the beat: right note, early or late, how hard (a MIDI piano tells the force). Stars from 0 to 3, one spoken
 // tip, and when a passage keeps slipping, that passage alone three times more slowly before the whole piece again.
-// Progress is kept on the device.
+// Nothing is kept: anyone can sit down, and each session finds their level by listening, from the simplest piece up.
 const PATH = ['lune', 'mary', 'jacques', 'ode', 'twinkle', 'largo', 'jingle', 'lullaby', 'canon', 'grieg', 'minuet', 'elise', 'gymno'];
-const coachStore = () => { try { return JSON.parse(store.get('nocturne-coach') || '{}'); } catch { return {}; } };
 const coach = {
   run: 0, live: null, // live: the timed pass being played { exp: [{m, at}], got: [{m, at, v, midi}] }
-  get data() { const d = coachStore(); d.songs = d.songs || {}; return d; },
-  save(d) { store.set('nocturne-coach', JSON.stringify(d)); },
   active() { return mode === 'coach'; },
   async say(id, extra) { if (!this.active()) return; caption(CAPTIONS[lang][id] + (extra ? `  ${extra}` : '')); await sound.say(id); },
   alive(run) { return run === this.run && this.active(); },
   // ---------------------------------------------------------------- the session
   async session() {
     const run = ++this.run; mode = 'coach'; document.body.dataset.mode = 'coach'; songs.stop(); lesson.stop();
-    const d = this.data, cur = PATH.find((id) => (d.songs[id]?.stage || 0) < 3);
-    const played = PATH.filter((id) => (d.songs[id]?.stage || 0) >= 2 && id !== cur);
-    const review = played.sort((a, b) => (d.songs[a].stars || 0) - (d.songs[b].stars || 0))[0];
-    await this.say(review ? 'c_hello' : 'c_first'); if (!this.alive(run)) return;
+    const until = performance.now() + 10 * 60e3; // about ten minutes, then a last piece is finished and that's it
+    await this.say('c_first'); if (!this.alive(run)) return;
     // warm-up: the five notes up and down, in time
     await this.say('c_warm'); if (!this.alive(run)) return;
     const warm = [60, 62, 64, 65, 67, 65, 64, 62, 60].map((m, i) => ({ m, t: i, d: 1 }));
     const w = await this.timed(warm, 0.62, run); if (!w) return;
     await this.feedback(w, run, false); if (!this.alive(run)) return;
-    // a piece to revisit, at full speed
-    if (review) {
-      await this.say('c_review', titleOf(review)); if (!this.alive(run)) return;
-      await this.piece(review, 3, run); if (!this.alive(run)) return;
+    // then the pieces, from the simplest: the coach goes on as long as they are played well, and skips straight to
+    // full speed after a perfect one, so a good player soon reaches pieces of their level
+    let fast = w.stars === 3;
+    for (const id of PATH) {
+      if (performance.now() > until) break;
+      await this.say('c_new', titleOf(id)); if (!this.alive(run)) return;
+      const best = await this.learn(id, run, fast); if (best == null || !this.alive(run)) return;
+      if (best < 2) break; // this one needs more practice: the session stops here
+      fast = best === 3;
     }
-    // one step on the path
-    if (cur) {
-      const st = d.songs[cur]?.stage || 0;
-      await this.say(st ? 'c_cont' : 'c_new', titleOf(cur)); if (!this.alive(run)) return;
-      if (st === 0) { if (!await this.notes(cur, run)) return; await this.piece(cur, 2, run); }
-      else await this.piece(cur, st + 1, run);
-      if (!this.alive(run)) return;
-      await this.say('c_done');
-    } else await this.say('c_all');
+    await this.say('c_done');
     if (this.alive(run)) toFree(true);
+  },
+  // a piece in up to three steps; returns the best stars at full speed (null if the session was left)
+  async learn(id, run, fast) {
+    if (!fast) {
+      let s2 = await this.piece(id, 2, run); if (s2 == null) return null;
+      if (s2 < 1) { if (!await this.notes(id, run)) return null; s2 = await this.piece(id, 2, run); if (s2 == null) return null; }
+      if (s2 < 1) return s2;
+    }
+    return this.piece(id, 3, run);
   },
   // step 1: the notes, the light waits for each one
   notes(id, run) {
@@ -446,7 +447,6 @@ const coach = {
         miss = 0; piano.ripple(m, 0x9dffc8); i++;
         if (i < seq.length) return show();
         this.wait = null; piano.setTargets([]); piano.guide(null); $('dots').classList.add('done'); sound.chime(86);
-        const d = this.data; d.songs[id] = { ...(d.songs[id] || {}), stage: Math.max(1, d.songs[id]?.stage || 0) }; this.save(d);
         setTimeout(() => res(this.alive(run)), 900);
       } };
       this.stopWait = () => res(false);
@@ -457,25 +457,22 @@ const coach = {
   async piece(id, step, run) {
     const tl = timeline(id), q = SONGS[id].q / (step === 2 ? 0.7 : 1), seq = tl.rh;
     setSpan(id);
-    await this.say(step === 2 ? 'c_time' : 'c_tempo'); if (!this.alive(run)) return;
+    await this.say(step === 2 ? 'c_time' : 'c_tempo'); if (!this.alive(run)) return null;
     let best = 0;
     for (let tries = 0; tries < 2; tries++) {
-      const r = await this.timed(seq, q, run, step === 3 ? tl.lh : null); if (!r) return;
+      const r = await this.timed(seq, q, run, step === 3 ? tl.lh : null); if (!r) return null;
       best = Math.max(best, r.stars);
-      const weak = await this.feedback(r, run, true); if (!this.alive(run)) return;
+      const weak = await this.feedback(r, run, true); if (!this.alive(run)) return null;
       if (r.stars >= (step === 2 ? 2 : 3) || tries === 1) break;
       // the weak passage, three times more slowly, then the whole piece again
       if (weak) {
-        await this.say('c_loop'); if (!this.alive(run)) return;
+        await this.say('c_loop'); if (!this.alive(run)) return null;
         const part = seq.slice(weak[0], weak[1]), t0 = part[0].t, piece = part.map((e) => ({ ...e, t: e.t - t0 }));
-        for (let k = 0; k < 3; k++) { if (!await this.timed(piece, q / 0.75, run, null, k > 0)) return; }
-        await this.say('c_loopok'); if (!this.alive(run)) return;
+        for (let k = 0; k < 3; k++) { if (!await this.timed(piece, q / 0.75, run, null, k > 0)) return null; }
+        await this.say('c_loopok'); if (!this.alive(run)) return null;
       }
     }
-    const d = this.data, s = d.songs[id] || {}; s.stars = Math.max(s.stars || 0, step === 3 ? best : 0);
-    if (best >= (step === 2 ? 1 : 2)) s.stage = Math.max(s.stage || 0, step);
-    else s.stage = Math.max(s.stage || 0, step - 1);
-    d.songs[id] = s; this.save(d); setSpan(null);
+    setSpan(null); return this.alive(run) ? best : null;
   },
   // one pass in time: four ticks, then the notes light up on the beat; every key struck is timed against them
   timed(seq, q, run, lh = null, quickStart = false) {
@@ -597,16 +594,14 @@ async function begin(which) {
   sound.rain(store.get('nocturne-rain2') === '1'); $('b-rain').classList.toggle('on', sound.rainOn);
   await sound.loadLines(lang, IDS);
   if (small && portrait()) await rotateGate();
-  if (which === 'lesson') basicsDone() ? coach.session() : toLesson(); else toFree(false);
+  if (which === 'lesson') toLesson(); else toFree(false);
 }
-const basicsDone = () => store.get('nocturne-basics') === '1';
 function toLesson() {
   songs.stop(); coach.stop();
   mode = 'lesson'; document.body.dataset.mode = 'lesson';
   lesson.go(0);
 }
 async function toFree(fromLesson) {
-  if (fromLesson && mode === 'lesson') store.set('nocturne-basics', '1');
   if (mode === 'coach') coach.stop();
   lesson.stop(); songs.stop(); mode = 'free'; document.body.dataset.mode = 'free';
   $('prog').style.setProperty('--p', '100%');
@@ -617,11 +612,11 @@ async function toFree(fromLesson) {
 function texts() {
   const t = T[lang], set = (id, txt) => { const el = $(id); if (el) el.lastChild.textContent = txt; };
   document.documentElement.lang = lang;
-  $('tag').textContent = t.tag; $('t-learn').textContent = basicsDone() ? t.session : t.learn; $('s-learn').textContent = basicsDone() ? t.sessionS : t.learnS;
+  $('tag').textContent = t.tag; $('t-learn').textContent = t.learn; $('s-learn').textContent = t.learnS;
   $('t-free').textContent = t.free; $('s-free').textContent = t.freeS;
   $('hp').textContent = document.body.classList.contains('loaded') ? t.ready : t.tuning;
   set('b-replay', t.replay); set('b-next', t.next); set('b-prev', t.prev); set('b-exit', t.exit); set('b-pause', t.pause);
-  set('b-notes', t.notes); set('b-pedal', t.pedal); set('b-rain', t.rain); set('b-lesson', basicsDone() ? t.sessionB : t.lesson); set('b-songs', t.songs); set('b-midi', t.midi); if ($('midi-hint')) $('midi-hint').querySelector('span').textContent = t.midiHint;
+  set('b-notes', t.notes); set('b-pedal', t.pedal); set('b-rain', t.rain); set('b-lesson', t.sessionB); set('b-songs', t.songs); set('b-midi', t.midi); if ($('midi-hint')) $('midi-hint').querySelector('span').textContent = t.midiHint;
   set('b-s-restart', t.restart); set('b-s-back', t.back); set('b-s-pause', t.pause); set('b-s-show', t.show); set('b-s-lh', t.lh); set('b-s-stop', t.stop);
   $('songs-h').textContent = t.songs; songs.list(); songs.bar();
   $('pause-t').textContent = t.paused; $('pause-s').textContent = t.resume;
@@ -643,7 +638,9 @@ on('b-next', () => lesson.go(lesson.i + 1));
 on('b-prev', () => lesson.go(lesson.i - 1));
 on('b-exit', () => toFree(false));
 on('b-pause', () => pause(!paused));
-on('b-lesson', () => (basicsDone() ? coach.session() : toLesson()));
+on('b-lesson', () => coach.session()); // the toolbar's session: the coach (the first lesson is on the start screen)
+// whatever an older version kept on this device is forgotten
+try { localStorage.removeItem('nocturne-coach'); localStorage.removeItem('nocturne-basics'); } catch {}
 on('b-songs', () => songs.open());
 on('songs-x', () => songs.close());
 on('b-s-restart', () => songs.restart());
