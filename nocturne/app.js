@@ -12,7 +12,7 @@ const T = {
     replay: 'Replay', next: 'Next', prev: 'Back', exit: 'Free play', notes: 'Notes', pedal: 'Pedal', rain: 'Rain', lesson: 'Lesson', midi: 'MIDI', midiOn: 'MIDI piano connected', midiNo: 'No MIDI keyboard found', midiOff: 'MIDI piano unplugged', midiHint: 'A MIDI piano? Plug it into the computer and connect it here', octave: 'Octave', keysTip: (a, b) => `Play with your computer keys: their letters are on the piano. ${a} and ${b} change octave`,
     songs: 'Songs', kids: 'Nursery songs', classic: 'Classical', listen: 'Listen', play: 'Play', bravo: 'Well played',
     pause: 'Pause', paused: 'Paused', resume: 'Tap to continue', restart: 'Restart', back: 'Rewind', show: 'Show me', lh: 'Left hand', stop: 'Stop', speed: 'Speed',
-    session: 'My session for today', sessionS: 'ten minutes with your coach', sessionB: 'Session', course: 'Course', startHere: 'Start here', go: 'Go', practice: 'Practise', coachSession: 'A session with the coach', nextLesson: 'Next lesson', toMap: 'The course', learnC: 'Learn the piano', learnCS: 'a full course, from the first C to playing alone',
+    session: 'My session for today', sessionS: 'ten minutes with your coach', sessionB: 'Session', course: 'Course', cont: 'Continue ▸', again2: 'Listen again', yourTurn: 'Your turn ▸', tryAgain: 'Try again', workPart: 'Work on the tricky passage', listenFirst: 'Hear the model', wholeAgain: 'The whole piece again ▸', explore: 'Play white keys and watch where they are written', mapTip: 'Follow the lessons in order: each one takes 5 to 10 minutes.', startHere: 'Start here', go: 'Go', practice: 'Practise', coachSession: 'A session with the coach', nextLesson: 'Next lesson', toMap: 'The course', learnC: 'Learn the piano', learnCS: 'a full course, from the first C to playing alone',
     titles: { lune: 'Au clair de la lune', mary: 'Mary Had a Little Lamb', jacques: 'Frère Jacques', twinkle: 'Twinkle, Twinkle, Little Star', jingle: 'Jingle Bells',
       ode: 'Ode to Joy', largo: 'New World Symphony, Largo', lullaby: 'Lullaby', canon: 'Canon in D', grieg: 'In the Hall of the Mountain King', minuet: 'Minuet in G', elise: 'Für Elise', gymno: 'Gymnopédie No. 1', prelude: 'Prelude in C' },
     by: { Petzold: 'Petzold (attr. Bach)' },
@@ -21,7 +21,7 @@ const T = {
     replay: 'Réécouter', next: 'Suivant', prev: 'Précédent', exit: 'Jeu libre', notes: 'Notes', pedal: 'Pédale', rain: 'Pluie', lesson: 'Leçon', midi: 'MIDI', midiOn: 'Piano MIDI branché', midiNo: 'Aucun clavier MIDI trouvé', midiOff: 'Piano MIDI débranché', midiHint: 'Un piano MIDI ? Branchez-le à l’ordinateur et connectez-le ici', octave: 'Octave', keysTip: (a, b) => `Jouez avec les touches de l’ordinateur : leurs lettres sont sur le piano. ${a} et ${b} changent d’octave`,
     songs: 'Chansons', kids: 'Comptines', classic: 'Classique', listen: 'Écouter', play: 'Jouer', bravo: 'Bien joué',
     pause: 'Pause', paused: 'En pause', resume: 'Touchez pour reprendre', restart: 'Début', back: 'Reculer', show: 'Montre-moi', lh: 'Main gauche', stop: 'Arrêter', speed: 'Vitesse',
-    session: 'Ma séance du jour', sessionS: 'dix minutes avec votre coach', sessionB: 'Séance', course: 'Cours', startHere: 'Commencer ici', go: 'Ouvrir', practice: 'S’entraîner', coachSession: 'Une séance avec le coach', nextLesson: 'Leçon suivante', toMap: 'Le cours', learnC: 'Apprendre le piano', learnCS: 'un cours complet, du premier Do à jouer seul',
+    session: 'Ma séance du jour', sessionS: 'dix minutes avec votre coach', sessionB: 'Séance', course: 'Cours', cont: 'Continuer ▸', again2: 'Réécouter', yourTurn: 'À vous ▸', tryAgain: 'Réessayer', workPart: 'Travailler le passage difficile', listenFirst: 'Écouter le modèle', wholeAgain: 'Rejouer le morceau entier ▸', explore: 'Jouez des touches blanches et regardez où elles s’écrivent', mapTip: 'Suivez les leçons dans l’ordre : chacune dure 5 à 10 minutes.', startHere: 'Commencer ici', go: 'Ouvrir', practice: 'S’entraîner', coachSession: 'Une séance avec le coach', nextLesson: 'Leçon suivante', toMap: 'Le cours', learnC: 'Apprendre le piano', learnCS: 'un cours complet, du premier Do à jouer seul',
     titles: { lune: 'Au clair de la lune', mary: 'Mary avait un petit agneau', jacques: 'Frère Jacques', twinkle: 'Ah ! vous dirai-je, maman', jingle: 'Vive le vent',
       ode: 'Hymne à la joie', largo: 'Symphonie du Nouveau Monde, Largo', lullaby: 'Berceuse', canon: 'Canon en ré', grieg: 'Dans l’antre du roi de la montagne', minuet: 'Menuet en sol', elise: 'Lettre à Élise', gymno: 'Gymnopédie n° 1', prelude: 'Prélude en do' },
     by: { Petzold: 'Petzold (attribué à Bach)' },
@@ -421,7 +421,7 @@ const PATH = ['lune', 'mary', 'jacques', 'ode', 'twinkle', 'largo', 'jingle', 'l
 const coach = {
   run: 0, live: null, // live: the timed pass being played { exp: [{m, at}], got: [{m, at, v, midi}] }
   active() { return mode === 'coach'; },
-  async say(id, extra) { if (!this.active()) return; caption(CAPTIONS[lang][id] + (extra ? `  ${extra}` : '')); await sound.say(id); },
+  async say(id, extra) { if (!this.active()) return; this.last = id; caption(CAPTIONS[lang][id] + (extra ? `  ${extra}` : '')); await sound.say(id); },
   alive(run) { return run === this.run && this.active(); },
   // ---------------------------------------------------------------- the session
   async session() {
@@ -507,7 +507,9 @@ const coach = {
       const stopAt = t0 + endBeat * q + 0.5, beats = Math.ceil(endBeat) + ticks;
       for (let b = 0; b < beats; b++) { const at = t0 + (b - ticks) * q; this.tick(at, b < ticks ? (b === 0 ? 1 : 0.8) : 0.35, b < ticks); }
       if (o.lh) for (const e of o.lh) { const at = t0 + e.t * q, dur = e.d * q * 0.94; if (e.t >= endBeat) continue; sound.noteOn(e.m, 0.3, at); sound.noteOff(e.m, at + dur); setTimeout(() => { if (this.live === live) piano.press(e.m, 0.3); }, (at - c.currentTime) * 1000); setTimeout(() => piano.release(e.m), (at + dur - c.currentTime) * 1000); }
-      const live = this.live = { exp, got: [], q, any: !!o.any };
+      const live = this.live = { exp, got: [], q, any: !!o.any, demo: !!o.demo };
+      // the model: the piano plays the exercise itself, the keys go down under the light
+      if (o.demo) for (const e of exp) { const dur = e.d * q * 0.92; sound.noteOn(e.m, 0.55, e.at); sound.noteOff(e.m, e.at + dur); setTimeout(() => { if (this.live === live) piano.press(e.m, 0.5); }, (e.at - c.currentTime) * 1000); setTimeout(() => piano.release(e.m), (e.at + dur - c.currentTime) * 1000); }
       const times = [...new Set(exp.map((e) => e.t))];
       dots(times.length, 0); let lastT = null, miss = 0;
       const frame = () => {
@@ -523,7 +525,7 @@ const coach = {
         // the beats counted above the score: the count-in, then one, two, three, four in every bar
         if (o.staff) { const bt = Math.floor((now - t0) / q + 1e-3), on = bt < 0 ? bt + ticks : ((bt % meterN) + meterN) % meterN; [...bc.children].forEach((el, j) => el.classList.toggle('on', j === on)); bc.classList.toggle('count', bt < 0); }
         dots(times.length, Math.min(times.length, k));
-        if (now > stopAt) { this.live = null; bc?.classList.remove('on'); piano.setTargets([]); piano.guide(null); $('dots').classList.add('done'); return res(this.score(live)); }
+        if (now > stopAt) { this.live = null; bc?.classList.remove('on'); piano.setTargets([]); piano.guide(null); $('dots').classList.add('done'); return res(live.demo ? { demo: true } : this.score(live)); }
         requestAnimationFrame(frame);
       };
       if (o.staff) staff.cursor(times[0]);
@@ -588,6 +590,7 @@ const coach = {
   onNote(m, vel, src) {
     if (!this.active()) return;
     if (this.live) {
+      if (this.live.demo) return; // listening to the model
       const now = sound.ctx.currentTime; this.live.got.push({ m, at: now, v: vel, src });
       const e = this.live.exp.find((x) => (this.live.any || x.m === m) && Math.abs(x.at - now) < Math.max(0.2, this.live.q * 0.5));
       if (e) piano.ripple(m, 0x9dffc8); else if (++this.live.wrong >= 2 || isNaN(this.live.wrong)) { this.live.wrong = 0; this.live.hint = true; }
@@ -598,7 +601,7 @@ const coach = {
     if (this.live) { const now = sound.ctx.currentTime, e = this.live.exp.find((x) => x.at > now - this.live.q * 0.5); return e ? this.live.exp.filter((x) => x.at === e.at).map((x) => x.m) : []; }
     return this.wait?.want() || [];
   },
-  stop() { this.run++; this.live = null; this.wait = null; this.stopWait?.(); this.stopWait = null; sound.stopVoice(); piano.setTargets([]); piano.guide(null); piano.clearBadges(); dots(0, 0); staff.hide(); if (span) setSpan(null); },
+  stop() { this.run++; this.live = null; this.wait = null; this.stopWait?.(); this.stopWait = null; sound.stopVoice(); piano.setTargets([]); piano.guide(null); piano.clearBadges(); dots(0, 0); staff.hide(); if (span) setSpan(null); $('cont').classList.remove('on'); hintText(''); },
 };
 
 // ------------------------------------------------------------------ the course
@@ -632,7 +635,7 @@ const course = {
   open() {
     const t = T[lang];
     $('course-h').textContent = t.course;
-    $('course-l').innerHTML = COURSE.map((ch, c) => `<li class="cat">${c + 1} · ${ch[lang]}</li>` + ch.lessons.map((l) => {
+    $('course-l').innerHTML = `<li class="tip">${t.mapTip}</li>` + COURSE.map((ch, c) => `<li class="cat">${c + 1} · ${ch[lang]}</li>` + ch.lessons.map((l) => {
       const i = LESSONS.findIndex((x) => x.id === l.id);
       return `<li><span class="nm">${l[lang]}</span><button data-i="${i}" class="${i === 0 ? 'pl' : ''}">${i === 0 ? t.startHere : t.go}</button></li>`;
     }).join('')).join('') + `<li class="cat">${t.practice}</li><li><span class="nm">${t.coachSession}</span><button data-coach="1">${t.go}</button></li>`;
@@ -657,8 +660,9 @@ const course = {
     $('lessonend').classList.add('on');
   },
   step(st, run) {
-    if (st.say) return coach.say(st.say);
+    if (st.say) return this.explain(st, run);
     if (st.show) return this.showOnly(st);
+    if (st.explore) return this.explore(st, run);
     if (st.pedal) return this.pedal(st, run);
     if (st.read) return this.read(st, run);
     if (st.play) return this.play(st, run);
@@ -666,14 +670,57 @@ const course = {
     if (st.echo) return this.echo(st, run);
     if (st.improv) return this.improv(st, run);
   },
+  // an explanation: what it talks about is pointed at on the score, and the next step waits for "Continue" (the
+  // learner goes at their own pace and can hear it again)
+  async explain(st, run) {
+    if (st.point) staff.point(st.point);
+    await coach.say(st.say); if (!coach.alive(run)) return;
+    if (!st.go) await this.choose(run, [{ k: 'go', t: T[lang].cont, main: true }], st.say);
+  },
+  // buttons under the piano, the main one also with space, Enter or the right arrow; "listen again" repeats a line
+  choose(run, list, again = null) {
+    return new Promise((res) => {
+      const box = $('cont'); box.innerHTML = '';
+      const done = (k) => { removeEventListener('keydown', key, true); clearInterval(iv); box.classList.remove('on'); box.innerHTML = ''; res(k); };
+      if (again) { const b = document.createElement('button'); b.textContent = T[lang].again2; b.onclick = () => { caption(CAPTIONS[lang][again]); sound.say(again); }; box.append(b); }
+      for (const o of list) { const b = document.createElement('button'); b.textContent = o.t; if (o.main) b.className = 'pl'; b.onclick = () => done(o.k); box.append(b); }
+      const main = list.find((o) => o.main) || list[0];
+      const key = (e) => { if ([' ', 'Enter', 'ArrowRight'].includes(e.key)) { e.preventDefault(); e.stopPropagation(); done(main.k); } };
+      addEventListener('keydown', key, true);
+      const iv = setInterval(() => { if (!coach.alive(run)) done(null); }, 300);
+      box.classList.add('on');
+    });
+  },
   // the reading aids for the score of a step
   aids(st, x, dflt = true) {
     const nm = (m) => NAMES[lang][((m % 12) + 12) % 12];
     return { meter: x.meter, key: x.key, lead: st.lead, names: (st.names ?? dflt) ? nm : null, fingers: st.fingers || null, mark: st.mark || null, hands: lang === 'fr' ? ['MD', 'MG'] : ['RH', 'LH'] };
   },
   // a score to look at while the teacher explains it
-  async showOnly(st) { const x = exercise(st.show); spanOf(x.ev); await staff.show(x.ev, this.aids(st, x)); },
-  // play in time: up to three tries; between them the passage that slipped, three times more slowly
+  async showOnly(st) { const x = exercise(st.show); spanOf(x.ev); await staff.show(x.ev, this.aids(st, x)); if (st.point) staff.point(st.point); },
+  // the score that writes itself: every key played appears on the staff where it belongs, with its name
+  explore(st, run) {
+    return new Promise(async (res) => {
+      const clef = st.explore.clef || 'treble', n = st.explore.n || 6, seen = new Set(), shown = [];
+      const fold = (m) => { if (clef === 'bass') { while (m > 60) m -= 12; while (m < 40) m += 12; } else { while (m < 60) m += 12; while (m > 81) m -= 12; } return m; };
+      const h = clef === 'bass' ? 'l' : 'r', nm = (m) => NAMES[lang][((m % 12) + 12) % 12];
+      await staff.show([{ t: 0, d: 4, ms: [clef === 'bass' ? 48 : 60], h }], { names: nm, noTime: true }); staff.el.querySelector('svg')?.classList.add('ghost');
+      hintText(T[lang].explore);
+      coach.wait = {
+        want: () => [],
+        on: async (m) => {
+          const s = fold(m); shown.push(s); if (shown.length > 8) shown.shift(); seen.add(s);
+          await staff.show(shown.map((x, i) => ({ t: i, d: 1, ms: [x], h })), { meter: 8, names: nm, noTime: true }); staff.cursor(shown.length - 1);
+          dots(n, Math.min(n, seen.size));
+          if (seen.size >= n && coach.wait) { coach.wait = null; hintText(''); sound.chime(88); setTimeout(res, 900); }
+        },
+      };
+      coach.stopWait = () => res();
+      dots(n, 0);
+    });
+  },
+  // play in time: first the piano plays it (listen and watch), then the learner, when ready; after each try the
+  // stars and one tip, then the learner chooses: again, work on the passage that slipped, or go on
   async play(st, run) {
     const x = exercise(st.play), q = (st.q || x.q) / (st.tempo || 1);
     let ev = x.ev; if (typeof st.play === 'string' && SONGS[st.play] && st.lh) ev = songEvents(st.play, st).ev;
@@ -684,21 +731,34 @@ const course = {
     const show = (e) => staff.show(e, this.aids(st, x, st.lights !== false));
     await show(ev); if (!coach.alive(run)) return;
     const o = { lh: acc, lights: st.lights !== false, staff: true, any: st.any, meter: x.meter };
-    for (let tries = 0; tries < 3; tries++) {
+    // listen first (not for the pieces played from the score alone: reading them is the exercise)
+    if (st.lights !== false) {
+      caption(CAPTIONS[lang].k_demo); await sound.say('k_demo'); if (!coach.alive(run)) return;
+      if (!await coach.timed(ev, q, run, { ...o, demo: true })) { if (!coach.alive(run)) return; }
+    }
+    let k = await this.choose(run, [{ k: 'go', t: T[lang].yourTurn, main: true }]);
+    while (coach.alive(run) && k) {
+      if (k === 'listen') { if (!await coach.timed(ev, q, run, { ...o, demo: true })) { if (!coach.alive(run)) return; } k = await this.choose(run, [{ k: 'go', t: T[lang].yourTurn, main: true }]); continue; }
+      if (k === 'part' && this.weak) {
+        const [a, b] = this.weak, shift = Math.floor(a / x.meter) * x.meter;
+        const part = ev.filter((e) => e.t >= a - 1e-6 && e.t < b - 1e-6).map((e) => ({ ...e, t: e.t - shift }));
+        await show(part); await coach.say('c_loop'); if (!coach.alive(run)) return;
+        await coach.timed(part, q / 0.75, run, { ...o, lh: null, demo: true });
+        for (let j = 0; j < 3; j++) { if (!await coach.timed(part, q / 0.75, run, { ...o, lh: null, quick: j > 0 })) return; }
+        await show(ev); k = await this.choose(run, [{ k: 'go', t: T[lang].wholeAgain, main: true }]); continue;
+      }
+      if (k === 'next') break;
+      caption(CAPTIONS[lang].k_yourturn); await sound.say('k_yourturn'); if (!coach.alive(run)) return;
       const r = await coach.timed(ev, q, run, o); if (!r) return;
       const fb = await coach.feedback(r, run, true, st); if (!fb || !coach.alive(run)) return;
       const ok = r.stars >= 2 && (!st.hold || r.holdOk) && (st.art !== 'legato' || r.legato == null || r.legato >= 0.7) && (st.art !== 'staccato' || r.staccato == null || r.staccato >= 0.7)
         && (!st.dyn || r.vel == null || (st.dyn === 'p' ? r.vel <= 0.55 : r.vel >= 0.6));
-      if (ok || tries === 2) break;
-      if (fb.weak && r.weakT) {
-        await coach.say('c_loop'); if (!coach.alive(run)) return;
-        const [a, b] = r.weakT, shift = Math.floor(a / x.meter) * x.meter;
-        const part = ev.filter((e) => e.t >= a - 1e-6 && e.t < b - 1e-6).map((e) => ({ ...e, t: e.t - shift }));
-        await show(part);
-        for (let k = 0; k < 3; k++) { if (!await coach.timed(part, q / 0.75, run, { ...o, lh: null, quick: k > 0 })) return; }
-        await coach.say('c_loopok'); if (!coach.alive(run)) return;
-        await show(ev);
-      }
+      this.weak = r.weakT;
+      const opts = [{ k: 'go', t: T[lang].tryAgain, main: !ok }];
+      if (r.weakT) opts.push({ k: 'part', t: T[lang].workPart });
+      opts.push({ k: 'listen', t: T[lang].listenFirst });
+      opts.push({ k: 'next', t: T[lang].cont, main: ok });
+      k = await this.choose(run, opts);
     }
     piano.clearBadges(); staff.hide();
   },
@@ -828,6 +888,7 @@ function dots(n, k) {
   else { if (d.children.length !== n || d.querySelector('b')) d.innerHTML = '<i></i>'.repeat(n); [...d.children].forEach((el, i) => el.classList.toggle('on', i < k)); }
   d.classList.add('on');
 }
+function hintText(t) { const h = $('chint'); h.textContent = t || ''; h.classList.toggle('on', !!t); }
 function toast(txt, ms = 2600) { const t = $('toast'); t.textContent = txt; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), ms); }
 
 // on a phone: fullscreen + landscape where the browser allows it (Android), otherwise ask kindly (iPhone)
@@ -898,7 +959,7 @@ for (const b of document.querySelectorAll('[data-lang]')) b.addEventListener('cl
 const on = (id, fn) => $(id)?.addEventListener('click', fn);
 on('go-learn', () => begin('course'));
 on('go-free', () => begin('free'));
-on('b-replay', () => lesson.go(lesson.i));
+on('b-replay', () => { if (mode === 'coach') { if (coach.last && !sound.speaking) { caption(CAPTIONS[lang][coach.last]); sound.say(coach.last); } } else lesson.go(lesson.i); });
 on('b-next', () => lesson.go(lesson.i + 1));
 on('b-prev', () => lesson.go(lesson.i - 1));
 on('b-exit', () => toFree(false));

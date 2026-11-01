@@ -22,10 +22,15 @@ function loadVex() {
   return loading || (loading = new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'lib/vexflow/vexflow.js'; s.onload = res; s.onerror = rej; document.head.append(s); }));
 }
 
+const LBL = {
+  fr: { clef: 'clé de sol', bass: 'clé de fa', time: '4 temps par mesure', bar: 'barre de mesure', measure: 'une mesure' },
+  en: { clef: 'treble clef', bass: 'bass clef', time: '4 beats in a bar', bar: 'barline', measure: 'one bar' },
+};
 export class Staff {
   constructor(el) { this.el = el; this.ev = null; }
   async show(events, o = {}) {
     await loadVex();
+    this.pts = null; // a new score: the teacher points again if needed
     this.ev = events; this.o = { meter: 4, key: 'C', lead: false, names: null, fingers: null, mark: null, hands: null, ...o };
     const hands = new Set(events.map((e) => e.h));
     this.clefs = this.o.lead || !hands.has('l') ? ['treble'] : !hands.has('r') ? ['bass'] : ['treble', 'bass'];
@@ -36,22 +41,46 @@ export class Staff {
     window.__placeStaff?.();
     this.draw(0);
   }
-  hide() { this.el.classList.remove('on'); document.body.classList.remove('staffon'); this.ev = null; }
-  get perPage() { return Math.max(1, Math.min(4, Math.floor(this.el.clientWidth / 190))); }
+  // the teacher's pointer: the five lines numbered from the bottom, the four spaces, the clef, the time signature, a
+  // barline, one bar, or a note with a word next to it (list of 'lines' | 'spaces' | 'clef' | 'time' | 'bar' |
+  // 'measure' | { note: i, text })
+  point(list = []) {
+    this.el.querySelector('.callouts')?.remove(); this.pts = list; if (!list.length || !this.first) return;
+    const box = document.createElement('div'); box.className = 'callouts'; this.el.append(box);
+    const z = this.z, s = this.first[0], W = this.el.clientWidth / z, L = LBL[document.documentElement.lang === 'fr' ? 'fr' : 'en'], top = s.getYForLine(0), bot = s.getYForLine(4);
+    const add = (cls, css, txt = '') => { const d = document.createElement('div'); d.className = cls; Object.assign(d.style, css); d.textContent = txt; box.append(d); return d; };
+    // positions in the score's own units, scaled like the drawing; labels kept inside the paper
+    const px = (v) => `${Math.round(v * z)}px`;
+    const lx = (v) => Math.max(48 / z, Math.min(W - 40 / z, v));
+    for (const p of list) {
+      if (p === 'lines') for (let i = 0; i < 5; i++) { const y = s.getYForLine(i); add('co-line', { left: px(s.getX() + 44), top: px(y - 1), width: px(W - s.getX() - 110) }); add('co small', { left: px(W - (24 + (i % 2) * 24) / z), top: px(y) }, String(5 - i)); }
+      if (p === 'spaces') for (let i = 0; i < 4; i++) { const y = (s.getYForLine(i) + s.getYForLine(i + 1)) / 2; add('co-space', { left: px(s.getX() + 44), top: px(y - 4), width: px(W - s.getX() - 110) }); add('co small blue', { left: px(W - (24 + (i % 2) * 24) / z), top: px(y) }, String(4 - i)); }
+      if (p === 'clef') { add('co-ring', { left: px(s.getX() + 2), top: px(top - 22), width: px(40), height: px(bot - top + 44) }); add('co', { left: px(lx(s.getX() + 22)), top: px(bot + 30) }, this.clefs[0] === 'bass' ? L.bass : L.clef); }
+      if (p === 'time') { const x = s.getNoteStartX() - 24; add('co-ring', { left: px(x - 12), top: px(top - 6), width: px(26), height: px(bot - top + 12) }); add('co', { left: px(lx(x + 2)), top: px(bot + 26) }, L.time); }
+      if (p === 'bar') { add('co-ring', { left: px(this.barEnd - 6), top: px(top - 8), width: px(12), height: px(bot - top + 16) }); add('co', { left: px(lx(this.barEnd)), top: px(top - 18) }, L.bar); }
+      if (p === 'measure') { add('co-band', { left: px(s.getNoteStartX() - 8), top: px(top - 10), width: px(this.barEnd - s.getNoteStartX() + 6), height: px(bot - top + 20) }); add('co', { left: px((s.getNoteStartX() + this.barEnd) / 2), top: px(top - 18) }, L.measure); }
+      if (p && p.note != null) { const n = this.notes[p.note]; if (!n) continue; const x = n.getAbsoluteX() + 6, y = Math.min(...n.getYs()); add('co-ring round', { left: px(x - 14), top: px(y - 14), width: px(28), height: px(28) }); add('co', { left: px(x), top: px(Math.max(10, y - 30)) }, p.text || ''); }
+    }
+  }
+  hide() { this.el.classList.remove('on'); document.body.classList.remove('staffon'); this.ev = null; this.pts = null; }
+  // the score is drawn larger than VexFlow's default, easier to read for a beginner
+  get z() { return this.clefs?.length === 2 ? 1.12 : 1.35; }
+  get perPage() { return Math.max(1, Math.min(4, this.bars || 4, Math.floor(this.el.clientWidth / this.z / 190))); }
   draw(page) {
-    const VF = window.Vex.Flow, el = this.el, W = el.clientWidth, H = this.clefs.length === 2 ? 250 : 140;
-    el.innerHTML = ''; this.page = page; this.notes = [];
-    const r = new VF.Renderer(el, VF.Renderer.Backends.SVG); r.resize(W, H); const ctx = r.getContext();
+    const VF = window.Vex.Flow, el = this.el, z = this.z, W = el.clientWidth / z, H = this.clefs.length === 2 ? 250 : 140;
+    el.innerHTML = ''; this.page = page; this.notes = []; this.first = null; this.barEnd = null;
+    const r = new VF.Renderer(el, VF.Renderer.Backends.SVG); r.resize(W * z, H * z); const ctx = r.getContext(); ctx.scale(z, z);
     const pp = this.perPage, b0 = page * pp, b1 = Math.min(this.bars, b0 + pp), m = this.o.meter;
     const first = 70 + (this.o.key !== 'C' ? 20 : 0) + (page === 0 ? 30 : 0), bw = (W - 20 - first) / pp;
     let x = 10;
     for (let b = b0; b < b1; b++) {
       const w = b === b0 ? bw + first : bw, staves = this.clefs.map((clef, k) => {
         const s = new VF.Stave(x, 4 + k * 110, w);
-        if (b === b0) { s.addClef(clef); if (this.o.key !== 'C') s.addKeySignature(this.o.key); if (page === 0) s.addTimeSignature(`${m}/4`); if (this.clefs.length === 2 && this.o.hands) s.setText(this.o.hands[k], VF.Modifier.Position.LEFT, { shift_x: 6 }); }
+        if (b === b0) { s.addClef(clef); if (this.o.key !== 'C') s.addKeySignature(this.o.key); if (page === 0 && !this.o.noTime) s.addTimeSignature(`${m}/4`); if (this.clefs.length === 2 && this.o.hands) s.setText(this.o.hands[k], VF.Modifier.Position.LEFT, { shift_x: 6 }); }
         if (b === this.bars - 1) s.setEndBarType(VF.Barline.type.END);
         s.setContext(ctx).draw(); return s;
       });
+      if (b === b0) { this.first = staves; this.barEnd = x + w; }
       if (staves.length === 2 && b === b0) { new VF.StaveConnector(staves[0], staves[1]).setType(VF.StaveConnector.type.BRACE).setContext(ctx).draw(); new VF.StaveConnector(staves[0], staves[1]).setType(VF.StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw(); }
       if (staves.length === 2) new VF.StaveConnector(staves[0], staves[1]).setType(VF.StaveConnector.type.SINGLE_RIGHT).setContext(ctx).draw();
       const voices = this.clefs.map((clef, k) => {
@@ -69,6 +98,7 @@ export class Staff {
       x += w;
     }
     if (this.cur != null) this.cursor(this.cur);
+    if (this.pts?.length) this.point(this.pts);
   }
   // the notes (and rests) of one hand in one bar
   bar(VF, a, z, h, clef) {

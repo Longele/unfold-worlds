@@ -38,15 +38,33 @@ export const COURSE = [
       { say: 'k_fing2' }, { say: 'k_fing1' }, { say: 'k_fing3' },
       { play: ex('c4 e4 d4 f4 e4 g4 f4 d4 c4:2 r:2'), q: 0.8, fingers: { 60: 1, 62: 2, 64: 3, 65: 4, 67: 5 } }, { say: 'k_fing_end' }] },
   ] },
-  { fr: 'Lire la musique et le rythme', en: 'Reading music and rhythm', lessons: [
-    { id: 'score', fr: 'Comment lire une partition', en: 'How to read a score', steps: [
-      { show: ex('c4 d4 e4 f4 g4 a4 b4 c5') }, { say: 'k_score1' }, { show: ex('c4 c4 c4:2 c4:4') }, { say: 'k_score2' },
-      { say: 'k_score3' }, { play: ex('c4 d4 e4 f4 g4:2 r:2'), q: 0.8 }, { say: 'k_score4' }] },
-    { id: 'pulse', fr: 'La pulsation : noire, blanche, ronde', en: 'The pulse: quarter, half, whole notes', steps: [
-      { say: 'k_pulse1' }, { play: ex('c4 c4 c4 c4 c4 c4 c4 c4'), any: true, q: 0.75 },
-      { say: 'k_pulse2' }, { play: ex('c4:2 c4:2 c4 c4 c4:2 c4:4'), any: true, hold: true, q: 0.75 },
-      { say: 'k_pulse3' }, { play: ex('c4 c4 c4:2 c4:2 c4:2 c4 c4 c4 c4 c4:4'), any: true, hold: true, q: 0.7 },
+  { fr: 'Lire une partition', en: 'Reading a score', lessons: [
+    { id: 'staff', fr: 'La portée : cinq lignes, et chaque touche à sa place', en: 'The staff: five lines, and every key in its place', steps: [
+      { show: ex('c4 d4 e4 f4 g4 a4 b4 c5') }, { say: 'k_st1', point: ['lines'] }, { say: 'k_st2', point: ['spaces'] },
+      { say: 'k_st3', point: [] }, { explore: { clef: 'treble', n: 6 } }, { say: 'k_st4' }] },
+    { id: 'clef', fr: 'La clé de sol, le Do du milieu et le Sol', en: 'The treble clef, middle C and G', steps: [
+      { show: ex('c4:2 g4:2') }, { say: 'k_cl1', point: ['clef'] }, { say: 'k_cl2', point: [{ note: 0, text: 'Do' }] }, { read: 'c4', names: true },
+      { show: ex('c4:2 g4:2') }, { say: 'k_cl3', point: ['lines', { note: 1, text: 'Sol' }] }, { read: 'g4', names: true },
+      { say: 'k_cl4' }, { read: 'g4 c4 g4 g4 c4 g4 c4 c4', names: false }, { say: 'k_treble_end' }] },
+    { id: 'steps', fr: 'Do Ré Mi Fa Sol sur la portée', en: 'C D E F G on the staff', steps: [
+      { show: ex('c4 d4 e4 f4 g4:3') }, { say: 'k_steps1' }, { read: 'c4 d4 e4 f4 g4 f4 e4 d4 c4', names: true },
+      { say: 'k_steps2' }, { read: 'e4 c4 g4 d4 f4 e4 g4 c4 d4 f4', names: false },
+      { say: 'k_steps3' }, { read: 'mary', names: false }, { say: 'k_steps_end' }] },
+    { id: 'durations', fr: 'Combien de temps tenir une note : noire, blanche, ronde', en: 'How long to hold a note: quarter, half, whole', steps: [
+      { say: 'k_dur0' },
+      { show: ex('c4 c4 c4 c4') }, { say: 'k_dur1', point: [{ note: 0, text: '1' }] }, { play: ex('c4 c4 c4 c4 c4 c4 c4 c4'), any: true, q: 0.8 },
+      { show: ex('c4:2 c4:2') }, { say: 'k_dur2', point: [{ note: 0, text: '2' }] }, { play: ex('c4:2 c4:2 c4:2 c4:2'), any: true, hold: true, q: 0.8 },
+      { show: ex('c4:4') }, { say: 'k_dur3', point: [{ note: 0, text: '4' }] }, { play: ex('c4:4 c4:4'), any: true, hold: true, q: 0.8 },
       { say: 'k_pulse_end' }] },
+    { id: 'bars', fr: 'Les mesures et le comptage', en: 'Bars and counting', steps: [
+      { show: ex('c4 c4 c4:2 c4:2 c4:2 c4 c4 c4 c4 c4:4') }, { say: 'k_bar1', point: ['time'] }, { say: 'k_bar2', point: ['bar', 'measure'] },
+      { say: 'k_bar3', point: [] }, { play: ex('c4 c4 c4:2 c4:2 c4:2 c4 c4 c4 c4 c4:4'), any: true, hold: true, q: 0.75 },
+      { play: ex('c4 d4 e4:2 e4 d4 c4:2 c4 e4 d4 f4 e4:4'), q: 0.75 }, { say: 'k_bar_end' }] },
+    { id: 'intervals', fr: 'Lire par intervalles', en: 'Reading by intervals', steps: [
+      { show: ex('c4 d4 c4 e4') }, { say: 'k_int1', point: [{ note: 1, text: '+1' }, { note: 3, text: '+2' }] }, { read: 'c4 e4 g4 e4 c4 d4 f4 d4 e4 g4', names: false },
+      { say: 'k_int2' }, { play: 'lune', lights: false, names: false, tempo: 0.8 }, { say: 'k_int_end' }] },
+  ] },
+  { fr: 'Le rythme', en: 'Rhythm', lessons: [
     { id: 'rests', fr: 'Les silences et la valse à trois temps', en: 'Rests, and the waltz in three', steps: [
       { say: 'k_rest1' }, { play: ex('c4 r c4 r c4 c4 r:2 c4:2 r c4 c4:4'), any: true, q: 0.7 },
       { say: 'k_rest2' }, { play: ex('c4 c4 c4 c4:2 c4 c4 c4 c4 c4:3', '', { meter: 3 }), any: true, hold: true, q: 0.6 },
@@ -56,17 +74,6 @@ export const COURSE = [
       { say: 'k_dot1' }, { play: ex('c4:1.5 c4:0.5 c4:1.5 c4:0.5 c4:2 c4:2'), any: true, q: 0.75 },
       { say: 'k_eighth2' }, { play: 'jacques', tempo: 0.8 },
       { say: 'k_eighth_end' }] },
-  ] },
-  { fr: 'Lire la main droite', en: 'Reading the right hand', lessons: [
-    { id: 'treble', fr: 'La clé de sol et les notes repères', en: 'The treble clef and landmark notes', steps: [
-      { say: 'k_treble1' }, { say: 'k_treble2' }, { read: 'c4 g4 c4 g4', names: true }, { say: 'k_noname' }, { read: 'g4 g4 c4 g4 c4 c4 g4', names: false }, { say: 'k_treble_end' }] },
-    { id: 'steps', fr: 'Do Ré Mi Fa Sol sur la portée', en: 'C D E F G on the staff', steps: [
-      { say: 'k_steps1' }, { read: 'c4 d4 e4 f4 g4 f4 e4 d4 c4', names: true },
-      { say: 'k_steps2' }, { read: 'e4 c4 g4 d4 f4 e4 g4 c4 d4 f4', names: false },
-      { say: 'k_steps3' }, { read: 'mary', names: false }, { say: 'k_steps_end' }] },
-    { id: 'intervals', fr: 'Lire par intervalles', en: 'Reading by intervals', steps: [
-      { say: 'k_int1' }, { read: 'c4 e4 g4 e4 c4 d4 f4 d4 e4 g4', names: false },
-      { say: 'k_int2' }, { play: 'lune', lights: false, names: false, tempo: 0.8 }, { say: 'k_int_end' }] },
   ] },
   { fr: 'La main gauche', en: 'The left hand', lessons: [
     { id: 'bass', fr: 'La clé de fa', en: 'The bass clef', steps: [
