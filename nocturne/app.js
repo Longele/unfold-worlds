@@ -645,6 +645,8 @@ const course = {
   async start(i) {
     this.close(); $('lessonend').classList.remove('on');
     const L = LESSONS[i]; this.idx = i; toast(L[lang], 3500);
+    // the lesson's voice lines are fetched as it opens, so none is late or silent
+    sound.loadLines(lang, [...new Set([...L.steps.filter((x) => x.say).map((x) => x.say), 'k_demo', 'k_yourturn', 'k_next', 'k_read_hint'])]);
     if (L.steps[0].basics) { this.pending = i; toLesson(); return; } // the guided first lesson; its end comes back here
     const run = ++coach.run; mode = 'coach'; document.body.dataset.mode = 'coach'; songs.stop(); lesson.stop();
     for (const st of L.steps) { if (!coach.alive(run)) return; await this.step(st, run); }

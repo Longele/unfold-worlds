@@ -134,7 +134,9 @@ export class Sound {
   // narrator: resolves when the line ends (or is stopped)
   async say(id) {
     this.stopVoice();
-    const b = await this.lines.get(`${this.lang}/${id}`);
+    // a line not loaded yet (the course has many) is fetched now
+    const key = `${this.lang}/${id}`; if (!this.lines.has(key)) this.lines.set(key, this.fetchBuf(`${this.base}/audio/voice/${this.lang}/${id}.mp3`).catch(() => null));
+    const b = await this.lines.get(key);
     if (!b) return;
     const c = this.ctx, src = c.createBufferSource(); src.buffer = b;
     src.connect(this.voiceBus);
