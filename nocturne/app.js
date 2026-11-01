@@ -601,7 +601,7 @@ const coach = {
     if (this.live) { const now = sound.ctx.currentTime, e = this.live.exp.find((x) => x.at > now - this.live.q * 0.5); return e ? this.live.exp.filter((x) => x.at === e.at).map((x) => x.m) : []; }
     return this.wait?.want() || [];
   },
-  stop() { this.run++; this.live = null; this.wait = null; this.stopWait?.(); this.stopWait = null; sound.stopVoice(); piano.setTargets([]); piano.guide(null); piano.clearBadges(); dots(0, 0); staff.hide(); if (span) setSpan(null); $('cont').classList.remove('on'); hintText(''); },
+  stop() { this.run++; this.live = null; this.wait = null; this.stopWait?.(); this.stopWait = null; sound.stopVoice(); piano.setTargets([]); piano.guide(null); piano.clearBadges(); dots(0, 0); staff.hide(); course.figure?.(null); if (span) setSpan(null); $('cont').classList.remove('on'); hintText(''); },
 };
 
 // ------------------------------------------------------------------ the course
@@ -649,9 +649,10 @@ const course = {
     sound.loadLines(lang, [...new Set([...L.steps.filter((x) => x.say).map((x) => x.say), 'k_demo', 'k_yourturn', 'k_next', 'k_read_hint'])]);
     if (L.steps[0].basics) { this.pending = i; toLesson(); return; } // the guided first lesson; its end comes back here
     const run = ++coach.run; mode = 'coach'; document.body.dataset.mode = 'coach'; songs.stop(); lesson.stop();
-    for (const st of L.steps) { if (!coach.alive(run)) return; await this.step(st, run); }
+    for (const [k, st] of L.steps.entries()) { if (!coach.alive(run)) return; $('prog').style.setProperty('--p', `${(k / L.steps.length) * 100}%`); await this.step(st, run); }
+    $('prog').style.setProperty('--p', '100%');
     if (!coach.alive(run)) return;
-    staff.hide(); setSpan(null); this.end(i);
+    staff.hide(); this.figure(null); setSpan(null); this.end(i);
   },
   async end(i) {
     sound.chime(88); caption(CAPTIONS[lang].k_next); await sound.say('k_next');
@@ -664,6 +665,7 @@ const course = {
   step(st, run) {
     if (st.say) return this.explain(st, run);
     if (st.show) return this.showOnly(st);
+    if (st.figure) return this.figure(st.figure);
     if (st.explore) return this.explore(st, run);
     if (st.pedal) return this.pedal(st, run);
     if (st.read) return this.read(st, run);
@@ -696,7 +698,20 @@ const course = {
   // the reading aids for the score of a step
   aids(st, x, dflt = true) {
     const nm = (m) => NAMES[lang][((m % 12) + 12) % 12];
-    return { meter: x.meter, key: x.key, lead: st.lead, names: (st.names ?? dflt) ? nm : null, fingers: st.fingers || null, mark: st.mark || null, hands: lang === 'fr' ? ['MD', 'MG'] : ['RH', 'LH'] };
+    return { meter: x.meter, key: x.key, lead: st.lead, names: (st.names ?? dflt) ? nm : null, fingers: st.fingers || null, mark: st.mark || null, art: st.art || null, hands: lang === 'fr' ? ['MD', 'MG'] : ['RH', 'LH'] };
+  },
+  // a drawing over the piano: the two hands with their finger numbers (the thumb is 1 on both)
+  figure(name) {
+    const el = $('figure'), L = lang === 'fr' ? ['main gauche', 'main droite'] : ['left hand', 'right hand'];
+    if (!name) { el.classList.remove('on'); return; }
+    const hand = (x, mirror, label) => {
+      const fx = mirror ? [-1, 1] : [1, 1], f = [[-62, -10, 1, 34, -35], [-34, -70, 2, 26, -8], [-8, -84, 3, 26, 0], [18, -74, 4, 25, 6], [42, -52, 5, 22, 14]];
+      return `<g transform="translate(${x},150) scale(${fx[0]},1)"><rect x="-58" y="-40" width="112" height="96" rx="34" fill="#f1d9bd" stroke="#8a5a3a" stroke-width="2"/>` +
+        f.map(([dx, dy, n, w, rot]) => `<g transform="translate(${dx},${dy}) rotate(${rot})"><rect x="${-w / 2}" y="-44" width="${w}" height="${n === 1 ? 58 : 72}" rx="${w / 2}" fill="#f1d9bd" stroke="#8a5a3a" stroke-width="2"/><g transform="translate(0,-26) rotate(${-rot}) translate(0,26) scale(${fx[0]},1)"><circle cx="0" cy="-26" r="11" fill="#d9781f"/><text x="0" y="-21" text-anchor="middle" font-size="14" font-weight="700" fill="#fff" font-family="Arial">${n}</text></g></g>`).join('') +
+        `<g transform="scale(${fx[0]},1)"><text x="0" y="80" text-anchor="middle" font-size="15" fill="#5a3a20" font-family="Arial">${label}</text></g></g>`;
+    };
+    el.innerHTML = `<svg viewBox="0 0 520 250">${hand(140, true, L[0])}${hand(380, false, L[1])}</svg>`;
+    el.classList.add('on');
   },
   // a score to look at while the teacher explains it
   async showOnly(st) { const x = exercise(st.show); spanOf(x.ev); await staff.show(x.ev, this.aids(st, x)); if (st.point) staff.point(st.point); },
@@ -724,7 +739,7 @@ const course = {
   // play in time: first the piano plays it (listen and watch), then the learner, when ready; after each try the
   // stars and one tip, then the learner chooses: again, work on the passage that slipped, or go on
   async play(st, run) {
-    const x = exercise(st.play), q = (st.q || x.q) / (st.tempo || 1);
+    this.figure(null); const x = exercise(st.play), q = (st.q || x.q) / (st.tempo || 1);
     let ev = x.ev; if (typeof st.play === 'string' && SONGS[st.play] && st.lh) ev = songEvents(st.play, st).ev;
     if (st.hands) ev = ev.filter((e) => e.h === st.hands[0]);
     const acc = typeof st.play === 'string' && SONGS[st.play] && !st.lh ? x.acc : null;
@@ -738,9 +753,9 @@ const course = {
       caption(CAPTIONS[lang].k_demo); await sound.say('k_demo'); if (!coach.alive(run)) return;
       if (!await coach.timed(ev, q, run, { ...o, demo: true })) { if (!coach.alive(run)) return; }
     }
-    let k = await this.choose(run, [{ k: 'go', t: T[lang].yourTurn, main: true }]);
+    let k = await this.choose(run, [{ k: 'go', t: T[lang].yourTurn, main: true }, { k: 'listen', t: T[lang].listenFirst }]);
     while (coach.alive(run) && k) {
-      if (k === 'listen') { if (!await coach.timed(ev, q, run, { ...o, demo: true })) { if (!coach.alive(run)) return; } k = await this.choose(run, [{ k: 'go', t: T[lang].yourTurn, main: true }]); continue; }
+      if (k === 'listen') { if (!await coach.timed(ev, q, run, { ...o, demo: true })) { if (!coach.alive(run)) return; } k = await this.choose(run, [{ k: 'go', t: T[lang].yourTurn, main: true }, { k: 'listen', t: T[lang].listenFirst }]); continue; }
       if (k === 'part' && this.weak) {
         const [a, b] = this.weak, shift = Math.floor(a / x.meter) * x.meter;
         const part = ev.filter((e) => e.t >= a - 1e-6 && e.t < b - 1e-6).map((e) => ({ ...e, t: e.t - shift }));
@@ -878,6 +893,7 @@ function placeStaff() {
   const st = $('staff'), c = $('cap'); if (!st || innerHeight <= 520) { if (st) st.style.top = ''; return; }
   const bottom = c.textContent ? c.getBoundingClientRect().bottom : 0;
   st.style.top = bottom ? `${Math.round(Math.max(bottom + 44, innerHeight * 0.09 + 112))}px` : ''; // room for the beats above it
+  const f = $('figure'); if (f) f.style.top = bottom ? `${Math.round(bottom + 20)}px` : ''; // the hands drawing never covers the words
 }
 // progress of the current exercise: one dot per note, or a thin bar for long pieces
 function dots(n, k) {

@@ -194,7 +194,7 @@ body[data-mode="coach"] #b-prev, body[data-mode="coach"] #b-next { display: none
 #pedalbtn.on { background: var(--acc); color: var(--ink); }
 /* the teacher's pointer on the score */
 #staff .callouts { position: absolute; inset: 0; pointer-events: none; }
-#staff .co { position: absolute; transform: translate(-50%, -50%); padding: 2px 8px; border-radius: 9px; background: #d9781f; color: #fff; font-family: var(--mono); font-size: 11px; letter-spacing: .04em; white-space: nowrap; animation: coin .5s var(--ease) both; }
+#staff .co { position: absolute; transform: translate(-50%, -50%); padding: 2px 8px; border-radius: 9px; background: #d9781f; color: #fff; font-family: var(--mono); font-size: 13px; letter-spacing: .04em; white-space: nowrap; animation: coin .5s var(--ease) both; }
 #staff .co.blue { background: #2f6fb3; }
 #staff .co-line { position: absolute; height: 3px; background: rgba(217, 120, 31, .55); border-radius: 2px; animation: coin .5s var(--ease) both; }
 #staff .co-space { position: absolute; height: 8px; background: rgba(47, 111, 179, .22); border-radius: 4px; animation: coin .5s var(--ease) both; }
@@ -214,3 +214,9 @@ body[data-mode="coach"] #b-prev, body[data-mode="coach"] #b-next { display: none
 #course li.tip { display: block; padding: 0 6px 6px; border: 0; color: var(--dim); font-size: 15px; }
 #staff svg.ghost .vf-stavenote { opacity: 0; }
 #staff .co.small { padding: 0 5px; font-size: 9.5px; line-height: 13px; border-radius: 7px; }
+body[data-mode="coach"] #prog { opacity: 1; }
+/* a drawing over the piano (the hands and their finger numbers) */
+#figure { position: fixed; left: 50%; top: calc(max(9vh, 64px) + 96px); transform: translate(-50%, 8px); width: min(560px, calc(100vw - 32px)); z-index: 4; padding: 10px; border-radius: 16px; background: #f3ecdd; box-shadow: 0 10px 40px rgba(0, 0, 0, .45); opacity: 0; pointer-events: none; transition: opacity .5s var(--ease), transform .5s var(--ease); }
+#figure.on { opacity: 1; transform: translate(-50%, 0); }
+#figure svg { display: block; width: 100%; height: auto; }
+@media (max-height: 520px) { #figure { top: 40px; width: min(380px, 70vw); } }

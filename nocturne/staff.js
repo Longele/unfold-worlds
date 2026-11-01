@@ -23,8 +23,8 @@ function loadVex() {
 }
 
 const LBL = {
-  fr: { clef: 'clé de sol', bass: 'clé de fa', time: '4 temps par mesure', bar: 'barre de mesure', measure: 'une mesure' },
-  en: { clef: 'treble clef', bass: 'bass clef', time: '4 beats in a bar', bar: 'barline', measure: 'one bar' },
+  fr: { key: 'armure', clef: 'clé de sol', bass: 'clé de fa', time: 'les chiffres de la mesure', bar: 'barre de mesure', measure: 'une mesure' },
+  en: { key: 'key signature', clef: 'treble clef', bass: 'bass clef', time: 'time signature', bar: 'barline', measure: 'one bar' },
 };
 export class Staff {
   constructor(el) { this.el = el; this.ev = null; }
@@ -59,6 +59,8 @@ export class Staff {
       if (p === 'time') { const x = s.getNoteStartX() - 24; add('co-ring', { left: px(x - 12), top: px(top - 6), width: px(26), height: px(bot - top + 12) }); add('co', { left: px(lx(x + 2)), top: px(bot + 26) }, L.time); }
       if (p === 'bar') { add('co-ring', { left: px(this.barEnd - 6), top: px(top - 8), width: px(12), height: px(bot - top + 16) }); add('co', { left: px(lx(this.barEnd)), top: px(top - 18) }, L.bar); }
       if (p === 'measure') { add('co-band', { left: px(s.getNoteStartX() - 8), top: px(top - 10), width: px(this.barEnd - s.getNoteStartX() + 6), height: px(bot - top + 20) }); add('co', { left: px((s.getNoteStartX() + this.barEnd) / 2), top: px(top - 18) }, L.measure); }
+      if (p === 'key') { const x = s.getX() + 44; add('co-ring', { left: px(x - 4), top: px(top - 8), width: px(22), height: px(bot - top + 16) }); add('co', { left: px(lx(x + 8)), top: px(bot + 26) }, L.key); }
+      if (p && p.rest != null) { const n = this.rests[p.rest]; if (!n) continue; const x = n.getAbsoluteX() + 6, y = (top + bot) / 2; add('co-ring round', { left: px(x - 16), top: px(y - 16), width: px(32), height: px(32) }); add('co', { left: px(lx(x)), top: px(top - 18) }, p.text || ''); }
       if (p && p.note != null) { const n = this.notes[p.note]; if (!n) continue; const x = n.getAbsoluteX() + 6, y = Math.min(...n.getYs()); add('co-ring round', { left: px(x - 14), top: px(y - 14), width: px(28), height: px(28) }); add('co', { left: px(x), top: px(Math.max(10, y - 30)) }, p.text || ''); }
     }
   }
@@ -68,7 +70,7 @@ export class Staff {
   get perPage() { return Math.max(1, Math.min(4, this.bars || 4, Math.floor(this.el.clientWidth / this.z / 190))); }
   draw(page) {
     const VF = window.Vex.Flow, el = this.el, z = this.z, W = el.clientWidth / z, H = this.clefs.length === 2 ? 250 : 140;
-    el.innerHTML = ''; this.page = page; this.notes = []; this.first = null; this.barEnd = null;
+    el.innerHTML = ''; this.page = page; this.notes = []; this.rests = []; this.first = null; this.barEnd = null;
     const r = new VF.Renderer(el, VF.Renderer.Backends.SVG); r.resize(W * z, H * z); const ctx = r.getContext(); ctx.scale(z, z);
     const pp = this.perPage, b0 = page * pp, b1 = Math.min(this.bars, b0 + pp), m = this.o.meter;
     const first = 70 + (this.o.key !== 'C' ? 20 : 0) + (page === 0 ? 30 : 0), bw = (W - 20 - first) / pp;
@@ -105,7 +107,7 @@ export class Staff {
     const ev = this.ev.filter((e) => e.h === h && e.t >= a - 1e-6 && e.t < z - 1e-6).sort((p, q) => p.t - q.t);
     const chords = this.o.lead ? this.ev.filter((e) => e.h === 'l' && e.ms.length >= 2) : [];
     const out = []; let t = a;
-    const rest = (d) => { while (d > 1e-6) { const [b, c] = durOf(d); const n = new VF.StaveNote({ clef, keys: [clef === 'bass' ? 'd/3' : 'b/4'], duration: c + 'r' }); if (c.includes('d')) VF.Dot.buildAndAttach([n], { all: true }); out.push(n); d -= b; } };
+    const rest = (d) => { while (d > 1e-6) { const [b, c] = durOf(d); const n = new VF.StaveNote({ clef, keys: [clef === 'bass' ? 'd/3' : 'b/4'], duration: c + 'r' }); if (c.includes('d')) VF.Dot.buildAndAttach([n], { all: true }); this.rests.push(n); out.push(n); d -= b; } };
     for (const e of ev) {
       if (e.t > t + 1e-6) rest(e.t - t);
       const d = Math.min(e.d, z - e.t), [b, c] = durOf(d), sp = e.sp || e.ms.map(keyOf);
@@ -116,6 +118,7 @@ export class Staff {
       // reading aids: the note's name under it, the finger above it, a dynamic on the first note
       if (this.o.names) n.addModifier(new VF.Annotation(e.ms.map(this.o.names).join(' ')).setFont('Arial', e.ms.length > 1 ? 10 : 12, 'bold').setVerticalJustification(VF.Annotation.VerticalJustify.BOTTOM), 0);
       const fg = this.o.fingers && e.ms.map((x) => this.o.fingers[x]).filter(Boolean); if (fg?.length) n.addModifier(new VF.Annotation(fg.join(' ')).setFont('Arial', 13, 'bold').setVerticalJustification(VF.Annotation.VerticalJustify.TOP), 0);
+      if (this.o.art === 'staccato') n.addModifier(new VF.Articulation('a.').setPosition(VF.Modifier.Position.ABOVE), 0);
       if (this.o.mark && e.t === 0) n.addModifier(new VF.Annotation(this.o.mark).setFont('Times', 20, 'italic bold').setVerticalJustification(VF.Annotation.VerticalJustify.BOTTOM), 0);
       n.__t = e.t; this.notes.push(n); out.push(n); t = e.t + b;
     }

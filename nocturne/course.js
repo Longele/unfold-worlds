@@ -35,7 +35,7 @@ export const COURSE = [
   { fr: 'Découvrir le clavier', en: 'Meet the keyboard', lessons: [
     { id: 'first', fr: 'Première leçon : les touches, les noms, les premières mélodies', en: 'First lesson: keys, names, first melodies', steps: [{ basics: true }] },
     { id: 'fingers', fr: 'Bien s’installer et les numéros des doigts', en: 'Sitting well, and finger numbers', steps: [
-      { say: 'k_fing2' }, { say: 'k_fing1' }, { say: 'k_fing3' },
+      { say: 'k_fing2' }, { figure: 'hands' }, { say: 'k_fing1' }, { say: 'k_fing3' },
       { play: ex('c4 e4 d4 f4 e4 g4 f4 d4 c4:2 r:2'), q: 0.8, fingers: { 60: 1, 62: 2, 64: 3, 65: 4, 67: 5 } }, { say: 'k_fing_end' }] },
   ] },
   { fr: 'Lire une partition', en: 'Reading a score', lessons: [
@@ -47,9 +47,13 @@ export const COURSE = [
       { show: ex('c4:2 g4:2') }, { say: 'k_cl3', point: ['lines', { note: 1, text: 'Sol' }] }, { read: 'g4', names: true },
       { say: 'k_cl4' }, { read: 'g4 c4 g4 g4 c4 g4 c4 c4', names: false }, { say: 'k_treble_end' }] },
     { id: 'steps', fr: 'Do Ré Mi Fa Sol sur la portée', en: 'C D E F G on the staff', steps: [
-      { show: ex('c4 d4 e4 f4 g4:3') }, { say: 'k_steps1' }, { read: 'c4 d4 e4 f4 g4 f4 e4 d4 c4', names: true },
+      { show: ex('c4 d4 e4 f4 g4:3') }, { say: 'k_steps1', point: ['lines'] }, { read: 'c4 d4 e4 f4 g4 f4 e4 d4 c4', names: true },
       { say: 'k_steps2' }, { read: 'e4 c4 g4 d4 f4 e4 g4 c4 d4 f4', names: false },
       { say: 'k_steps3' }, { read: 'mary', names: false }, { say: 'k_steps_end' }] },
+    { id: 'upper', fr: 'La, Si, Do aigu… les notes du haut', en: 'A, B, high C… the higher notes', steps: [
+      { show: ex('g4 a4 b4 c5') }, { say: 'k_up1', point: [{ note: 3, text: 'Do' }] }, { read: 'g4 a4 b4 c5 b4 a4 g4', names: true },
+      { show: ex('c5 d5 e5 f5 g5:3') }, { say: 'k_up2', point: ['lines'] }, { explore: { clef: 'treble', n: 5 } },
+      { read: 'c5 d5 e5 f5 g5 e5 c5 a4 c5', names: true }, { say: 'k_noname' }, { read: 'a4 c5 e5 g5 b4 d5 f5 c5', names: false }, { say: 'k_up_end' }] },
     { id: 'durations', fr: 'Combien de temps tenir une note : noire, blanche, ronde', en: 'How long to hold a note: quarter, half, whole', steps: [
       { say: 'k_dur0' },
       { show: ex('c4 c4 c4 c4') }, { say: 'k_dur1', point: [{ note: 0, text: '1' }] }, { play: ex('c4 c4 c4 c4 c4 c4 c4 c4'), any: true, q: 0.8 },
@@ -66,18 +70,19 @@ export const COURSE = [
   ] },
   { fr: 'Le rythme', en: 'Rhythm', lessons: [
     { id: 'rests', fr: 'Les silences et la valse à trois temps', en: 'Rests, and the waltz in three', steps: [
-      { say: 'k_rest1' }, { play: ex('c4 r c4 r c4 c4 r:2 c4:2 r c4 c4:4'), any: true, q: 0.7 },
-      { say: 'k_rest2' }, { play: ex('c4 c4 c4 c4:2 c4 c4 c4 c4 c4:3', '', { meter: 3 }), any: true, hold: true, q: 0.6 },
+      { show: ex('c4 r c4 r') }, { say: 'k_rest1', point: [{ rest: 0, text: '1' }] }, { play: ex('c4 r c4 r c4 c4 c4 r c4:2 r r c4:4'), any: true, q: 0.7 },
+      { show: ex('c4 c4 c4 c4:3', '', { meter: 3 }) }, { say: 'k_rest2', point: ['time', { note: 3, text: '3' }] }, { play: ex('c4 c4 c4 c4:2 c4 c4 c4 c4 c4:3', '', { meter: 3 }), any: true, hold: true, q: 0.6 },
       { say: 'k_rest_end' }] },
     { id: 'eighths', fr: 'Les croches', en: 'Eighth notes', steps: [
-      { say: 'k_eighth1' }, { play: ex('c4 c4:0.5 c4:0.5 c4 c4:0.5 c4:0.5 c4:0.5 c4:0.5 c4:0.5 c4:0.5 c4 c4 c4:2 c4:2'), any: true, q: 0.8 },
-      { say: 'k_dot1' }, { play: ex('c4:1.5 c4:0.5 c4:1.5 c4:0.5 c4:2 c4:2'), any: true, q: 0.75 },
+      { show: ex('c4 c4:0.5 c4:0.5 c4 c4') }, { say: 'k_eighth1', point: [{ note: 1, text: '1/2' }, { note: 2, text: '1/2' }] }, { play: ex('c4 c4:0.5 c4:0.5 c4 c4:0.5 c4:0.5 c4:0.5 c4:0.5 c4:0.5 c4:0.5 c4 c4 c4:2 c4:2'), any: true, q: 0.8 },
+      { show: ex('c4:1.5 c4:0.5 c4:2') }, { say: 'k_dot1', point: [{ note: 0, text: '1 + 1/2' }] }, { play: ex('c4:1.5 c4:0.5 c4:1.5 c4:0.5 c4:2 c4:2'), any: true, q: 0.75 },
       { say: 'k_eighth2' }, { play: 'jacques', tempo: 0.8 },
       { say: 'k_eighth_end' }] },
   ] },
   { fr: 'La main gauche', en: 'The left hand', lessons: [
     { id: 'bass', fr: 'La clé de fa', en: 'The bass clef', steps: [
-      { say: 'k_bass1' }, { say: 'k_bass2' }, { read: ex('', 'c3 d3 e3 f3 g3 f3 e3 d3 c3'), names: true },
+      { show: ex('', 'c3:2 f3:2') }, { say: 'k_bass1', point: ['clef', { note: 1, text: 'Fa' }] }, { say: 'k_bass1b', point: ['spaces', { note: 0, text: 'Do' }] },
+      { say: 'k_bass_exp' }, { explore: { clef: 'bass', n: 5 } }, { say: 'k_bass2' }, { figure: 'hands' }, { read: ex('', 'c3 d3 e3 f3 g3 f3 e3 d3 c3'), names: true },
       { say: 'k_noname' }, { read: ex('', 'e3 c3 g3 d3 f3 c3 e3 g3'), names: false }, { say: 'k_bass_end' }] },
     { id: 'lefthand', fr: 'Une mélodie à la main gauche', en: 'A melody in the left hand', steps: [
       { say: 'k_lh1' }, { play: ex('', 'c3 c3 c3 d3 e3:2 d3:2 c3 e3 d3 d3 c3:4'), q: 0.6 }, { say: 'k_lh_end' }] },
@@ -86,10 +91,12 @@ export const COURSE = [
     { id: 'alternate', fr: 'Chacune son tour', en: 'Taking turns', steps: [
       { say: 'k_alt1' }, { play: ex('c4 d4 e4:2 r:4 e4 f4 g4:2 r:4', 'r:4 c3 d3 e3:2 r:4 e3 f3 g3:2'), q: 0.6 }, { say: 'k_alt_end' }] },
     { id: 'together', fr: 'Ensemble', en: 'Together', steps: [
+      { say: 'k_sep1' }, { play: ex('c4 c4 c4 d4 e4:2 d4:2 c4 e4 d4 d4 c4:4'), q: 0.75 },
+      { say: 'k_sep2' }, { play: ex('', 'c3:4 c3:2 g2:2 c3:2 g2:2 c3:4'), q: 0.75, hold: true },
       { say: 'k_tog1' }, { play: ex('c4 c4 c4 d4 e4:2 d4:2 c4 e4 d4 d4 c4:4', 'c3:4 c3:2 g2:2 c3:2 g2:2 c3:4'), q: 0.75, hold: true },
       { say: 'k_tog_end' }] },
     { id: 'odehands', fr: 'L’Hymne à la joie à deux mains', en: 'Ode to Joy with both hands', steps: [
-      { say: 'k_ode1' }, { play: 'ode', lh: 'root', tempo: 0.7 }, { say: 'k_ode2' }, { play: 'ode', lh: 'root', tempo: 1 }, { say: 'k_ode_end' }] },
+      { say: 'k_ode1' }, { play: 'ode', tempo: 0.7 }, { say: 'k_sep2' }, { play: 'ode', hands: 'l', lh: 'root', tempo: 0.7 }, { say: 'k_sep3' }, { play: 'ode', lh: 'root', tempo: 0.7 }, { say: 'k_ode2' }, { play: 'ode', lh: 'root', tempo: 1 }, { say: 'k_ode_end' }] },
   ] },
   { fr: 'Le toucher', en: 'Touch', lessons: [
     { id: 'legato', fr: 'Lié et détaché', en: 'Legato and staccato', steps: [
@@ -105,13 +112,13 @@ export const COURSE = [
   ] },
   { fr: 'Dièses et gammes', en: 'Sharps and scales', lessons: [
     { id: 'sharps', fr: 'Dièses et bémols', en: 'Sharps and flats', steps: [
-      { say: 'k_sharp1' }, { read: 'c4 c#4 d4 f4 f#4 g4 bb4 a4', names: true }, { say: 'k_sharp_end' }] },
+      { show: ex('c4 c#4 b4 bb4') }, { say: 'k_sharp1', point: [{ note: 1, text: '♯' }, { note: 3, text: '♭' }] }, { read: 'c4 c#4 d4 f4 f#4 g4 bb4 a4', names: true }, { say: 'k_sharp_end' }] },
     { id: 'cscale', fr: 'La gamme de Do et le passage du pouce', en: 'The C scale and the thumb under', steps: [
       { say: 'k_sc1' }, { play: ex('c4 d4 e4 f4 g4 a4 b4 c5 b4 a4 g4 f4 e4 d4 c4:2'), q: 0.65, fingers: { 60: 1, 62: 2, 64: 3, 65: 1, 67: 2, 69: 3, 71: 4, 72: 5 } },
       { say: 'k_sc2' }, { play: ex('', 'c3 d3 e3 f3 g3 a3 b3 c4:2'), q: 0.65, fingers: { 48: 5, 50: 4, 52: 3, 53: 2, 55: 1, 57: 3, 59: 2, 60: 1 } },
       { say: 'k_sc_end' }] },
     { id: 'gscale', fr: 'La gamme de Sol et l’armure', en: 'The G scale and the key signature', steps: [
-      { say: 'k_g1' }, { play: ex('g4 a4 b4 c5 d5 e5 f#5 g5:2', '', { key: 'G' }), q: 0.65, fingers: { 67: 1, 69: 2, 71: 3, 72: 1, 74: 2, 76: 3, 78: 4, 79: 5 } },
+      { show: ex('g4 a4 b4 c5 d5 e5 f#5 g5', '', { key: 'G' }) }, { say: 'k_g1', point: ['key'] }, { play: ex('g4 a4 b4 c5 d5 e5 f#5 g5:2', '', { key: 'G' }), q: 0.65, fingers: { 67: 1, 69: 2, 71: 3, 72: 1, 74: 2, 76: 3, 78: 4, 79: 5 } },
       { say: 'k_g2' }, { read: ex('g4 a4 b4 g4 d5 c5 b4 a4 g4 f#4 g4', '', { key: 'G' }), names: false }, { say: 'k_g_end' }] },
   ] },
   { fr: 'Les accords', en: 'Chords', lessons: [
@@ -120,14 +127,14 @@ export const COURSE = [
       { say: 'k_ch2' }, { chords: ['[a4,c5,e5]', '[c4,e4,g4]', '[a4,c5,e5]'] }, { say: 'k_ch_end' }] },
     { id: 'accomp', fr: 'Accompagner à la main gauche', en: 'Accompanying with the left hand', steps: [
       { say: 'k_acc1' }, { play: ex('', `${C}:4 ${F}:4 ${G}:4 ${C}:4`), q: 0.6, hold: true },
-      { say: 'k_acc2' }, { play: 'twinkle', lh: 'chord', tempo: 0.65 }, { say: 'k_acc_end' }] },
+      { say: 'k_acc2' }, { play: 'twinkle', lh: 'root', tempo: 0.65 }, { say: 'k_acc3' }, { play: 'twinkle', lh: 'chord', tempo: 0.6 }, { say: 'k_acc_end' }] },
     { id: 'broken', fr: 'Les accords brisés', en: 'Broken chords', steps: [
       { say: 'k_br1' }, { play: ex('', 'c3:0.5 g3:0.5 e3:0.5 g3:0.5 c3:0.5 g3:0.5 e3:0.5 g3:0.5 c3:0.5 a3:0.5 f3:0.5 a3:0.5 c3:0.5 a3:0.5 f3:0.5 a3:0.5 b2:0.5 g3:0.5 d3:0.5 g3:0.5 b2:0.5 g3:0.5 d3:0.5 g3:0.5 c3:4'), q: 0.75 },
       { say: 'k_br_end' }] },
   ] },
   { fr: 'Jouer seul', en: 'Playing on your own', lessons: [
     { id: 'lead', fr: 'Lire une grille d’accords', en: 'Reading a lead sheet', steps: [
-      { say: 'k_lead1' }, { play: 'lune', lh: 'chord', lead: true, lights: false, names: false, tempo: 0.7 }, { say: 'k_lead2' }, { play: 'jingle', lh: 'chord', lead: true, lights: false, names: false, tempo: 0.7 }, { say: 'k_lead_end' }] },
+      { show: ex('c4:2 f4:2 g4:2 a4:2', '[c3,e3,g3]:2 [c3,f3,a3]:2 [b2,d3,g3]:2 [c3,e3,a3]:2'), lead: true }, { say: 'k_lead0' }, { say: 'k_lead1' }, { play: 'lune', lh: 'chord', lead: true, lights: false, names: false, tempo: 0.7 }, { say: 'k_lead2' }, { play: 'jingle', lh: 'chord', lead: true, lights: false, names: false, tempo: 0.7 }, { say: 'k_lead_end' }] },
     { id: 'ear', fr: 'Jouer d’oreille', en: 'Playing by ear', steps: [
       { say: 'k_ear1' }, { echo: ['c4 d4 e4', 'c4 e4 d4', 'c4 d4 e4 f4 g4', 'c4 e4 g4 e4 c4', 'e4 d4 c4 d4 e4 e4 e4'] }, { say: 'k_ear_end' }] },
     { id: 'improv', fr: 'Improviser', en: 'Improvising', steps: [
