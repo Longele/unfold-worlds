@@ -3,6 +3,7 @@ import { Piano3D } from './piano3d.js';
 import { Sound } from './sound.js';
 import { CAPTIONS } from './captions.js';
 import { SONGS, timeline, notesOf } from './songs.js';
+import { songFromMidi } from './midifile.js';
 import { Staff, chordName } from './staff.js';
 import { COURSE, LESSONS, parse } from './course.js';
 
@@ -10,21 +11,23 @@ const $ = (id) => document.getElementById(id);
 const T = {
   en: { tag: 'Piano, simply.', learn: 'Learn the basics', learnS: 'ten minutes, guided by voice', free: 'Just play', freeS: 'there are no wrong notes', tuning: 'tuning the piano', ready: 'best with headphones',
     replay: 'Replay', next: 'Next', prev: 'Back', exit: 'Free play', notes: 'Notes', pedal: 'Pedal', rain: 'Rain', lesson: 'Lesson', midi: 'MIDI', midiOn: 'MIDI piano connected', midiNo: 'No MIDI keyboard found', midiOff: 'MIDI piano unplugged', midiHint: 'A MIDI piano? Plug it into the computer and connect it here', octave: 'Octave', keysTip: (a, b) => `Play with your computer keys: their letters are on the piano. ${a} and ${b} change octave`,
-    songs: 'Songs', kids: 'Nursery songs', classic: 'Classical', listen: 'Listen', play: 'Play', bravo: 'Well played',
+    songs: 'Songs', kids: 'Nursery songs', classic: 'Classical', famous: 'Famous tunes', mine: 'My MIDI files', openMidi: 'Open a MIDI file', openMidiS: 'from your computer or phone; it stays on your device', midiBad: 'This file could not be read as MIDI', listen: 'Listen', play: 'Play', bravo: 'Well played',
     pause: 'Pause', paused: 'Paused', resume: 'Tap to continue', restart: 'Restart', back: 'Rewind', show: 'Show me', lh: 'Left hand', stop: 'Stop', speed: 'Speed',
     session: 'My session for today', sessionS: 'ten minutes with your coach', sessionB: 'Session', course: 'Course', cont: 'Continue ▸', again2: 'Listen again', yourTurn: 'Your turn ▸', tryAgain: 'Try again', workPart: 'Work on the tricky passage', listenFirst: 'Hear the model', wholeAgain: 'The whole piece again ▸', explore: 'Play white keys and watch where they are written', mapTip: 'Follow the lessons in order: each one takes 5 to 10 minutes.', startHere: 'Start here', go: 'Go', practice: 'Practise', coachSession: 'A session with the coach', nextLesson: 'Next lesson', toMap: 'The course', learnC: 'Learn the piano', learnCS: 'a full course, from the first C to playing alone',
     titles: { lune: 'Au clair de la lune', mary: 'Mary Had a Little Lamb', jacques: 'Frère Jacques', twinkle: 'Twinkle, Twinkle, Little Star', jingle: 'Jingle Bells',
-      ode: 'Ode to Joy', largo: 'New World Symphony, Largo', lullaby: 'Lullaby', canon: 'Canon in D', grieg: 'In the Hall of the Mountain King', minuet: 'Minuet in G', elise: 'Für Elise', gymno: 'Gymnopédie No. 1', prelude: 'Prelude in C' },
-    by: { Petzold: 'Petzold (attr. Bach)' },
+      ode: 'Ode to Joy', largo: 'New World Symphony, Largo', lullaby: 'Lullaby', canon: 'Canon in D', grieg: 'In the Hall of the Mountain King', minuet: 'Minuet in G', elise: 'Für Elise', gymno: 'Gymnopédie No. 1', prelude: 'Prelude in C',
+      saints: 'When the Saints Go Marching In', susanna: 'Oh! Susanna', auld: 'Auld Lang Syne', green: 'Greensleeves', nacht: 'Eine kleine Nachtmusik', fifth: 'Symphony No. 5' },
+    by: { Petzold: 'Petzold (attr. Bach)', Trad: 'Traditional', Foster: 'Stephen Foster' },
     labels: { none: 'Notes off', names: 'Note names', keys: 'Computer keys' }, turn: 'Turn your phone sideways', turnS: 'for the whole keyboard', stay: 'Continue upright', done: 'The piano is yours', credit: 'Piano: Salamander Grand Piano by Alexander Holm, CC BY 3.0' },
   fr: { tag: 'Le piano, simplement.', learn: 'Apprendre les bases', learnS: 'dix minutes, guidé par la voix', free: 'Jouer librement', freeS: 'il n’y a pas de fausse note', tuning: 'accordage du piano', ready: 'meilleur avec un casque',
     replay: 'Réécouter', next: 'Suivant', prev: 'Précédent', exit: 'Jeu libre', notes: 'Notes', pedal: 'Pédale', rain: 'Pluie', lesson: 'Leçon', midi: 'MIDI', midiOn: 'Piano MIDI branché', midiNo: 'Aucun clavier MIDI trouvé', midiOff: 'Piano MIDI débranché', midiHint: 'Un piano MIDI ? Branchez-le à l’ordinateur et connectez-le ici', octave: 'Octave', keysTip: (a, b) => `Jouez avec les touches de l’ordinateur : leurs lettres sont sur le piano. ${a} et ${b} changent d’octave`,
-    songs: 'Chansons', kids: 'Comptines', classic: 'Classique', listen: 'Écouter', play: 'Jouer', bravo: 'Bien joué',
+    songs: 'Chansons', kids: 'Comptines', classic: 'Classique', famous: 'Airs célèbres', mine: 'Mes fichiers MIDI', openMidi: 'Ouvrir un fichier MIDI', openMidiS: 'depuis votre ordinateur ou téléphone ; il reste sur votre appareil', midiBad: 'Ce fichier ne peut pas être lu comme un fichier MIDI', listen: 'Écouter', play: 'Jouer', bravo: 'Bien joué',
     pause: 'Pause', paused: 'En pause', resume: 'Touchez pour reprendre', restart: 'Début', back: 'Reculer', show: 'Montre-moi', lh: 'Main gauche', stop: 'Arrêter', speed: 'Vitesse',
     session: 'Ma séance du jour', sessionS: 'dix minutes avec votre coach', sessionB: 'Séance', course: 'Cours', cont: 'Continuer ▸', again2: 'Réécouter', yourTurn: 'À vous ▸', tryAgain: 'Réessayer', workPart: 'Travailler le passage difficile', listenFirst: 'Écouter le modèle', wholeAgain: 'Rejouer le morceau entier ▸', explore: 'Jouez des touches blanches et regardez où elles s’écrivent', mapTip: 'Suivez les leçons dans l’ordre : chacune dure 5 à 10 minutes.', startHere: 'Commencer ici', go: 'Ouvrir', practice: 'S’entraîner', coachSession: 'Une séance avec le coach', nextLesson: 'Leçon suivante', toMap: 'Le cours', learnC: 'Apprendre le piano', learnCS: 'un cours complet, du premier Do à jouer seul',
     titles: { lune: 'Au clair de la lune', mary: 'Mary avait un petit agneau', jacques: 'Frère Jacques', twinkle: 'Ah ! vous dirai-je, maman', jingle: 'Vive le vent',
-      ode: 'Hymne à la joie', largo: 'Symphonie du Nouveau Monde, Largo', lullaby: 'Berceuse', canon: 'Canon en ré', grieg: 'Dans l’antre du roi de la montagne', minuet: 'Menuet en sol', elise: 'Lettre à Élise', gymno: 'Gymnopédie n° 1', prelude: 'Prélude en do' },
-    by: { Petzold: 'Petzold (attribué à Bach)' },
+      ode: 'Hymne à la joie', largo: 'Symphonie du Nouveau Monde, Largo', lullaby: 'Berceuse', canon: 'Canon en ré', grieg: 'Dans l’antre du roi de la montagne', minuet: 'Menuet en sol', elise: 'Lettre à Élise', gymno: 'Gymnopédie n° 1', prelude: 'Prélude en do',
+      saints: 'When the Saints Go Marching In', susanna: 'Oh! Susanna', auld: 'Ce n’est qu’un au revoir', green: 'Greensleeves', nacht: 'Une petite musique de nuit', fifth: 'Symphonie n° 5' },
+    by: { Petzold: 'Petzold (attribué à Bach)', Trad: 'Traditionnel', Foster: 'Stephen Foster' },
     labels: { none: 'Notes masquées', names: 'Noms des notes', keys: 'Touches du clavier' }, turn: 'Tournez votre téléphone', turnS: 'pour avoir tout le clavier', stay: 'Continuer en portrait', done: 'Le piano est à vous', credit: 'Piano : Salamander Grand Piano par Alexander Holm, CC BY 3.0' },
 };
 const NAMES = { en: ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'], fr: ['Do', 'Do♯', 'Ré', 'Ré♯', 'Mi', 'Fa', 'Fa♯', 'Sol', 'Sol♯', 'La', 'La♯', 'Si'] };
@@ -32,7 +35,7 @@ const store = { get: (k) => { try { return localStorage.getItem(k); } catch { re
 let lang = new URLSearchParams(location.search).get('lang') || store.get('nocturne-lang') || ((navigator.language || '').startsWith('fr') ? 'fr' : 'en');
 if (!T[lang]) lang = 'en';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const titleOf = (id) => T[lang].titles[id] || id;
+const titleOf = (id) => T[lang].titles[id] || SONGS[id]?.title || id;
 
 // ------------------------------------------------------------------ instrument
 const piano = new Piano3D($('gl'));
@@ -324,7 +327,8 @@ const songs = {
   cur: null, idx: 0, miss: 0, token: 0, tempo: 1, lh: true, busy: false,
   list() {
     const t = T[lang], ids = Object.keys(SONGS);
-    $('songs-l').innerHTML = ['kids', 'classic'].map((cat) => `<li class="cat">${t[cat]}</li>` + ids.filter((id) => SONGS[id].cat === cat).map((id) => {
+    const own = `<li class="open"><label class="midibtn"><input type="file" id="midifile" accept=".mid,.midi,.kar,audio/midi,audio/x-midi">${t.openMidi}</label><small>${t.openMidiS}</small></li>`;
+    $('songs-l').innerHTML = own + ['mine', 'famous', 'kids', 'classic'].filter((cat) => ids.some((id) => SONGS[id].cat === cat)).map((cat) => `<li class="cat">${t[cat]}</li>` + ids.filter((id) => SONGS[id].cat === cat).map((id) => {
       const s = SONGS[id], by = s.by ? (t.by[s.by] || s.by) : '';
       return `<li><span class="nm">${titleOf(id)}${by ? `<small>${by}</small>` : ''}</span><span class="lv">${'<i></i>'.repeat(s.lv)}</span>
         <button data-act="listen" data-id="${id}">${t.listen}</button><button data-act="play" data-id="${id}" class="pl">${t.play}</button></li>`;
@@ -405,9 +409,20 @@ const songs = {
   },
 };
 $('songs-l').addEventListener('click', (e) => {
-  const b = e.target.closest('button'); if (!b) return;
+  const b = e.target.closest('button[data-act]'); if (!b) return;
   songs.close();
   if (b.dataset.act === 'listen') songs.listen(b.dataset.id); else songs.play(b.dataset.id);
+});
+
+// your own MIDI file: read here, kept only while the page is open, then played like any song of the book
+$('songs-l').addEventListener('change', async (e) => {
+  const f = e.target.files?.[0]; if (!f || e.target.id !== 'midifile') return;
+  try {
+    if (f.size > 4e6) throw new Error('too big');
+    const s = songFromMidi(await f.arrayBuffer(), f.name), id = 'mine' + (Object.keys(SONGS).filter((k) => k.startsWith('mine')).length + 1);
+    SONGS[id] = s; METER[id] = [2, 3, 4, 6].includes(s.meter) ? s.meter : 4;
+    songs.list(); $('songs-l').querySelector(`[data-id="${id}"]`)?.closest('li').classList.add('new'); $('songs').scrollTop = 0;
+  } catch { toast(T[lang].midiBad); }
 });
 
 // ------------------------------------------------------------------ coach
@@ -610,7 +625,7 @@ const coach = {
 // lines, reading on the staff with no light, playing in time (scored, the slipping passage looped slowly, at most
 // three tries so nobody is ever stuck), chords, playing back by ear, improvising over an accompaniment.
 const staff = new Staff($('staff'));
-const METER = { lullaby: 3, minuet: 3, gymno: 3, elise: 3 };
+const METER = { lullaby: 3, minuet: 3, gymno: 3, elise: 3, green: 3 };
 function songEvents(id, o = {}) {
   const tl = timeline(id), ev = tl.rh.map((e) => ({ t: e.t, d: e.d, ms: [e.m], h: 'r' }));
   let acc = null;
