@@ -134,7 +134,7 @@ function keysHelp() {
 
 // pedal: held with Space or a MIDI pedal, or latched from the toolbar
 let pedalLatched = false;
-function setPedal(on) { sound.setSustain(on); $('b-pedal').classList.toggle('on', on); }
+function setPedal(on) { sound.setSustain(on); $('b-pedal').classList.toggle('on', on); $('pedalbtn')?.classList.toggle('on', on); coach.wait?.pedal?.(on); }
 
 // MIDI pianos (Chrome, Edge, Opera; Firefox asks first; Safari has no MIDI). Once allowed, the piano is found again
 // on the next visit, and plugging or unplugging it is noticed. A real piano has more octaves than the screen: the
@@ -511,7 +511,7 @@ const coach = {
       const times = [...new Set(exp.map((e) => e.t))];
       dots(times.length, 0); let lastT = null, miss = 0;
       const frame = () => {
-        if (!this.alive(run) || this.live !== live) { piano.setTargets([]); piano.guide(null); return res(null); }
+        if (!this.alive(run) || this.live !== live) { bc?.classList.remove('on'); piano.setTargets([]); piano.guide(null); return res(null); }
         const now = c.currentTime;
         // the notes to play now (from half a beat before), and the next ones, faintly
         let k = times.findIndex((t) => t0 + t * q > now - 0.12 * q - 0.05); if (k < 0) k = times.length;
@@ -520,11 +520,14 @@ const coach = {
         if (lights) { piano.setTargets(nowNotes, true, nextNotes.filter((m) => !nowNotes.includes(m))); piano.guide(nowNotes); }
         else if (live.hint && nowNotes.length) { piano.setTargets(nowNotes, true); live.hint = false; setTimeout(() => this.live === live && piano.setTargets([]), 500); }
         if (o.staff && k < times.length && times[k] !== lastT && nowNotes.length) { lastT = times[k]; staff.cursor(times[k]); }
+        // the beats counted above the score: the count-in, then one, two, three, four in every bar
+        if (o.staff) { const bt = Math.floor((now - t0) / q + 1e-3), on = bt < 0 ? bt + ticks : ((bt % meterN) + meterN) % meterN; [...bc.children].forEach((el, j) => el.classList.toggle('on', j === on)); bc.classList.toggle('count', bt < 0); }
         dots(times.length, Math.min(times.length, k));
-        if (now > stopAt) { this.live = null; piano.setTargets([]); piano.guide(null); $('dots').classList.add('done'); return res(this.score(live)); }
+        if (now > stopAt) { this.live = null; bc?.classList.remove('on'); piano.setTargets([]); piano.guide(null); $('dots').classList.add('done'); return res(this.score(live)); }
         requestAnimationFrame(frame);
       };
       if (o.staff) staff.cursor(times[0]);
+      const bc = $('beatc'), meterN = o.meter || 4; if (o.staff) { bc.innerHTML = Array.from({ length: meterN }, (_, k) => `<i>${k + 1}</i>`).join(''); const r = $('staff').getBoundingClientRect(); bc.style.top = `${Math.round(r.top - 34)}px`; bc.classList.add('on'); } // just above the score
       requestAnimationFrame(frame);
     });
   },
@@ -655,22 +658,32 @@ const course = {
   },
   step(st, run) {
     if (st.say) return coach.say(st.say);
+    if (st.show) return this.showOnly(st);
+    if (st.pedal) return this.pedal(st, run);
     if (st.read) return this.read(st, run);
     if (st.play) return this.play(st, run);
     if (st.chords) return this.chords(st, run);
     if (st.echo) return this.echo(st, run);
     if (st.improv) return this.improv(st, run);
   },
+  // the reading aids for the score of a step
+  aids(st, x, dflt = true) {
+    const nm = (m) => NAMES[lang][((m % 12) + 12) % 12];
+    return { meter: x.meter, key: x.key, lead: st.lead, names: (st.names ?? dflt) ? nm : null, fingers: st.fingers || null, mark: st.mark || null, hands: lang === 'fr' ? ['MD', 'MG'] : ['RH', 'LH'] };
+  },
+  // a score to look at while the teacher explains it
+  async showOnly(st) { const x = exercise(st.show); spanOf(x.ev); await staff.show(x.ev, this.aids(st, x)); },
   // play in time: up to three tries; between them the passage that slipped, three times more slowly
   async play(st, run) {
     const x = exercise(st.play), q = (st.q || x.q) / (st.tempo || 1);
     let ev = x.ev; if (typeof st.play === 'string' && SONGS[st.play] && st.lh) ev = songEvents(st.play, st).ev;
+    if (st.hands) ev = ev.filter((e) => e.h === st.hands[0]);
     const acc = typeof st.play === 'string' && SONGS[st.play] && !st.lh ? x.acc : null;
     spanOf(ev);
     if (st.fingers) for (const [m, n] of Object.entries(st.fingers)) piano.setBadge(+m, n);
-    const show = (e) => staff.show(e, { meter: x.meter, key: x.key, lead: st.lead });
+    const show = (e) => staff.show(e, this.aids(st, x, st.lights !== false));
     await show(ev); if (!coach.alive(run)) return;
-    const o = { lh: acc, lights: st.lights !== false, staff: true, any: st.any };
+    const o = { lh: acc, lights: st.lights !== false, staff: true, any: st.any, meter: x.meter };
     for (let tries = 0; tries < 3; tries++) {
       const r = await coach.timed(ev, q, run, o); if (!r) return;
       const fb = await coach.feedback(r, run, true, st); if (!fb || !coach.alive(run)) return;
@@ -693,7 +706,7 @@ const course = {
   read(st, run) {
     return new Promise(async (res) => {
       const x = exercise(st.read), ev = [...x.ev].sort((a, b) => a.t - b.t);
-      spanOf(ev); await staff.show(ev, { meter: x.meter, key: x.key }); if (!coach.alive(run)) return res();
+      spanOf(ev); await staff.show(ev, this.aids(st, x)); if (!coach.alive(run)) return res();
       let i = 0, got = new Set(), miss = 0, hinted = false;
       const next = () => { got = new Set(); miss = 0; if (i >= ev.length) { coach.wait = null; sound.chime(86); $('dots').classList.add('done'); setTimeout(() => { staff.hide(); res(); }, 700); return; } staff.cursor(ev[i].t); dots(ev.length, i); };
       coach.wait = {
@@ -727,6 +740,29 @@ const course = {
         },
       };
       coach.stopWait = () => res();
+      show();
+    });
+  },
+  // the pedal: each chord played, the pedal pressed, the keys let go (the sound goes on); a button for touch screens
+  pedal(st, run) {
+    return new Promise(async (res) => {
+      const list = st.pedal.map((c) => parse(`${c}:4`)[0].ms); let i = 0, stage = 0, w = null;
+      const btn = document.createElement('button'); btn.id = 'pedalbtn'; btn.textContent = T[lang].pedal; document.body.append(btn);
+      btn.onpointerdown = (e) => { e.preventDefault(); setPedal(true); }; btn.onpointerup = btn.onpointerleave = btn.onpointercancel = () => setPedal(pedalLatched);
+      const done = () => { btn.remove(); coach.wait = null; piano.setTargets([]); staff.hide(); res(); };
+      const show = async () => {
+        if (coach.wait !== w) return; if (i >= list.length) return done();
+        stage = 0; spanOf([{ ms: list[i] }]); piano.setTargets(list[i], true); piano.guide(list[i]); toast(chordName(list[i]), 1800);
+        await staff.show([{ t: 0, d: 4, ms: list[i], h: 'l' }], { names: (m) => NAMES[lang][m % 12] }); dots(list.length, i);
+      };
+      const check = () => {
+        const c = list[i]; if (!c) return;
+        if (stage === 0 && c.every((n) => held.has(n) || performance.now() - (pressedAt.get(n) || -1e9) < 2000)) { stage = 1; c.forEach((n) => piano.ripple(n, 0xffe2b0)); }
+        if (stage === 1 && sound.sustain) stage = 2;
+        if (stage === 2 && c.every((n) => !held.has(n))) { stage = 3; c.forEach((n) => piano.ripple(n, 0x9dffc8)); sound.chime(86); i++; setTimeout(show, 900); }
+      };
+      w = coach.wait = { want: () => list[i] || [], on: () => check(), off: () => setTimeout(check, 0), pedal: () => check() }; // off: once the key is out of held
+      coach.stopWait = () => { btn.remove(); res(); };
       show();
     });
   },
@@ -773,7 +809,13 @@ $('course-l').addEventListener('click', (e) => { const b = e.target.closest('but
 let started = false, mode = 'intro';
 function caption(txt) {
   const c = $('cap'); c.classList.remove('on');
-  setTimeout(() => { c.textContent = txt || ''; if (txt) c.classList.add('on'); }, 260);
+  setTimeout(() => { c.textContent = txt || ''; if (txt) c.classList.add('on'); placeStaff(); }, 260);
+}
+// the score sits just under the caption, however many lines it has (a phone held sideways hides the caption instead)
+function placeStaff() {
+  const st = $('staff'), c = $('cap'); if (!st || innerHeight <= 520) { if (st) st.style.top = ''; return; }
+  const bottom = c.textContent ? c.getBoundingClientRect().bottom : 0;
+  st.style.top = bottom ? `${Math.round(Math.max(bottom + 44, innerHeight * 0.09 + 112))}px` : ''; // room for the beats above it
 }
 // progress of the current exercise: one dot per note, or a thin bar for long pieces
 function dots(n, k) {
@@ -904,4 +946,5 @@ document.fonts?.ready.then(() => applyLabels());
   if (piano.keys.has(m)) { piano.press(m, 0.4); setTimeout(() => piano.release(m), 500); }
   setTimeout(ghost, 1400 + Math.random() * 1800);
 })();
+window.__placeStaff = placeStaff;
 window.__nocturne = { piano, sound, lesson, songs, coach, store, course, staff, noteOn, noteOff, toLesson: () => toLesson(), get mode() { return mode; }, coachTry: (id) => { const run = ++coach.run; mode = 'coach'; document.body.dataset.mode = 'coach'; return coach.piece(id, 3, run); } };

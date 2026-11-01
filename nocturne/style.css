@@ -168,9 +168,9 @@ body[data-mode="coach"] #b-prev, body[data-mode="coach"] #b-next, body[data-mode
 #lessonend p::before { content: '✓ '; }
 #lessonend button { white-space: normal; text-align: center; }
 /* the score: a sheet of paper above the keys */
-#staff { position: fixed; left: 50%; top: calc(max(9vh, 64px) + 112px); transform: translate(-50%, -8px); width: min(820px, calc(100vw - 32px)); height: 128px; z-index: 3; border-radius: 14px; background: #f3ecdd; box-shadow: 0 10px 40px rgba(0, 0, 0, .45);
+#staff { position: fixed; left: 50%; top: calc(max(9vh, 64px) + 112px); transform: translate(-50%, -8px); width: min(820px, calc(100vw - 32px)); height: 146px; z-index: 3; border-radius: 14px; background: #f3ecdd; box-shadow: 0 10px 40px rgba(0, 0, 0, .45);
   opacity: 0; pointer-events: none; transition: opacity .5s var(--ease), transform .5s var(--ease); overflow: hidden; }
-#staff.grand { height: 218px; }
+#staff.grand { height: 256px; }
 #staff.on { opacity: 1; transform: translate(-50%, 0); }
 #staff svg { display: block; }
 #staff .vf-stavenote.on path, #staff .vf-stavenote.on rect { fill: #d9781f !important; stroke: #d9781f !important; }
@@ -182,3 +182,13 @@ body[data-mode="coach"] #b-prev, body[data-mode="coach"] #b-next, body[data-mode
   #staff, #staff.on { top: 46px; transform: translate(-50%, 0) scale(.62); transform-origin: top center; width: min(820px, calc((100vw - 32px) / .62)); }
   #staff:not(.on) { transform: translate(-50%, -8px) scale(.62); }
 }
+/* the beats counted above the score: the count-in in the accent colour, then 1 2 3 4 in every bar */
+#beatc { position: fixed; left: 50%; top: calc(max(9vh, 64px) + 76px); transform: translateX(-50%); z-index: 4; display: flex; gap: 14px; font-family: var(--mono); font-size: 15px; color: var(--dim); opacity: 0; transition: opacity .4s; pointer-events: none; }
+#beatc.on { opacity: 1; }
+#beatc i { font-style: normal; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--faint); transition: background .08s, color .08s; }
+#beatc i.on { background: var(--fg); color: var(--ink); border-color: transparent; }
+#beatc.count i.on { background: var(--acc); }
+
+/* the pedal button, for touch screens and mice, during the pedal lesson */
+#pedalbtn { position: fixed; right: max(18px, env(safe-area-inset-right)); bottom: calc(max(22px, env(safe-area-inset-bottom)) + 70px); z-index: 8; padding: 16px 22px; border-radius: 18px; border: 1px solid var(--faint); background: rgba(10, 11, 14, .85); color: var(--fg); font-family: var(--mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; touch-action: none; }
+#pedalbtn.on { background: var(--acc); color: var(--ink); }

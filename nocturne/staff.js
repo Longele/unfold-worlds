@@ -26,19 +26,20 @@ export class Staff {
   constructor(el) { this.el = el; this.ev = null; }
   async show(events, o = {}) {
     await loadVex();
-    this.ev = events; this.o = { meter: 4, key: 'C', lead: false, ...o };
+    this.ev = events; this.o = { meter: 4, key: 'C', lead: false, names: null, fingers: null, mark: null, hands: null, ...o };
     const hands = new Set(events.map((e) => e.h));
     this.clefs = this.o.lead || !hands.has('l') ? ['treble'] : !hands.has('r') ? ['bass'] : ['treble', 'bass'];
     const end = Math.max(...events.map((e) => e.t + e.d));
     this.bars = Math.max(1, Math.ceil(end / this.o.meter - 1e-6));
     this.page = -1; this.cur = null;
     this.el.classList.toggle('grand', this.clefs.length === 2); this.el.classList.add('on'); document.body.classList.add('staffon');
+    window.__placeStaff?.();
     this.draw(0);
   }
   hide() { this.el.classList.remove('on'); document.body.classList.remove('staffon'); this.ev = null; }
   get perPage() { return Math.max(1, Math.min(4, Math.floor(this.el.clientWidth / 190))); }
   draw(page) {
-    const VF = window.Vex.Flow, el = this.el, W = el.clientWidth, H = this.clefs.length === 2 ? 210 : 120;
+    const VF = window.Vex.Flow, el = this.el, W = el.clientWidth, H = this.clefs.length === 2 ? 250 : 140;
     el.innerHTML = ''; this.page = page; this.notes = [];
     const r = new VF.Renderer(el, VF.Renderer.Backends.SVG); r.resize(W, H); const ctx = r.getContext();
     const pp = this.perPage, b0 = page * pp, b1 = Math.min(this.bars, b0 + pp), m = this.o.meter;
@@ -46,8 +47,8 @@ export class Staff {
     let x = 10;
     for (let b = b0; b < b1; b++) {
       const w = b === b0 ? bw + first : bw, staves = this.clefs.map((clef, k) => {
-        const s = new VF.Stave(x, 4 + k * 90, w);
-        if (b === b0) { s.addClef(clef); if (this.o.key !== 'C') s.addKeySignature(this.o.key); if (page === 0) s.addTimeSignature(`${m}/4`); }
+        const s = new VF.Stave(x, 4 + k * 110, w);
+        if (b === b0) { s.addClef(clef); if (this.o.key !== 'C') s.addKeySignature(this.o.key); if (page === 0) s.addTimeSignature(`${m}/4`); if (this.clefs.length === 2 && this.o.hands) s.setText(this.o.hands[k], VF.Modifier.Position.LEFT, { shift_x: 6 }); }
         if (b === this.bars - 1) s.setEndBarType(VF.Barline.type.END);
         s.setContext(ctx).draw(); return s;
       });
@@ -82,6 +83,10 @@ export class Staff {
       sp.forEach((k, i) => { const acc = k.split('/')[0].slice(1); if (acc && !(this.o.key === 'G' && k.startsWith('f#'))) n.addModifier(new VF.Accidental(acc), i); });
       if (c.includes('d')) VF.Dot.buildAndAttach([n], { all: true });
       const ch = chords.find((x) => Math.abs(x.t - e.t) < 1e-6); if (ch) n.addModifier(new VF.Annotation(chordName(ch.ms)).setFont('Arial', 15, 'bold').setVerticalJustification(VF.Annotation.VerticalJustify.TOP), 0);
+      // reading aids: the note's name under it, the finger above it, a dynamic on the first note
+      if (this.o.names) n.addModifier(new VF.Annotation(e.ms.map(this.o.names).join(' ')).setFont('Arial', e.ms.length > 1 ? 10 : 12, 'bold').setVerticalJustification(VF.Annotation.VerticalJustify.BOTTOM), 0);
+      const fg = this.o.fingers && e.ms.map((x) => this.o.fingers[x]).filter(Boolean); if (fg?.length) n.addModifier(new VF.Annotation(fg.join(' ')).setFont('Arial', 13, 'bold').setVerticalJustification(VF.Annotation.VerticalJustify.TOP), 0);
+      if (this.o.mark && e.t === 0) n.addModifier(new VF.Annotation(this.o.mark).setFont('Times', 20, 'italic bold').setVerticalJustification(VF.Annotation.VerticalJustify.BOTTOM), 0);
       n.__t = e.t; this.notes.push(n); out.push(n); t = e.t + b;
     }
     if (z - t > 1e-6) rest(z - t);
