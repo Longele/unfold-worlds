@@ -158,3 +158,8 @@ body.reading .ambient { opacity: 1; }
 /* when a game starts, the texts already read fly up and away so they never hide the game */
 .cap.gone, .bubble.gone, .tail.gone { opacity: 0; transform: translateY(-40px); transition: opacity .35s, transform .35s; pointer-events: none; }
 .bubble.gone { transform: translate(-50%, -40px); }
+
+/* "I read it myself": the arrow at the end of a line, waiting for a touch */
+.bubble .more, .cap .more { display: inline-block; margin-left: .35em; font-style: normal; color: var(--ink, #121212); opacity: .75; animation: morepulse 1.1s ease-in-out infinite; }
+@keyframes morepulse { 50% { opacity: .2; transform: translateX(3px); } }
+.hint.tap { opacity: .8; }

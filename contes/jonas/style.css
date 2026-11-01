@@ -196,3 +196,8 @@ body.reading .ambient { opacity: 1; }
 .fishbox img { position: absolute; inset: 0; width: 100%; height: 100%; }
 .fbody { clip-path: inset(0 0 0 26%); }
 .ftail { clip-path: inset(0 72% 0 0); transform-origin: 28% 50%; }
+
+/* "I read it myself": the arrow at the end of a line, waiting for a touch */
+.bubble .more, .cap .more { display: inline-block; margin-left: .35em; font-style: normal; color: var(--ink, #121212); opacity: .75; animation: morepulse 1.1s ease-in-out infinite; }
+@keyframes morepulse { 50% { opacity: .2; transform: translateX(3px); } }
+.hint.tap { opacity: .8; }

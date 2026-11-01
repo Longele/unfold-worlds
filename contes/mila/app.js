@@ -61,7 +61,7 @@ function tail(el, t) {
 }
 async function say(ln) {
   const el = showLine(ln);
-  if (mode !== 'voice') { await sleep(300); return el; }
+  if (mode !== 'voice') { await readPause(el); return el; }
   voice.src = `voice/${lang}/${ln.id}.mp3`; duck(true);
   try { await voice.play(); } catch { duck(false); return el; }
   const words = wordsOf(ln.id), spans = el.querySelectorAll('span');
@@ -75,6 +75,27 @@ async function say(ln) {
   });
   await sleep(250);
   return el;
+}
+
+// "I read it myself": a line stays until the reader has read it. A touch anywhere (or a click, space, Enter or the
+// right arrow) brings the next one; a small blinking arrow at the end of the line, and the hint under the page, say
+// so. The buttons (back, home, listen again) keep working meanwhile.
+function readPause(el) {
+  return new Promise((res) => {
+    const more = document.createElement('i'); more.className = 'more'; more.textContent = '▸'; el.append(more);
+    const h = document.getElementById('hint'), own = h && !h.textContent;
+    if (own) { h.textContent = matchMedia('(pointer: fine)').matches ? (lang === 'fr' ? 'Clique ou appuie sur Espace pour continuer' : 'Click or press Space to continue') : (lang === 'fr' ? 'Touche l’écran pour continuer' : 'Tap the screen to continue'); h.classList.add('on', 'tap'); }
+    const t0 = performance.now();
+    const go = (e) => {
+      if (performance.now() - t0 < 400) return;
+      if (e.type === 'keydown' && ![' ', 'Enter', 'ArrowRight'].includes(e.key)) return;
+      if (e.type === 'pointerdown' && e.target.closest?.('button, a')) return;
+      e.preventDefault(); e.stopPropagation(); done();
+    };
+    const done = () => { removeEventListener('pointerdown', go, true); removeEventListener('keydown', go, true); clearInterval(iv); more.remove(); if (own && h.classList.contains('tap')) { h.textContent = ''; h.classList.remove('on', 'tap'); } res(); };
+    const iv = setInterval(() => { if (!el.isConnected) done(); }, 200); // the page was left
+    addEventListener('pointerdown', go, true); addEventListener('keydown', go, true);
+  });
 }
 function clearLayer() { $('layer').innerHTML = ''; $('spots').innerHTML = ''; }
 
