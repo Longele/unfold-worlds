@@ -7,7 +7,7 @@ import { SONGS, timeline, notesOf } from './songs.js';
 const $ = (id) => document.getElementById(id);
 const T = {
   en: { tag: 'Piano, simply.', learn: 'Learn the basics', learnS: 'ten minutes, guided by voice', free: 'Just play', freeS: 'there are no wrong notes', tuning: 'tuning the piano', ready: 'best with headphones',
-    replay: 'Replay', next: 'Next', prev: 'Back', exit: 'Free play', notes: 'Notes', pedal: 'Pedal', rain: 'Rain', lesson: 'Lesson', midi: 'MIDI', midiOn: 'MIDI piano connected', midiNo: 'No MIDI keyboard found', midiOff: 'MIDI piano unplugged', midiHint: 'A MIDI piano? Plug it into the computer and connect it here',
+    replay: 'Replay', next: 'Next', prev: 'Back', exit: 'Free play', notes: 'Notes', pedal: 'Pedal', rain: 'Rain', lesson: 'Lesson', midi: 'MIDI', midiOn: 'MIDI piano connected', midiNo: 'No MIDI keyboard found', midiOff: 'MIDI piano unplugged', midiHint: 'A MIDI piano? Plug it into the computer and connect it here', octave: 'Octave', keysTip: (a, b) => `Play with your computer keys: their letters are on the piano. ${a} and ${b} change octave`,
     songs: 'Songs', kids: 'Nursery songs', classic: 'Classical', listen: 'Listen', play: 'Play', bravo: 'Well played',
     pause: 'Pause', paused: 'Paused', resume: 'Tap to continue', restart: 'Restart', back: 'Rewind', show: 'Show me', lh: 'Left hand', stop: 'Stop', speed: 'Speed',
     session: 'My session for today', sessionS: 'ten minutes with your coach', sessionB: 'Session',
@@ -16,7 +16,7 @@ const T = {
     by: { Petzold: 'Petzold (attr. Bach)' },
     labels: { none: 'Notes off', names: 'Note names', keys: 'Computer keys' }, turn: 'Turn your phone sideways', turnS: 'for the whole keyboard', stay: 'Continue upright', done: 'The piano is yours', credit: 'Piano: Salamander Grand Piano by Alexander Holm, CC BY 3.0' },
   fr: { tag: 'Le piano, simplement.', learn: 'Apprendre les bases', learnS: 'dix minutes, guidé par la voix', free: 'Jouer librement', freeS: 'il n’y a pas de fausse note', tuning: 'accordage du piano', ready: 'meilleur avec un casque',
-    replay: 'Réécouter', next: 'Suivant', prev: 'Précédent', exit: 'Jeu libre', notes: 'Notes', pedal: 'Pédale', rain: 'Pluie', lesson: 'Leçon', midi: 'MIDI', midiOn: 'Piano MIDI branché', midiNo: 'Aucun clavier MIDI trouvé', midiOff: 'Piano MIDI débranché', midiHint: 'Un piano MIDI ? Branchez-le à l’ordinateur et connectez-le ici',
+    replay: 'Réécouter', next: 'Suivant', prev: 'Précédent', exit: 'Jeu libre', notes: 'Notes', pedal: 'Pédale', rain: 'Pluie', lesson: 'Leçon', midi: 'MIDI', midiOn: 'Piano MIDI branché', midiNo: 'Aucun clavier MIDI trouvé', midiOff: 'Piano MIDI débranché', midiHint: 'Un piano MIDI ? Branchez-le à l’ordinateur et connectez-le ici', octave: 'Octave', keysTip: (a, b) => `Jouez avec les touches de l’ordinateur : leurs lettres sont sur le piano. ${a} et ${b} changent d’octave`,
     songs: 'Chansons', kids: 'Comptines', classic: 'Classique', listen: 'Écouter', play: 'Jouer', bravo: 'Bien joué',
     pause: 'Pause', paused: 'En pause', resume: 'Touchez pour reprendre', restart: 'Début', back: 'Reculer', show: 'Montre-moi', lh: 'Main gauche', stop: 'Arrêter', speed: 'Vitesse',
     session: 'Ma séance du jour', sessionS: 'dix minutes avec votre coach', sessionB: 'Séance',
@@ -56,10 +56,13 @@ addEventListener('resize', () => { piano.setRange(...range()); applyLabels(); if
 const KEYMAP = { KeyA: 60, KeyW: 61, KeyS: 62, KeyE: 63, KeyD: 64, KeyF: 65, KeyT: 66, KeyG: 67, KeyY: 68, KeyH: 69, KeyU: 70, KeyJ: 71, KeyK: 72, KeyO: 73, KeyL: 74, KeyP: 75, Semicolon: 76 };
 const keyLetter = {};
 for (const [code, m] of Object.entries(KEYMAP)) keyLetter[m] = code === 'Semicolon' ? ';' : code.slice(3);
-navigator.keyboard?.getLayoutMap?.().then((map) => { for (const [code, m] of Object.entries(KEYMAP)) { const l = map.get(code); if (l) keyLetter[m] = l.toUpperCase(); } if (labelMode === 'keys') applyLabels(); }).catch(() => {});
+let octKeys = ['Z', 'X']; // the letters of the octave keys on this keyboard (W and X on a French one)
+navigator.keyboard?.getLayoutMap?.().then((map) => { for (const [code, m] of Object.entries(KEYMAP)) { const l = map.get(code); if (l) keyLetter[m] = l.toUpperCase(); } octKeys = ['KeyZ', 'KeyX'].map((c, i) => (map.get(c) || octKeys[i]).toUpperCase()); if (labelMode === 'keys') applyLabels(); }).catch(() => {});
 const nameOf = (m) => NAMES[lang][((m % 12) + 12) % 12];
 let labelMode = 'none';
-function applyLabels() { piano.setLabels(labelMode, nameOf, (m) => keyLetter[m] || ''); }
+// Z and X move the computer keys one octave down or up
+let oct = 0;
+function applyLabels() { piano.setLabels(labelMode, nameOf, (m) => keyLetter[m - 12 * oct] || ''); }
 
 const held = new Map(); // midi -> count of sources holding it
 const pressedAt = new Map();
@@ -101,20 +104,30 @@ const up = (e) => { const m = ptr.get(e.pointerId); if (m == null) return; ptr.d
 canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up); canvas.addEventListener('lostpointercapture', up);
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-const kdown = new Set();
+const kdown = new Map(); // key code -> the note it holds
 addEventListener('keydown', (e) => {
   if (!started || e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.code === 'Escape') { pause(!paused); return; }
   if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) setPedal(true); return; }
-  const m = KEYMAP[e.code]; if (m == null || e.repeat || kdown.has(e.code)) return;
-  e.preventDefault(); kdown.add(e.code); noteOn(m, 0.72);
+  if ((e.code === 'KeyZ' || e.code === 'KeyX') && !e.repeat) { oct = Math.max(-2, Math.min(1, oct + (e.code === 'KeyX' ? 1 : -1))); applyLabels(); toast(`${T[lang].octave} ${oct > 0 ? '+' : ''}${oct}`); return; }
+  const k = KEYMAP[e.code]; if (k == null || e.repeat || kdown.has(e.code)) return;
+  e.preventDefault(); keysHelp();
+  // in a lesson, a song or the coach the right note counts in any octave and sounds where it is awaited, so the
+  // seventeen keys of the computer reach every piece; in free play the key sounds where it is
+  const m = k + 12 * oct, s = shownFor(m);
+  const real = mode === 'free' ? m : s; kdown.set(e.code, [s, real]); noteOn(s, 0.72, real);
 });
 addEventListener('keyup', (e) => {
   if (e.code === 'Space') { setPedal(pedalLatched); return; }
-  const m = KEYMAP[e.code]; if (m == null || !kdown.has(e.code)) return;
-  kdown.delete(e.code); noteOff(m);
+  const h = kdown.get(e.code); if (!h) return;
+  kdown.delete(e.code); noteOff(h[0], h[1]);
 });
-addEventListener('blur', () => { for (const c of kdown) noteOff(KEYMAP[c]); kdown.clear(); });
+addEventListener('blur', () => { for (const [s, real] of kdown.values()) noteOff(s, real); kdown.clear(); });
+// the first time someone plays with the computer keys, their letters appear on the piano keys
+function keysHelp() {
+  if (keysHelp.done || labelMode !== 'none' || !matchMedia('(pointer: fine)').matches) return;
+  keysHelp.done = true; labelMode = 'keys'; applyLabels(); $('b-notes').classList.add('on'); toast(T[lang].keysTip(...octKeys), 6000);
+}
 
 // pedal: held with Space or a MIDI pedal, or latched from the toolbar
 let pedalLatched = false;
@@ -565,7 +578,7 @@ function dots(n, k) {
   else { if (d.children.length !== n || d.querySelector('b')) d.innerHTML = '<i></i>'.repeat(n); [...d.children].forEach((el, i) => el.classList.toggle('on', i < k)); }
   d.classList.add('on');
 }
-function toast(txt) { const t = $('toast'); t.textContent = txt; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); }
+function toast(txt, ms = 2600) { const t = $('toast'); t.textContent = txt; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), ms); }
 
 // on a phone: fullscreen + landscape where the browser allows it (Android), otherwise ask kindly (iPhone)
 function rotateGate() {
@@ -678,4 +691,4 @@ document.fonts?.ready.then(() => applyLabels());
   if (piano.keys.has(m)) { piano.press(m, 0.4); setTimeout(() => piano.release(m), 500); }
   setTimeout(ghost, 1400 + Math.random() * 1800);
 })();
-window.__nocturne = { piano, sound, lesson, songs, coach, store, noteOn, noteOff, toLesson: () => toLesson(), get mode() { return mode; } };
+window.__nocturne = { piano, sound, lesson, songs, coach, store, noteOn, noteOff, toLesson: () => toLesson(), get mode() { return mode; }, coachTry: (id) => { const run = ++coach.run; mode = 'coach'; document.body.dataset.mode = 'coach'; return coach.piece(id, 3, run); } };
