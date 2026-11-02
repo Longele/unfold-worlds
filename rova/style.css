@@ -192,3 +192,6 @@ body.home .panel, body.home #viewbtns, body.home #top { visibility: hidden; }
   .panel #hint.on ~ #tip { display: none; }
   body.story #radio { bottom: auto; top: calc(64px + env(safe-area-inset-top)); }
 }
+/* short windows: the home scrolls instead of hiding its buttons */
+#home { overflow: auto; }
+@media (max-height: 640px) { #home { place-items: start center; } #home h1 { font-size: 64px; } .pitch { font-size: 15px; margin-bottom: 14px; } .tag { margin-bottom: 10px; } }
