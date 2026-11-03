@@ -47,6 +47,8 @@ export function labs(env) {
     return o;
   }
   const done = async (L, res, ms = 900) => { sfx('found'); await sleep(ms); L.close(); await sleep(300); res(); };
+  // a time of night: 2 h 16 in French, 2:16 in English
+  const hm = (m) => fr() ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}` : `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
   const fmt = (x, n = 2) => x.toFixed(n).replace('.', fr() ? ',' : '.');
 
   // ---------------------------------------------------------------- the suspects notebook (stays on the panel's corner)
@@ -92,7 +94,7 @@ export function labs(env) {
         for (let r = -2; r <= 2; r++) { k.beginPath(); k.moveTo(0, cy + r * amp); k.lineTo(W, cy + r * amp); k.stroke(); }
         // the hours
         k.fillStyle = '#5a6b80'; k.font = `600 ${Math.round(W * 0.03)}px system-ui`; k.textAlign = 'center';
-        for (let s = 0; s <= N; s += 600) { const x = (s - off) / vw * W; if (x > -40 && x < W + 40) k.fillText(`${(20 + s / 600) % 24} h`, x, cy + amp * 3.2); }
+        for (let s = 0; s <= N; s += 600) { const x = (s - off) / vw * W; if (x > -40 && x < W + 40) k.fillText(fr() ? `${(20 + s / 600) % 24} h` : `${(20 + s / 600) % 24}:00`, x, cy + amp * 3.2); }
         // the ink line
         k.strokeStyle = '#1d2a4a'; k.lineWidth = 1.6; k.beginPath();
         for (let x = 0; x <= W; x += 1) { const s = off + x / W * vw, i = Math.floor(s), v = data[i] ?? 0; const y = cy - v * amp; x ? k.lineTo(x, y) : k.moveTo(x, y); } k.stroke();
@@ -148,7 +150,7 @@ export function labs(env) {
       const nights = [16, 12, 8, 4, 0].map((m, i) => ({ n: i + 1, m: 120 + m })); // 2 h 16, 2 h 12 ... 2 h 00 (3 min 56 s earlier each night, rounded)
       const placed = []; let hand = 0, handTo = 0;
       const col = ['#ffb35c', '#ffd27a', '#9df0c0', '#7fe0ff', '#c6a8ff'];
-      const row = L.info(''); const draw = () => { row.innerHTML = nights.map((x, i) => `<button class="night ${placed.includes(i) ? 'done' : ''}" data-i="${i}" style="--c:${col[i]}">${fr() ? 'Nuit' : 'Night'} ${x.n}<b>${Math.floor(x.m / 60)} h ${String(x.m % 60).padStart(2, '0')}</b></button>`).join(''); };
+      const row = L.info(''); const draw = () => { row.innerHTML = nights.map((x, i) => `<button class="night ${placed.includes(i) ? 'done' : ''}" data-i="${i}" style="--c:${col[i]}">${fr() ? 'Nuit' : 'Night'} ${x.n}<b>${hm(x.m)}</b></button>`).join(''); };
       draw();
       row.onpointerdown = (e) => { const b = e.target.closest('.night'); if (!b) return; e.stopPropagation(); const i = +b.dataset.i; if (placed.includes(i)) return; placed.push(i); handTo = nights[i].m; sfx('tap'); draw(); if (placed.length === 5) setTimeout(ask, 1200); };
       env.key((e, d) => { if (d && e.key === ' ') { const i = [0, 1, 2, 3, 4].find((j) => !placed.includes(j)); if (i != null) row.querySelector(`[data-i="${i}"]`)?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); return true; } });
@@ -169,7 +171,7 @@ export function labs(env) {
         if (placed.length) {
           const zx = W * 0.1, zy = H * 0.72, zw = W * 0.8; k.fillStyle = 'rgba(255,255,255,.08)'; k.fillRect(zx, zy - 22, zw, 44);
           k.fillStyle = '#cfd8ea'; k.font = `600 ${Math.round(W * 0.03)}px system-ui`;
-          for (let m = 0; m <= 20; m += 4) { const x = zx + m / 20 * zw; k.fillRect(x, zy + 14, 2, 10); k.fillText(`2 h ${String(m).padStart(2, '0')}`, x, zy + 38); }
+          for (let m = 0; m <= 20; m += 4) { const x = zx + m / 20 * zw; k.fillRect(x, zy + 14, 2, 10); k.fillText(hm(120 + m), x, zy + 38); }
           placed.forEach((i) => { const x = zx + (nights[i].m - 120) / 20 * zw; k.fillStyle = col[i]; k.beginPath(); k.arc(x, zy, 11, 0, 7); k.fill(); k.fillStyle = '#111'; k.fillText(nights[i].n, x, zy + 1); });
         }
       });
@@ -189,7 +191,7 @@ export function labs(env) {
       const go = () => { if (anim > 0 || day >= 3) return; anim = 1; sfx('whoosh', 0.5); };
       btn.onpointerdown = (e) => { e.stopPropagation(); go(); }; env.key((e, d) => { if (d && e.key === ' ') { go(); return true; } });
       const info = L.info('');
-      const show = () => { info.innerHTML = `<div class="cmp"><div><i>📡</i>${fr() ? 'Une antenne humaine' : 'A human transmitter'}<b>${'2 h 16'}</b></div><div><i>⭐</i>${fr() ? 'Le signal' : 'The signal'}<b>${['2 h 16', '2 h 12', '2 h 08', '2 h 04'][day]}</b></div></div>` + (day ? `<p class="small">${fr() ? 'Jour' : 'Day'} ${day + 1} : ${fr() ? 'le ciel revient' : 'the sky comes back'} <b>${fr() ? '4 minutes plus tôt' : '4 minutes earlier'}</b></p>` : ''); };
+      const show = () => { info.innerHTML = `<div class="cmp"><div><i>📡</i>${fr() ? 'Une antenne humaine' : 'A human transmitter'}<b>${hm(136)}</b></div><div><i>⭐</i>${fr() ? 'Le signal' : 'The signal'}<b>${hm([136, 132, 128, 124][day])}</b></div></div>` + (day ? `<p class="small">${fr() ? 'Jour' : 'Day'} ${day + 1} : ${fr() ? 'le ciel revient' : 'the sky comes back'} <b>${fr() ? '4 minutes plus tôt' : '4 minutes earlier'}</b></p>` : ''); };
       show();
       L.loop((dt) => {
         const k = L.k, W = L.W, H = L.H, cx = W / 2, cy = H * 0.42, R = Math.min(W, H) * 0.3;
@@ -385,7 +387,7 @@ export function labs(env) {
         if (which === 2 && !broken) { k.fillStyle = '#cfe7ff'; k.font = `600 ${Math.round(W * 0.03)}px system-ui`; k.textAlign = 'center'; k.fillText(fr() ? '(agrandie : en vrai, minuscule)' : '(enlarged: really tiny)', cx, cy + r + 30); }
         // the speed readout and the goal
         k.fillStyle = '#fff'; k.font = `800 ${Math.round(W * 0.06)}px system-ui`; k.textAlign = 'center'; k.fillText(`${fr() ? '1 tour en' : '1 turn in'} ${human(P)}`, cx, H * 0.75);
-        k.fillStyle = '#9fb0cc'; k.font = `600 ${Math.round(W * 0.032)}px system-ui`; k.fillText(`${fr() ? 'objectif' : 'goal'} : 1,3 s`, cx, H * 0.75 + 28);
+        k.fillStyle = '#9fb0cc'; k.font = `600 ${Math.round(W * 0.032)}px system-ui`; k.fillText(fr() ? 'objectif : 1,3 s' : 'goal: 1.3 s', cx, H * 0.75 + 28);
         const bw = W * 0.7, bx = W * 0.15, by = H * 0.84; k.fillStyle = 'rgba(255,255,255,.12)'; k.fillRect(bx, by, bw, 10); k.fillStyle = '#ffb35c'; k.fillRect(bx, by, bw * s, 10);
         if (which === 2 && s >= 0.999 && !ok) { ok = true; tell(fr() ? 'Elle tient ! Minuscule et ultra-serrée.' : 'It holds! Tiny and ultra-dense.'); burst(0.5, 0.36, 50); done(L, res, 2200); }
       });
