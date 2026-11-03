@@ -1,0 +1,68 @@
+/* Le signal: a graphic novel for 11-13, at night, and its investigation labs (on top of the reader's style.css) */
+:root { --night: #0b1424; --cy: #7fe0ff; --amber: #ffb35c; }
+body { background: radial-gradient(130% 80% at 50% 0%, #1d3150 0%, #111c30 45%, var(--night) 100%); }
+.cimg::after { background: linear-gradient(180deg, rgba(11, 20, 36, 0) 30%, rgba(11, 20, 36, .88) 68%, var(--night)); }
+/* Awa's narration: a dark notebook box, the words lit as she says them */
+.cap { background: rgba(12, 24, 44, .93); color: #f1efe6; border: 2px solid var(--cy); box-shadow: 0 6px 20px rgba(0, 0, 0, .45); }
+.bubble.awa { background: #fff6dd; } .bubble.rose { background: #e7f4ec; }
+
+/* the lab: dark glass over the picture */
+.lab { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; background: rgba(6, 12, 24, var(--dim)); opacity: 0; transition: opacity .45s; touch-action: none; font-family: system-ui, sans-serif; }
+.lab.in { opacity: 1; }
+.lab-h { padding: 12px 14px 6px; font: 800 13px/1.2 system-ui; letter-spacing: .14em; text-transform: uppercase; color: var(--cy); text-shadow: 0 1px 6px #000; }
+.lab-h::before { content: "\25CF  "; color: #ff5d6c; animation: rec 1.2s steps(2) infinite; }
+@keyframes rec { 50% { opacity: .2; } }
+.lab-c { flex: 1; width: 100%; min-height: 0; display: block; touch-action: none; }
+.lab-i { padding: 6px 12px; color: #e8eefb; font-size: 15px; }
+.lab-i .small { margin: 4px 0; font-size: 15px; text-align: center; } .lab-i .small b { color: var(--amber); font-size: 18px; } .lab-i .small span { color: #9fb0cc; font-size: 13px; }
+.lab-i .q { margin: 2px 0 8px; font-weight: 800; font-size: 17px; text-align: center; }
+.lab-ctl { display: flex; gap: 10px; justify-content: center; align-items: center; padding: 8px 12px 14px; }
+.lb { padding: 12px 18px; border-radius: 14px; background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .25); color: #fff; font: 800 18px system-ui; min-width: 54px; }
+.lb.main { background: linear-gradient(180deg, #ffd27a, #ffa53c); color: #2a1600; border: 0; box-shadow: 0 4px 0 #a5651a; }
+.lb.big { padding: 18px 42px; font-size: 22px; letter-spacing: .08em; }
+.lb.hit { animation: hit .18s; } @keyframes hit { 50% { transform: scale(.92); } }
+.lb.ro { background: none; border: 0; font-weight: 600; } .lb.ro b { color: var(--amber); }
+.lb:disabled { opacity: .4; }
+.opt { display: block; width: 100%; margin: 6px 0; padding: 12px 14px; border-radius: 12px; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .22); color: #fff; font: 700 15.5px system-ui; text-align: left; }
+.opt.ok { background: #2bd968; color: #04210e; } .opt.no { background: #ff5d6c; animation: shake .4s; }
+@keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.night { margin: 3px; padding: 7px 10px; border-radius: 10px; background: rgba(255, 255, 255, .08); border: 2px solid var(--c); color: #fff; font: 700 13px system-ui; }
+.night b { display: block; font-size: 15px; color: var(--c); } .night.done { opacity: .35; }
+.lab-i:has(.night) { display: flex; flex-wrap: wrap; justify-content: center; }
+.cmp { display: flex; gap: 10px; } .cmp > div { flex: 1; padding: 8px; border-radius: 12px; background: rgba(255, 255, 255, .07); text-align: center; font-size: 13.5px; } .cmp i { display: block; font-style: normal; font-size: 22px; } .cmp b { display: block; font-size: 19px; color: var(--amber); }
+.star { margin: 3px; padding: 7px 10px; border-radius: 12px; background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .25); color: #fff; font: 13px system-ui; }
+.star b { display: block; font-size: 14.5px; } .star span { color: #9fb0cc; } .star.on { border-color: var(--amber); background: rgba(255, 179, 92, .15); } .star:disabled { opacity: .3; }
+.lab-i:has(.star), .lab-i:has(.psr) { display: flex; justify-content: center; flex-wrap: wrap; }
+.lab-say { position: absolute; left: 50%; top: 52%; transform: translateX(-50%); padding: 8px 14px; border-radius: 12px; background: #fff; color: #10151f; font: 800 16px system-ui; white-space: nowrap; }
+.lab-say.pop { animation: pop .35s cubic-bezier(.2, 1.4, .4, 1); }
+.psr { margin: 6px; width: 30%; padding: 12px 6px; border-radius: 16px; background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .25); color: #fff; font: 13px system-ui; }
+.psr i { display: block; width: 46px; height: 46px; margin: 0 auto 8px; border-radius: 50%; background: radial-gradient(circle, #fff, #7fe0ff 45%, rgba(127, 224, 255, 0) 70%); opacity: .4; }
+.psr b { display: block; font-size: 15px; } .psr span { color: #9fb0cc; } .psr.heard { border-color: var(--amber); }
+.lab-i:has(.psr) { flex: 1; align-items: center; }
+
+/* the suspects: cards to pin, then the notebook in the corner */
+.cards { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+.card { position: absolute; width: 22%; padding: 8px 6px; border-radius: 6px; background: #fffbe8; color: #1a1a1a; box-shadow: 0 4px 10px rgba(0, 0, 0, .45); text-align: center; font: 700 12.5px system-ui; pointer-events: auto; touch-action: none; transform: rotate(var(--r, 0deg)); transition: left .3s, top .3s; }
+.card i { display: block; font-style: normal; font-size: 26px; } .card.drag { transition: none; transform: scale(1.08); z-index: 2; }
+.card.pinned::before { content: ""; position: absolute; left: 50%; top: -6px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: #d33; box-shadow: 0 2px 2px rgba(0, 0, 0, .5); }
+.cards.keep { opacity: 0; transition: opacity .6s; }
+#carnet { position: absolute; z-index: 7; right: 8px; bottom: 8px; display: none; gap: 4px; align-items: center; padding: 6px 8px; border-radius: 12px; background: rgba(12, 24, 44, .9); border: 1px solid var(--cy); color: #fff; font: 700 12px system-ui; }
+#carnet.on { display: flex; flex-wrap: wrap; max-width: 60%; }
+#carnet b { width: 100%; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--cy); display: none; }
+#carnet span { display: inline-flex; align-items: center; gap: 4px; } #carnet span em { display: none; font-style: normal; }
+#carnet i { font-style: normal; font-size: 18px; }
+#carnet span.out { opacity: .35; text-decoration: line-through; } #carnet span.out i { filter: grayscale(1); }
+#carnet span.doubt i::after { content: "?"; color: var(--amber); font-size: 12px; }
+#carnet span.win { color: var(--amber); } #carnet span.win i { filter: drop-shadow(0 0 6px var(--amber)); }
+#carnet.open { flex-direction: column; align-items: flex-start; } #carnet.open b, #carnet.open span em { display: block; } #carnet.open span { width: 100%; }
+#carnet.flash { animation: glowc 1s 2; } @keyframes glowc { 50% { box-shadow: 0 0 0 4px var(--amber); } }
+.panel.labon #carnet { display: none; }
+
+/* the loudspeaker, the note, the spoon */
+.speaker { position: absolute; z-index: 6; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: rgba(127, 224, 255, .25); border: 2px solid var(--cy); font-size: 28px; animation: glowc 1.2s infinite; pointer-events: auto; }
+.speaker.on span { display: inline-block; animation: hit .2s infinite; }
+.lgm { position: absolute; transform: translate(-50%, -50%) rotate(-6deg); padding: 6px 8px; background: #ffe066; color: #1a1a1a; font: 900 20px 'Comic Neue', system-ui; box-shadow: 0 3px 8px rgba(0, 0, 0, .5); animation: pop .4s cubic-bezier(.2, 1.4, .4, 1); }
+.spoon { position: absolute; z-index: 6; width: 70px; height: 70px; margin: -35px 0 0 -35px; border-radius: 50%; background: radial-gradient(circle, rgba(220, 245, 255, .95) 0 12%, rgba(127, 224, 255, .5) 30%, rgba(127, 224, 255, 0) 70%); touch-action: none; transition: left .4s, top .4s; animation: glowc 1.2s infinite; }
+.weight { position: absolute; white-space: nowrap; transform: translate(-50%, -50%); padding: 10px 14px; border-radius: 12px; background: #fff; color: #b3261e; text-align: center; font: 900 26px system-ui; box-shadow: 0 6px 20px rgba(0, 0, 0, .5); animation: pop .4s cubic-bezier(.2, 1.4, .4, 1); }
+.weight span { display: block; font-size: 15px; color: #333; }
+.panel.quake { animation: shake .12s 5; }
