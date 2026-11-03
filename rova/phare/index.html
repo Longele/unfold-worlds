@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Le phare · ROVA</title>
+<meta name="description" content="La nuit du cyclone : programme le phare pour envoyer un SOS en morse au bateau.">
+<meta name="theme-color" content="#05070c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Cpath d=%22M6 15h4l-1-10H7z%22 fill=%22%23e8e2d6%22/%3E%3Ccircle cx=%228%22 cy=%223.5%22 r=%222%22 fill=%22%23ffd77a%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="phare.css">
+</head>
+<body>
+<canvas id="scene"></canvas>
+<button id="mute" aria-label="Son"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="w" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg></button>
+<div id="legend"><b>Code morse</b><div><span class="l">S</span><i class="d"></i><i class="d"></i><i class="d"></i></div><div><span class="l">O</span><i class="b"></i><i class="b"></i><i class="b"></i></div><small>court · long</small></div>
+<div id="bubble"></div>
+<p id="sub"></p>
+
+<section id="console">
+  <div id="loop"><div id="loopctl"><span>Répéter</span><button id="minus" aria-label="moins">−</button><em id="loopn">1</em><button id="plus" aria-label="plus">+</button><span>fois</span><strong id="rep"></strong></div>
+    <div class="mem"><small>Mémoire du phare · <span id="count">0 flash</span></small><div id="tape"></div></div></div>
+  <div class="tools"><button id="undo" title="Retirer le dernier">⌫</button><button id="clear" title="Tout effacer">Effacer</button><button id="run" class="pl" disabled>Lancer le phare</button></div>
+  <button id="key" aria-label="Clé morse"><span class="lever"></span><span class="knob"></span><em>Clé morse</em><kbd>Espace</kbd></button>
+</section>
+
+<section id="pred"><h3>Combien de flashs le phare va-t-il envoyer ?</h3><div class="opts"></div><p class="why"></p></section>
+
+<section id="title" class="on"><div class="tc">
+  <p class="kick">ROVA · prototype · mission du phare</p>
+  <h1>La nuit du cyclone</h1>
+  <p>La radio est morte. Au large, un bateau ne sait pas que tu es là. Il ne te reste que la lumière du phare… et un code.</p>
+  <button id="go" class="pl">Monter au phare</button>
+  <small>Avec le son · au doigt, à la souris ou avec la barre d’espace</small>
+</div></section>
+
+<section id="end"><div class="tc">
+  <p class="kick">Mission accomplie</p><h2>Le bateau arrive</h2>
+  <ul><li><b>Séquence</b> : ton message, flash après flash, dans le bon ordre.</li><li><b>Boucle</b> : le phare l’a répété tout seul.</li><li><b>Débogage</b> : tu as lu ce que comprenait le marin, et corrigé.</li></ul>
+  <p class="fact">Le savais-tu ? Le signal SOS a été choisi en 1906, à Berlin, par une conférence internationale, simplement parce qu’il est très facile à reconnaître : ce n’est l’abréviation d’aucune phrase.</p>
+  <div class="rb"><button id="again">Rejouer</button><a class="pl" href="../">Retour à ROVA</a></div>
+</div></section>
+<script type="module" src="phare.js"></script>
+</body>
+</html>
