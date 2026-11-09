@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>La Grande Chasse</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#1a1440">
+<link rel="icon" href="pixo.png">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/", "mindar-image-three": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js" } }</script>
+</head>
+<body>
+<!-- the room seen through the camera, with Pixo in it -->
+<main id="room"><video class="cam" playsinline muted autoplay></video><canvas class="gl"></canvas></main>
+<div id="scanbox"></div>
+
+<div id="hud">
+  <div id="slots"></div>
+  <p id="say"></p>
+</div>
+<div id="arrow"><span>➜</span><em>Pixo est par là !</em></div>
+<div id="flash"></div>
+
+<section id="challenge"><div class="who"></div><div class="q"></div><div class="opts"></div></section>
+
+<section id="scan" class="screen"><div class="frame"></div><p class="t"></p><p class="s">Tenez le téléphone au-dessus de la carte, bien à plat.</p>
+  <div class="nocam"><img alt=""><button class="big" id="foundbtn"></button></div></section>
+
+<section id="clue" class="screen"><div class="box"><p class="kick">La carte suivante est cachée…</p><p class="riddle"></p>
+  <button class="peek" id="peek">👀 Indice pour les petits</button><div class="pic"></div><button class="big" id="cluego"></button></div></section>
+
+<section id="home" class="screen on"><div class="box">
+  <img class="pixo" src="pixo.png" alt="Pixo">
+  <p class="kick">Une chasse au trésor magique · 3 à 12 ans</p>
+  <h1>La Grande Chasse</h1>
+  <p class="pitch">Cette nuit, le vaisseau de Pixo s’est écrasé chez vous. Ses six morceaux sont cachés dans la maison. Les enfants vont les retrouver avec le téléphone… et Pixo va apparaître dans votre salon.</p>
+  <button class="big" id="toSetup">Préparer la chasse</button>
+  <p class="fine">Pour les parents · environ 20 minutes · la caméra reste sur le téléphone, rien n’est enregistré</p>
+</div></section>
+
+<section id="setup" class="screen"><div class="box">
+  <h2>Préparer la chasse</h2>
+  <ol>
+    <li><b>Imprimez les 6 cartes</b> sur du papier mat et découpez-les. <a href="cartes.pdf" target="_blank">Ouvrir les cartes à imprimer</a></li>
+    <li><b>Qui joue ?</b><div id="players"></div><button id="addp" class="ghost">+ Ajouter un enfant</button></li>
+    <li><b>Cachez les cartes 2 à 6</b> dans la maison, puis dites où chacune est cachée. Gardez la carte 1 dans votre poche.<div id="spots"></div></li>
+    <li><b>Comment jouer ?</b><div class="modes"><button data-mode="cam" class="on">📷 Avec la caméra du téléphone</button><button data-mode="nocam">🖥️ Sans caméra (ordinateur)</button></div></li>
+  </ol>
+  <button class="big" id="go">C’est parti !</button>
+</div></section>
+
+<section id="end" class="screen"><div class="box">
+  <img class="pixo" src="pixo.png" alt="">
+  <p class="kick">Mission accomplie</p><h2>Diplôme de Grands Explorateurs</h2>
+  <p class="names"></p>
+  <p class="pitch">ont retrouvé les six morceaux du vaisseau de Pixo et l’ont aidé à rentrer chez lui. Ce soir, regardez le ciel…</p>
+  <button class="big" id="again">Rejouer</button>
+</div></section>
+<script type="module" src="app.js"></script>
+</body>
+</html>

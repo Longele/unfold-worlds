@@ -1,0 +1,94 @@
+:root { --ink: #1a1440; --pink: #ff5f8a; --gold: #ffd23f; --mint: #5fd3a8; --round: ui-rounded, "SF Pro Rounded", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1440; color: #fff; font-family: var(--round); user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+button { font: inherit; color: inherit; border: 0; cursor: pointer; }
+
+/* the room: the camera picture, the 3D layer on top */
+#room { position: fixed; inset: 0; background: radial-gradient(circle at 50% 30%, #3a2f7a, #1a1440); }
+#room video.cam { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
+#room.live video.cam { opacity: 1; }
+#room canvas.gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+#scanbox { position: fixed; inset: 0; z-index: 1; display: none; }
+#scanbox.on { display: block; }
+#scanbox video { object-fit: cover; }
+
+/* the six slots of the ship, and Pixo's words */
+#hud { position: fixed; left: 0; right: 0; top: 0; z-index: 5; padding: calc(10px + env(safe-area-inset-top)) 12px 0; pointer-events: none; display: none; }
+body.playing #hud { display: block; }
+#slots { display: flex; justify-content: center; gap: 6px; }
+#slots i { width: 46px; height: 46px; border-radius: 14px; background: rgba(26, 20, 64, .6) center / 80% no-repeat; border: 2px dashed rgba(255, 255, 255, .4); filter: grayscale(1) brightness(.5); opacity: .7; transition: .5s; }
+#slots i.got { filter: none; opacity: 1; border: 2px solid var(--gold); background-color: rgba(255, 210, 63, .25); animation: slot .6s; }
+@keyframes slot { 40% { transform: scale(1.4); } }
+#say { margin: 10px auto 0; max-width: 560px; padding: 10px 14px; border-radius: 18px; background: rgba(255, 255, 255, .94); color: var(--ink); font-size: 17px; line-height: 1.35; font-weight: 700; text-align: center; opacity: 0; transform: translateY(-6px); transition: .3s; }
+#say.on { opacity: 1; transform: none; }
+
+/* where Pixo is when he is off screen */
+#arrow { position: fixed; z-index: 6; left: 50%; top: 50%; transform: translate(-50%, -50%); display: none; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; }
+#arrow.on { display: flex; }
+#arrow span { display: grid; place-items: center; width: 74px; height: 74px; border-radius: 50%; background: var(--pink); font-size: 40px; box-shadow: 0 0 0 6px rgba(255, 95, 138, .35); animation: pulse 1s infinite; }
+#arrow em { white-space: nowrap; text-align: center; font-style: normal; font-weight: 800; text-shadow: 0 2px 6px #000; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 14px rgba(255, 95, 138, .1); } }
+#flash { position: fixed; inset: 0; z-index: 20; pointer-events: none; background: radial-gradient(circle, #fff 0%, rgba(255, 240, 180, .9) 30%, rgba(95, 211, 168, 0) 70%); opacity: 0; }
+#flash.on { animation: flash 1.1s ease-out; }
+@keyframes flash { 0% { opacity: 0; transform: scale(.2); } 25% { opacity: 1; } 100% { opacity: 0; transform: scale(2.4); } }
+
+/* a challenge: who plays, the question, big answers */
+#challenge { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8; padding: 14px 14px calc(16px + env(safe-area-inset-bottom)); border-radius: 26px 26px 0 0; background: rgba(255, 255, 255, .96); color: var(--ink); transform: translateY(110%); transition: transform .45s cubic-bezier(.2, .9, .3, 1.1); text-align: center; }
+#challenge.on { transform: none; }
+#challenge .who { display: inline-block; padding: 6px 16px; border-radius: 999px; background: var(--c, var(--mint)); color: #fff; font-weight: 900; font-size: 20px; margin-bottom: 8px; }
+#challenge .q p { margin: 4px 0 10px; font-size: 18px; font-weight: 700; line-height: 1.35; }
+#challenge .q .big { font-size: 42px; font-weight: 900; } #challenge .q .word { letter-spacing: .08em; }
+#challenge .q .row { font-size: 38px; } #challenge .q .row .q { color: var(--pink); font-weight: 900; }
+#challenge .q .code { font-size: 36px; font-weight: 900; letter-spacing: .2em; color: #8e24aa; } #challenge .q .small { font-size: 14px; color: #666; }
+#challenge .q .stars { font-size: 46px; line-height: 1.1; margin-bottom: 6px; }
+#challenge .opts { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+#challenge .opts button { min-width: 30%; padding: 14px 12px; border-radius: 20px; background: #f1edff; color: var(--ink); font-size: 19px; font-weight: 800; box-shadow: 0 4px 0 #d4ccf5; }
+#challenge.big .opts button { min-width: 21%; padding: 10px; }
+#challenge .opts button.ok { background: var(--mint); color: #fff; box-shadow: 0 4px 0 #2e9b74; animation: slot .5s; }
+#challenge .opts button.no { background: #ffd6de; animation: shake .4s; }
+@keyframes shake { 25% { transform: translateX(-7px); } 75% { transform: translateX(7px); } }
+.dot { display: block; width: 64px; height: 64px; border-radius: 50%; margin: auto; box-shadow: inset 0 -6px 0 rgba(0, 0, 0, .15); }
+.shape svg { width: 64px; height: 64px; fill: #ff8a3c; display: block; margin: auto; }
+.num { font-size: 40px; } .emo { font-size: 44px; }
+
+/* screens: home, setup, the clue, scanning, the end */
+.screen { position: fixed; inset: 0; z-index: 10; display: none; overflow: auto; padding: calc(20px + env(safe-area-inset-top)) 18px 24px; }
+.screen.on { display: block; }
+.box { max-width: 560px; margin: 0 auto; text-align: center; }
+#home, #setup, #end { background: radial-gradient(ellipse at 50% 20%, #4a3aa0, #1a1440 70%); }
+.pixo { width: 160px; filter: drop-shadow(0 12px 18px rgba(0, 0, 0, .4)); animation: bob 2.4s ease-in-out infinite; }
+@keyframes bob { 50% { transform: translateY(-10px); } }
+.kick { margin: 8px 0 0; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); font-weight: 800; }
+h1 { margin: 4px 0 10px; font-size: 44px; line-height: 1; } h2 { margin: 6px 0 14px; font-size: 28px; }
+.pitch { font-size: 17px; line-height: 1.5; color: #e6e2ff; }
+.fine { font-size: 13px; color: #b8b1e6; }
+.big { display: inline-block; margin-top: 14px; padding: 16px 30px; border-radius: 22px; background: linear-gradient(180deg, #ffe066, #ffb703); color: #3a2400; font-size: 20px; font-weight: 900; box-shadow: 0 6px 0 #b77a00; }
+.big:active { transform: translateY(4px); box-shadow: 0 2px 0 #b77a00; }
+.ghost { padding: 10px 16px; border-radius: 14px; background: rgba(255, 255, 255, .12); font-weight: 700; margin-top: 6px; }
+#setup ol { text-align: left; padding-left: 22px; line-height: 1.45; } #setup li { margin: 0 0 18px; } #setup a { color: var(--gold); font-weight: 800; }
+.player { display: flex; gap: 6px; align-items: center; margin: 8px 0; flex-wrap: wrap; }
+.player input { flex: 1; min-width: 120px; padding: 10px 12px; border-radius: 12px; border: 0; font: inherit; font-size: 17px; }
+.player .ages button { padding: 8px 10px; border-radius: 12px; background: rgba(255, 255, 255, .12); font-weight: 700; font-size: 14px; }
+.player .ages button.on { background: var(--mint); color: #08281d; }
+.player .x { background: none; font-size: 20px; opacity: .6; }
+#spots .row { display: flex; align-items: center; gap: 6px; margin: 8px 0; flex-wrap: wrap; }
+#spots .row b { width: 64px; } #spots select { flex: 1; padding: 10px; border-radius: 12px; border: 0; font: inherit; font-size: 16px; }
+.modes { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.modes button { padding: 12px; border-radius: 14px; background: rgba(255, 255, 255, .12); font-weight: 700; text-align: left; }
+.modes button.on { background: var(--mint); color: #08281d; }
+#scan { background: transparent; text-align: center; pointer-events: none; }
+#scan .frame { width: min(64vw, 300px); aspect-ratio: 3 / 4; margin: 12vh auto 0; border-radius: 22px; border: 4px solid rgba(255, 255, 255, .9); box-shadow: 0 0 0 9999px rgba(0, 0, 0, .25); animation: scan 1.6s ease-in-out infinite; }
+@keyframes scan { 50% { border-color: var(--gold); } }
+#scan .t { font-size: 26px; font-weight: 900; text-shadow: 0 2px 8px #000; margin: 16px 0 4px; } #scan .s { margin: 0; text-shadow: 0 2px 6px #000; }
+#scan .nocam { display: none; pointer-events: auto; } #scan.nocam .nocam { display: block; } #scan.nocam .frame, #scan.nocam .s { display: none; }
+#scan .nocam img { width: 180px; border-radius: 14px; margin-top: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, .5); }
+#clue { background: rgba(26, 20, 64, .82); }
+#clue .box { margin-top: 10vh; padding: 22px; border-radius: 26px; background: rgba(255, 255, 255, .1); }
+#clue .riddle { font-size: 24px; font-weight: 800; line-height: 1.35; }
+#clue .pic { font-size: 120px; display: none; } #clue .pic.on { display: block; animation: slot .5s; }
+#clue .peek { padding: 10px 16px; border-radius: 14px; background: rgba(255, 255, 255, .15); font-weight: 800; }
+#end .names { font-size: 28px; font-weight: 900; color: var(--gold); margin: 6px 0; }
+#challenge .opts button.hint { animation: hint 1s infinite; }
+@keyframes hint { 50% { box-shadow: 0 0 0 6px var(--gold); transform: scale(1.06); } }
+#skipscan { display: none; pointer-events: auto; margin-top: 18px; }
+#scan.late #skipscan { display: inline-block; } #scan.nocam #skipscan { display: none; }
