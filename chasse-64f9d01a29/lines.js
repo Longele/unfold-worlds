@@ -56,6 +56,7 @@ export const LINES = {
   "go_find": "Allez, courez la chercher !",
   "e1": "Les six morceaux ! On a tout ! Posez la carte numéro un sur une table, et regardez-la avec le téléphone.",
   "e2": "Regardez ! Mon vaisseau se reconstruit, morceau par morceau !",
-  "e3": "Il est réparé ! Merci, mes amis Terriens. Je n'oublierai jamais votre maison. Ce soir, regardez le ciel : je vous ferai un clin d'œil. Au revoir !"
+  "e3": "Il est réparé ! Merci, mes amis Terriens. Je n'oublierai jamais votre maison. Ce soir, regardez le ciel : je vous ferai un clin d'œil. Au revoir !",
+  "resume": "Re-bonjour les explorateurs ! On reprend la chasse là où on s'était arrêtés. Allez, on continue !"
  }
 };

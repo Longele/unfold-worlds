@@ -1,21 +1,25 @@
 // La Grande Chasse: the challenges, one per player at each card, matched to age.
 //   p = 3 to 5 (no reading: colours, counting, shapes, all said aloud), m = 6 to 8 (adding, patterns, reading a
 //   word), g = 9 to 12 (a coded message, riddles, astronaut questions, number sequences).
-// A challenge: { voice: [line ids], text, options: [{ html, ok }], big }.
+// A challenge: { voice: [line ids], text, options: [{ html, ok }], big }. Pictures are illustrated icons (img/ic).
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const shuffle = (a) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const used = new Set();
 const fresh = (key, list) => { const left = list.filter((x) => !used.has(key + JSON.stringify(x))); const x = pick(left.length ? left : list); used.add(key + JSON.stringify(x)); return x; };
 
-const COLORS = { rouge: '#e53935', bleu: '#1e88e5', jaune: '#fdd835', vert: '#43a047', violet: '#8e24aa' };
+export const ic = (name, cls = '') => `<img class="ic ${cls}" src="img/ic/${name}.webp" alt="" draggable="false">`;
+const BALLS = { rouge: '#e8364a', bleu: '#2a7de1', jaune: '#ffc928', vert: '#2dbb5d', violet: '#9a4ee0' };
+const ball = (c) => `<i class="ball" style="--b:${BALLS[c]}"></i>`;
+const pic = (x) => (x.startsWith('ball:') ? ball(x.slice(5)) : ic(x));
 const SHAPES = {
-  rond: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/></svg>',
-  carre: '<svg viewBox="0 0 100 100"><rect x="12" y="12" width="76" height="76" rx="6"/></svg>',
-  triangle: '<svg viewBox="0 0 100 100"><path d="M50 10 L92 88 L8 88 Z"/></svg>',
-  etoile: '<svg viewBox="0 0 100 100"><path d="M50 6 L62 38 L96 38 L68 58 L79 92 L50 71 L21 92 L32 58 L4 38 L38 38 Z"/></svg>',
+  rond: '<circle cx="50" cy="50" r="40"/>',
+  carre: '<rect x="12" y="12" width="76" height="76" rx="10"/>',
+  triangle: '<path d="M50 9 Q54 9 56 13 L91 82 Q93 88 86 88 L14 88 Q7 88 9 82 L44 13 Q46 9 50 9 Z"/>',
+  etoile: '<path d="M50 6 L62 38 L96 38 L68 58 L79 92 L50 71 L21 92 L32 58 L4 38 L38 38 Z" stroke-linejoin="round" stroke-width="6" stroke="url(#sg)"/>',
 };
-const WORDS = [['CHAT', '🐱'], ['LUNE', '🌙'], ['FUSÉE', '🚀'], ['SOLEIL', '☀️'], ['POMME', '🍎'], ['ÉTOILE', '⭐'], ['POISSON', '🐟'], ['ARBRE', '🌳'], ['GÂTEAU', '🎂'], ['VÉLO', '🚲']];
-const PATTERNS = [['🔴', '🔵'], ['🌙', '⭐', '⭐'], ['🐱', '🐶', '🐰'], ['🍎', '🍎', '🍌'], ['🟢', '🟡', '🟣']];
+const shape = (n) => `<svg class="shape" viewBox="0 0 100 100"><defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb259"/><stop offset="1" stop-color="#ff6f3c"/></linearGradient></defs><g fill="url(#sg)">${SHAPES[n]}</g></svg>`;
+const WORDS = [['CHAT', 'cat'], ['LUNE', 'moon'], ['FUSÉE', 'rocket'], ['SOLEIL', 'sun'], ['POMME', 'apple'], ['ÉTOILE', 'star'], ['POISSON', 'fish'], ['ARBRE', 'tree'], ['GÂTEAU', 'cake'], ['VÉLO', 'bike'], ['CHIEN', 'dog'], ['LAPIN', 'rabbit']];
+const PATTERNS = [['ball:rouge', 'ball:bleu'], ['moon', 'star', 'star'], ['cat', 'dog', 'rabbit'], ['apple', 'apple', 'banana'], ['ball:vert', 'ball:jaune', 'ball:violet'], ['sun', 'moon']];
 const CODE = ['LUNE', 'FUSEE', 'ROBOT', 'PLANETE', 'COMETE', 'ETOILE', 'GALAXIE', 'SATURNE'];
 const RIDDLES = [
   { q: 'Pixo a 3 sœurs. Chaque sœur a 1 seul frère. Combien d’enfants y a-t-il dans sa famille ?', a: '4', o: ['4', '6', '7'] },
@@ -39,32 +43,34 @@ const shift = (w) => w.split('').map((c) => (c === 'Z' ? 'A' : String.fromCharCo
 export function challenge(age) {
   if (age === 'p') {
     const kind = pick(['col', 'count', 'shape']);
-    if (kind === 'col') { const names = shuffle(Object.keys(COLORS)).slice(0, 4), t = pick(names);
-      return { voice: ['col', `col_${t}`], text: '', big: true, options: names.map((n) => ({ html: `<i class="dot" style="background:${COLORS[n]}"></i>`, ok: n === t })) }; }
+    if (kind === 'col') { const names = shuffle(Object.keys(BALLS)).slice(0, 4), t = pick(names);
+      return { voice: ['col', `col_${t}`], text: '', big: true, options: names.map((n) => ({ html: ball(n), ok: n === t })) }; }
     if (kind === 'count') { const n = 1 + Math.floor(Math.random() * 5), opts = shuffle([...new Set([n, Math.max(1, n - 1), Math.min(6, n + 1), n === 1 ? 3 : 1])]).slice(0, 3); if (!opts.includes(n)) opts[0] = n;
-      return { voice: ['count'], text: `<div class="stars">${'⭐'.repeat(n)}</div>`, big: true, options: shuffle(opts).map((x) => ({ html: `<b class="num">${x}</b>`, ok: x === n })) }; }
+      return { voice: ['count'], text: `<div class="stars">${ic('star', 'twk').repeat(n)}</div>`, big: true, options: shuffle(opts).map((x) => ({ html: `<b class="num">${x}</b>`, ok: x === n })) }; }
     const names = shuffle(Object.keys(SHAPES)), t = pick(names);
-    return { voice: ['shape', `shape_${t}`], text: '', big: true, options: names.map((n) => ({ html: `<i class="shape">${SHAPES[n]}</i>`, ok: n === t })) };
+    return { voice: ['shape', `shape_${t}`], text: '', big: true, options: names.map((n) => ({ html: shape(n), ok: n === t })) };
   }
   if (age === 'm') {
     const kind = pick(['add', 'next', 'word']);
     if (kind === 'add') { const a = 2 + Math.floor(Math.random() * 8), b = 1 + Math.floor(Math.random() * 9), r = a + b;
-      return { voice: ['add'], text: `<p class="big">${a} + ${b} = ?</p>`, options: shuffle([r, r + 1, r - 2]).map((x) => ({ html: `<b class="num">${x}</b>`, ok: x === r })) }; }
-    if (kind === 'next') { const p = fresh('p', PATTERNS), seq = [...p, ...p, ...p].slice(0, p.length * 2 + 1), ans = p[seq.length % p.length], others = [...new Set([...p.filter((x) => x !== ans), ...shuffle([...new Set(PATTERNS.flat())].filter((x) => !p.includes(x)))])].slice(0, 2); // the motif's other piece is the tempting wrong answer
-      return { voice: ['next'], text: `<p class="row">${seq.join(' ')} <span class="q">?</span></p>`, options: shuffle([ans, ...others]).map((x) => ({ html: `<b class="emo">${x}</b>`, ok: x === ans })) }; }
+      return { voice: ['add'], text: `<p class="huge">${a} + ${b} = <span class="qm">?</span></p>`, options: shuffle([r, r + 1, r - 2]).map((x) => ({ html: `<b class="num">${x}</b>`, ok: x === r })) }; }
+    if (kind === 'next') { const p = fresh('p', PATTERNS), seq = [...p, ...p, ...p].slice(0, p.length * 2 + 1), ans = p[seq.length % p.length];
+      const others = [...new Set([...p.filter((x) => x !== ans), ...shuffle([...new Set(PATTERNS.flat())].filter((x) => !p.includes(x)))])].slice(0, 2); // the motif's other piece is the tempting wrong answer
+      return { voice: ['next'], text: `<div class="row">${seq.map(pic).join('')}<span class="slot">?</span></div>`, options: shuffle([ans, ...others]).map((x) => ({ html: pic(x), ok: x === ans })) }; }
     const w = fresh('w', WORDS), others = shuffle(WORDS.filter((x) => x !== w)).slice(0, 2);
-    return { voice: ['word'], text: `<p class="big word">${w[0]}</p>`, options: shuffle([w, ...others]).map((x) => ({ html: `<b class="emo">${x[1]}</b>`, ok: x === w })) };
+    return { voice: ['word'], text: `<p class="huge word">${w[0]}</p>`, options: shuffle([w, ...others]).map((x) => ({ html: ic(x[1]), ok: x === w })) };
   }
   const kind = pick(['cipher', 'riddle', 'science', 'seq']);
   if (kind === 'cipher') { const w = fresh('c', CODE), others = shuffle(CODE.filter((x) => x !== w)).slice(0, 2);
-    return { voice: ['cipher'], text: `<p class="code">${shift(w)}</p><p class="small">A→B, B→C, C→D… Recule chaque lettre d’un cran.</p>`, options: shuffle([w, ...others]).map((x) => ({ html: x, ok: x === w })) }; }
-  if (kind === 'riddle') { const r = fresh('r', RIDDLES); return { voice: ['riddle'], text: `<p>${r.q}</p>`, options: shuffle(r.o).map((x) => ({ html: x, ok: x === r.a })) }; }
-  if (kind === 'science') { const r = fresh('s', SCIENCE); return { voice: ['science'], text: `<p>${r.q}</p>`, options: shuffle(r.o).map((x) => ({ html: x, ok: x === r.a })) }; }
-  const s = fresh('q', SEQS); return { voice: ['seq'], text: `<p class="big">${s.s}</p>`, options: shuffle(s.o).map((x) => ({ html: `<b class="num">${x}</b>`, ok: x === s.a })) };
+    return { voice: ['cipher'], text: `<p class="code">${shift(w).split('').map((c) => `<span>${c}</span>`).join('')}</p><p class="small">A → B, B → C… Recule chaque lettre d’un cran.</p>`, options: shuffle([w, ...others]).map((x) => ({ html: x, ok: x === w })) }; }
+  if (kind === 'riddle') { const r = fresh('r', RIDDLES); return { voice: ['riddle'], text: `<p class="q">${r.q}</p>`, options: shuffle(r.o).map((x) => ({ html: x, ok: x === r.a })) }; }
+  if (kind === 'science') { const r = fresh('s', SCIENCE); return { voice: ['science'], text: `<p class="q">${r.q}</p>`, options: shuffle(r.o).map((x) => ({ html: x, ok: x === r.a })) }; }
+  const s = fresh('q', SEQS); return { voice: ['seq'], text: `<p class="huge">${s.s}</p>`, options: shuffle(s.o).map((x) => ({ html: `<b class="num">${x}</b>`, ok: x === s.a })) };
 }
 
-// where the parent can hide a card: a picture for the little ones, a riddle for everyone
+// where the parent can hide a card: an illustrated picture for the little ones, a riddle for everyone
 export const SPOTS = [
-  ['canape', '🛋️', 'Le canapé'], ['frigo', '🧊', 'Le frigo'], ['lit', '🛏️', 'Le lit'], ['table', '🍽️', 'La table'], ['livres', '📚', 'Les livres'], ['bain', '🛁', 'La salle de bain'],
-  ['porte', '🚪', 'La porte d’entrée'], ['coussin', '🛌', 'Sous un coussin'], ['plante', '🪴', 'Une plante'], ['jouets', '🧸', 'Les jouets'], ['chaussures', '👟', 'Les chaussures'],
+  ['canape', 'Le canapé'], ['frigo', 'Le frigo'], ['lit', 'Le lit'], ['table', 'La table'], ['livres', 'Les livres'], ['bain', 'La salle de bain'],
+  ['porte', 'La porte d’entrée'], ['coussin', 'Sous un coussin'], ['plante', 'Une plante'], ['jouets', 'Les jouets'], ['chaussures', 'Les chaussures'],
 ];
+export const AVATARS = [['fox', 'Renard'], ['panda', 'Panda'], ['lion', 'Lion'], ['bunny', 'Lapin'], ['owl', 'Hibou'], ['turtle', 'Tortue']];

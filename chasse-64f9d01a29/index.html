@@ -3,60 +3,132 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>La Grande Chasse</title>
-<meta name="robots" content="noindex">
-<meta name="theme-color" content="#1a1440">
-<link rel="icon" href="pixo.png">
+<title>La Grande Chasse de Pixo</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0d0b2b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="img/pixo-face.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<link rel="preload" href="img/keyart-sm.jpg" as="image">
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/", "mindar-image-three": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js" } }</script>
 </head>
 <body>
-<!-- the room seen through the camera, with Pixo in it -->
-<main id="room"><video class="cam" playsinline muted autoplay></video><canvas class="gl"></canvas></main>
+<!-- the camera (the card scanner keeps it running), then the room's 3D layer with Pixo -->
 <div id="scanbox"></div>
+<main id="room"><video class="cam" playsinline muted autoplay></video><canvas class="gl"></canvas></main>
 
-<div id="hud">
-  <div id="slots"></div>
-  <p id="say"></p>
-</div>
-<div id="arrow"><span>➜</span><em>Pixo est par là !</em></div>
+<header id="hud">
+  <button id="pausebtn" class="round" aria-label="Pause"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg></button>
+  <div id="slots" aria-label="Les morceaux du vaisseau"></div>
+</header>
+<div id="say"><img src="img/pixo-face.png" alt=""><p></p></div>
+<div id="arrow"><span><svg viewBox="0 0 24 24"><path d="M5 12h12M12 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><em>Pixo est par là !</em></div>
 <div id="flash"></div>
 
-<section id="challenge"><div class="who"></div><div class="q"></div><div class="opts"></div></section>
+<section id="challenge">
+  <div class="who"><img class="av" alt=""><b></b><span>à toi !</span></div>
+  <div class="q"></div><div class="opts"></div>
+</section>
 
-<section id="scan" class="screen"><div class="frame"></div><p class="t"></p><p class="s">Tenez le téléphone au-dessus de la carte, bien à plat.</p>
-  <div class="nocam"><img alt=""><button class="big" id="foundbtn"></button></div></section>
+<section id="scan" class="screen">
+  <div class="reticle"><i></i><i></i><i></i><i></i><div class="beam"></div></div>
+  <div class="scancap"><p class="kick"></p><p class="t"></p><p class="s">Posez la carte à plat, tenez le téléphone au-dessus.</p></div>
+  <div class="nocam"><div class="cardfx"><img alt=""></div><button class="cta" id="foundbtn"></button></div>
+  <button id="skipscan" class="ghost">La carte ne se détecte pas ? Continuer</button>
+</section>
 
-<section id="clue" class="screen"><div class="box"><p class="kick">La carte suivante est cachée…</p><p class="riddle"></p>
-  <button class="peek" id="peek">👀 Indice pour les petits</button><div class="pic"></div><button class="big" id="cluego"></button></div></section>
+<section id="clue" class="screen">
+  <div class="holo">
+    <div class="cardmini"><img alt=""></div>
+    <p class="kick"></p>
+    <p class="riddle"></p>
+    <button id="peek" class="chip">Indice pour les petits</button>
+    <div class="pic"><img alt=""><span></span></div>
+    <button class="cta" id="cluego"></button>
+  </div>
+</section>
 
-<section id="home" class="screen on"><div class="box">
-  <img class="pixo" src="pixo.png" alt="Pixo">
-  <p class="kick">Une chasse au trésor magique · 3 à 12 ans</p>
-  <h1>La Grande Chasse</h1>
-  <p class="pitch">Cette nuit, le vaisseau de Pixo s’est écrasé chez vous. Ses six morceaux sont cachés dans la maison. Les enfants vont les retrouver avec le téléphone… et Pixo va apparaître dans votre salon.</p>
-  <button class="big" id="toSetup">Préparer la chasse</button>
-  <p class="fine">Pour les parents · environ 20 minutes · la caméra reste sur le téléphone, rien n’est enregistré</p>
-</div></section>
+<section id="intro" class="screen"><video playsinline muted preload="auto"></video><button id="skipintro" class="ghost small">Passer</button></section>
 
-<section id="setup" class="screen"><div class="box">
-  <h2>Préparer la chasse</h2>
-  <ol>
-    <li><b>Imprimez les 6 cartes</b> sur du papier mat et découpez-les. <a href="cartes.pdf" target="_blank">Ouvrir les cartes à imprimer</a></li>
-    <li><b>Qui joue ?</b><div id="players"></div><button id="addp" class="ghost">+ Ajouter un enfant</button></li>
-    <li><b>Cachez les cartes 2 à 6</b> dans la maison, puis dites où chacune est cachée. Gardez la carte 1 dans votre poche.<div id="spots"></div></li>
-    <li><b>Comment jouer ?</b><div class="modes"><button data-mode="cam" class="on">📷 Avec la caméra du téléphone</button><button data-mode="nocam">🖥️ Sans caméra (ordinateur)</button></div></li>
-  </ol>
-  <button class="big" id="go">C’est parti !</button>
-</div></section>
+<section id="home" class="screen on">
+  <picture class="hero"><source media="(min-width: 900px)" srcset="img/keyart.jpg"><img src="img/keyart-sm.jpg" alt="Pixo, un petit extraterrestre, à côté de son vaisseau écrasé dans un salon"></picture>
+  <div class="homebox">
+    <div class="logo"><span class="l1">La Grande</span><span class="l2">Chasse</span><span class="l3">de Pixo</span></div>
+    <p class="tag">Cette nuit, un petit extraterrestre s’est écrasé chez vous. Ses six morceaux de vaisseau sont cachés dans la maison. À vos enfants de l’aider à rentrer.</p>
+    <ul class="facts"><li><b>3 à 12 ans</b></li><li><b>20 à 30 min</b></li><li><b>1 à 6 enfants</b></li></ul>
+    <button class="cta" id="toSetup">Préparer la chasse</button>
+    <button class="ghost" id="resume" hidden></button>
+    <button class="link" id="howbtn">Comment ça marche ?</button>
+  </div>
+</section>
 
-<section id="end" class="screen"><div class="box">
-  <img class="pixo" src="pixo.png" alt="">
-  <p class="kick">Mission accomplie</p><h2>Diplôme de Grands Explorateurs</h2>
-  <p class="names"></p>
-  <p class="pitch">ont retrouvé les six morceaux du vaisseau de Pixo et l’ont aidé à rentrer chez lui. Ce soir, regardez le ciel…</p>
-  <button class="big" id="again">Rejouer</button>
-</div></section>
+<section id="how" class="screen sheetwrap">
+  <div class="sheet">
+    <h2>Comment ça marche</h2>
+    <ol class="how">
+      <li><img src="cards/c1.jpg" alt=""><div><b>Imprimez les 6 cartes</b><span>Deux feuilles A4, papier mat. Cachez les cartes 2 à 6 dans la maison.</span></div></li>
+      <li><img src="img/pixo-face.png" alt=""><div><b>Pixo apparaît chez vous</b><span>Avec la caméra du téléphone, il se pose dans votre salon, parle et se cache autour des enfants.</span></div></li>
+      <li><img src="img/ic/star.webp" alt=""><div><b>Chaque enfant relève son défi</b><span>Couleurs et formes pour les petits, calculs et lecture pour les moyens, énigmes et codes secrets pour les grands.</span></div></li>
+    </ol>
+    <p class="fine">Rien n’est envoyé ni enregistré : l’image de la caméra reste sur le téléphone.</p>
+    <button class="cta" id="howok">C’est parti</button>
+  </div>
+</section>
+
+<section id="setup" class="screen">
+  <div class="wiz">
+    <div class="wtop"><button id="wback" class="round" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="dots"><i></i><i></i><i></i><i></i></div><span class="wstep"></span></div>
+
+    <div class="step" data-step="0">
+      <p class="kick">Étape 1</p><h2>Imprimez les cartes</h2>
+      <div class="fan"><img src="cards/c1.jpg" alt=""><img src="cards/c2.jpg" alt=""><img src="cards/c3.jpg" alt=""><img src="cards/c4.jpg" alt=""><img src="cards/c5.jpg" alt=""><img src="cards/c6.jpg" alt=""></div>
+      <a class="cta alt" href="cartes.pdf" target="_blank" rel="noopener">Ouvrir les cartes à imprimer</a>
+      <ul class="tips"><li>Papier <b>mat</b> de préférence (le brillant fait des reflets).</li><li>Imprimez en couleur, puis découpez les 6 cartes.</li><li>Pas d’imprimante ? Jouez sur ordinateur, à l’étape 4.</li></ul>
+    </div>
+
+    <div class="step" data-step="1">
+      <p class="kick">Étape 2</p><h2>Les explorateurs</h2>
+      <div id="players"></div>
+      <button id="addp" class="ghost">+ Ajouter un enfant</button>
+    </div>
+
+    <div class="step" data-step="2">
+      <p class="kick">Étape 3</p><h2>Cachez les cartes</h2>
+      <p class="lead">Gardez la carte <b>1</b> dans votre poche. Cachez les autres, puis dites où.</p>
+      <div id="spots"></div>
+    </div>
+
+    <div class="step" data-step="3">
+      <p class="kick">Étape 4</p><h2>Prêts ?</h2>
+      <div class="modes">
+        <button data-mode="cam"><img src="img/pixo-face.png" alt=""><b>Avec la caméra</b><span>Pixo apparaît dans votre salon. Le plus magique.</span></button>
+        <button data-mode="nocam"><img src="img/ic/canape.webp" alt=""><b>Sur ordinateur</b><span>Sans caméra ni carte imprimée, dans un salon virtuel.</span></button>
+      </div>
+      <ul class="tips"><li>Montez le son.</li><li>Allumez bien la pièce.</li><li>Rien n’est enregistré, rien ne quitte l’appareil.</li></ul>
+    </div>
+
+    <div class="wnav"><button class="cta" id="wnext">Suivant</button></div>
+  </div>
+</section>
+
+<section id="pause" class="screen sheetwrap">
+  <div class="sheet">
+    <h2>Pause</h2>
+    <button class="cta" id="presume">Reprendre</button>
+    <button class="ghost" id="pmusic">Musique : oui</button>
+    <button class="ghost" id="prestart">Recommencer depuis le début</button>
+  </div>
+</section>
+
+<section id="end" class="screen">
+  <div class="endbox">
+    <canvas id="diploma" width="1600" height="1131"></canvas>
+    <div class="endbtns"><button class="cta" id="dl">Télécharger le diplôme</button><button class="ghost" id="again">Rejouer</button></div>
+  </div>
+</section>
+<noscript>Ce jeu a besoin de JavaScript.</noscript>
 <script type="module" src="app.js"></script>
 </body>
 </html>
