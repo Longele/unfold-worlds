@@ -1,11 +1,12 @@
 // La Grande Chasse de Pixo: the game. Pixo, a filmed little alien, appears in the room through the phone; the
-// children find the six printed cards hidden in the house, each card opens a portal where a piece of his ship comes
-// back, each child passes a challenge for their age, and at the end the ship rebuilds and takes off. Nothing is sent
-// anywhere; the progress of a hunt is kept in this browser tab only, so a reload can resume it.
+// family finds the six printed cards hidden in the house; each card opens a portal where a piece of his ship comes
+// back, guarded by a mini-game drawn at random (catch the stars flying around the room, a colour hunt in the real
+// house, the antenna's memory game, cooling the engine by blowing or tapping, a quiz for every age), so no two hunts
+// are alike. Everyone earns stars; the family record is kept on this device. Nothing is sent anywhere.
 import * as THREE from 'three';
 import { Room, FLOOR } from './room.js';
 import { LINES } from './lines.js';
-import { challenge, SPOTS, AVATARS, ic } from './games.js';
+import { challenge, SPOTS, AVATARS, shuffle, pick, R } from './games.js';
 
 const $ = (s) => document.querySelector(s);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -13,12 +14,13 @@ const Q = new URLSearchParams(location.search), TEST = Q.has('test'), FAST = TES
 const T = (ms) => (FAST ? Math.min(ms, 120) : ms);
 const L = LINES.fr;
 const PCOL = ['#ff6fa0', '#3b9cff', '#f59e0b', '#9a5cf0', '#22b98c', '#ef4f6b'];
-const AGES = [['p', '3 à 5 ans', 'Petits'], ['m', '6 à 8 ans', 'Moyens'], ['g', '9 à 12 ans', 'Grands']];
-const KEY = 'grande-chasse';
+const AGES = [['p', '3-5 ans', 'Petits'], ['m', '6-8 ans', 'Moyens'], ['g', '9-12 ans', 'Grands'], ['a', 'Adulte', 'Parents']];
+const KEY = 'grande-chasse', RECORD = 'grande-chasse-record';
+const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-const S = { phase: 'home', players: [], spots: {}, mode: 'cam', next: 1, got: 0, hunting: false, seen: 0, music: true, want: 0 };
+const S = { phase: 'home', players: [], spots: {}, mode: 'cam', next: 1, got: 0, order: [1, 2, 3, 4, 5, 6], plan: [], hides: [], stars: 0, hunting: false, seen: 0, music: true, want: 0 };
 let room, ac, master, musicGain, mind = null, wake = null;
-const save = () => { try { sessionStorage.setItem(KEY, JSON.stringify({ players: S.players, spots: S.spots, mode: S.mode, next: S.next, got: S.got })); } catch {} };
+const save = () => { try { sessionStorage.setItem(KEY, JSON.stringify({ players: S.players, spots: S.spots, mode: S.mode, next: S.next, got: S.got, order: S.order, plan: S.plan, hides: S.hides, stars: S.stars })); } catch {} };
 const forget = () => { try { sessionStorage.removeItem(KEY); } catch {} };
 
 // ------------------------------------------------------------------ sound: voice placed in the room, real effects, a music bed
@@ -32,6 +34,13 @@ async function sfx(name, vol = 1, rate = 1) {
   if (!ac) return; const b = await load(spath(name)); if (!b) return;
   const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = b; s.playbackRate.value = rate; g.gain.value = vol; s.connect(g).connect(master); s.start(); return s;
 }
+// a soft marimba note (Simon pads)
+function note(f, len = 0.35) {
+  if (!ac) return; const t = ac.currentTime, o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain();
+  o.type = 'sine'; o2.type = 'triangle'; o.frequency.value = f; o2.frequency.value = f * 4; const g2 = ac.createGain(); g2.gain.value = 0.08;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.35, t + 0.01); g.gain.exponentialRampToValueAtTime(0.001, t + len);
+  o.connect(g); o2.connect(g2).connect(g); g.connect(master); o.start(t); o2.start(t); o.stop(t + len + 0.05); o2.stop(t + len + 0.05);
+}
 let scanLoop = null;
 async function scanHum(on) {
   if (!ac) return; if (scanLoop) { try { scanLoop.stop(); } catch {} scanLoop = null; }
@@ -42,7 +51,7 @@ async function startMusic() {
   const s = ac.createBufferSource(); s.buffer = b; s.loop = true; musicGain = ac.createGain(); musicGain.gain.value = 0; s.connect(musicGain).connect(master); s.start();
   duck(false);
 }
-function duck(on) { if (!musicGain) return; const v = !S.music ? 0 : on ? 0.1 : 0.32; musicGain.gain.setTargetAtTime(v, ac.currentTime, on ? 0.12 : 0.6); }
+function duck(on) { if (!musicGain) return; const v = !S.music ? 0 : on ? 0.1 : 0.3; musicGain.gain.setTargetAtTime(v, ac.currentTime, on ? 0.12 : 0.6); }
 let voice = null, sayTok = 0;
 function stopVoice() { try { voice?.src.stop(); } catch {} voice = null; }
 async function playVoice(id) {
@@ -65,17 +74,30 @@ async function say(id, first = 'talk', prefix = '') {
   return my === sayTok; // false when another line cut this one
 }
 async function says(ids, first) { for (const id of ids) { if (!await say(id, first)) return; first = 'talk'; } }
+const cheer = () => pick(['good1', 'good2', 'good3', 'good4', 'good5', 'good6']);
 
-// ------------------------------------------------------------------ screens
+// ------------------------------------------------------------------ screens, score
 function screen(id) { for (const s of document.querySelectorAll('.screen')) s.classList.toggle('on', s.id === id); }
 function flash() { const f = $('#flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }
 const avatarSrc = (av) => `img/ic/av_${av}.webp`;
+function addStars(p, n) {
+  if (n <= 0) return; p.stars = (p.stars || 0) + n; S.stars += n; const el = $('#score'); el.querySelector('b').textContent = S.stars;
+  el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+}
+function banner(p, timer = '', count = null) {
+  const m = $('#mini'); m.style.setProperty('--c', p.color); m.querySelector('.av').src = avatarSrc(p.av); m.querySelector('.who').textContent = p.name;
+  m.querySelector('.timer').textContent = timer; m.querySelector('.timer').style.display = timer === '' ? 'none' : ''; m.querySelector('.count').style.display = count == null ? 'none' : '';
+  if (count != null) m.querySelector('.count b').textContent = count; m.classList.add('on'); document.body.classList.add('mini');
+}
+const unbanner = () => { $('#mini').classList.remove('on'); document.body.classList.remove('mini'); };
+const order = (k) => S.players.map((_, i) => S.players[(i + k - 1) % S.players.length]);
 
 // ------------------------------------------------------------------ setup wizard (kept in memory and in this tab only)
 let step = 0;
-function playerRow(i, name = '', age = 'm', av = AVATARS[i % AVATARS.length][0]) {
+function playerRow(i, name = '', age = 'm', av) {
+  av = av || AVATARS[i % AVATARS.length][0];
   const d = document.createElement('div'); d.className = 'player'; d.dataset.av = av; d.dataset.age = age;
-  d.innerHTML = `<div class="top"><input maxlength="14" placeholder="Prénom" autocomplete="off" enterkeyhint="done"><button class="x" aria-label="Retirer cet enfant">✕</button></div>
+  d.innerHTML = `<div class="top"><input maxlength="14" placeholder="Prénom" autocomplete="off" enterkeyhint="done"><button class="x" aria-label="Retirer">✕</button></div>
     <div class="avs">${AVATARS.map(([a, l]) => `<button data-a="${a}" aria-label="${l}" class="${a === av ? 'on' : ''}"><img src="${avatarSrc(a)}" alt=""></button>`).join('')}</div>
     <div class="ages">${AGES.map(([a, l, s]) => `<button data-g="${a}" class="${a === age ? 'on' : ''}">${l}<small>${s}</small></button>`).join('')}</div>`;
   d.querySelector('input').value = name;
@@ -84,12 +106,17 @@ function playerRow(i, name = '', age = 'm', av = AVATARS[i % AVATARS.length][0])
   d.querySelector('.x').onclick = () => { if ($('#players').children.length > 1) d.remove(); };
   $('#players').append(d);
 }
+const spotLabel = (id) => (SPOTS.find((s) => s[0] === id) || SPOTS[0])[1];
 function spotRow(k, def) {
   const d = document.createElement('div'); d.className = 'spot'; d.dataset.k = k; d.dataset.spot = def;
-  d.innerHTML = `<img src="cards/c${k}.jpg" alt="Carte ${k}"><div class="chips">${SPOTS.map(([id, l]) => `<button data-s="${id}" class="${id === def ? 'on' : ''}"><img src="img/ic/${id}.webp" alt="">${l.replace(/^(Le |La |Les |Une |Sous un )/, '')}</button>`).join('')}</div>`;
-  d.querySelectorAll('.chips button').forEach((b) => b.onclick = () => { d.dataset.spot = b.dataset.s; d.querySelectorAll('.chips button').forEach((x) => x.classList.toggle('on', x === b)); sfx('tap', 0.6); });
-  $('#spots').append(d);
-  requestAnimationFrame(() => d.querySelector('.chips .on')?.scrollIntoView({ inline: 'center', block: 'nearest' }));
+  const draw = () => { d.innerHTML = `<img src="cards/c${k}.jpg" alt="Carte ${k}"><button class="pickbtn"><img src="img/ic/${d.dataset.spot}.webp" alt="">${spotLabel(d.dataset.spot)}<em>Changer</em></button>`; d.querySelector('.pickbtn').onclick = open; };
+  const open = () => {
+    $('#spotpick h2 span').textContent = k; const g = $('#spotpick .grid');
+    g.innerHTML = SPOTS.map(([id, l]) => `<button data-s="${id}" class="${id === d.dataset.spot ? 'on' : ''}"><img src="img/ic/${id}.webp" alt="">${l}</button>`).join('');
+    g.querySelectorAll('button').forEach((b) => b.onclick = () => { d.dataset.spot = b.dataset.s; sfx('tap', 0.6); draw(); screen('setup'); });
+    screen('spotpick');
+  };
+  draw(); $('#spots').append(d);
 }
 function showStep(n) {
   step = n; document.querySelectorAll('.step').forEach((s) => s.classList.toggle('on', +s.dataset.step === n));
@@ -98,8 +125,8 @@ function showStep(n) {
 }
 function setup() {
   playerRow(0);
-  $('#addp').onclick = () => { const n = $('#players').children.length; if (n < 6) playerRow(n); };
-  ['canape', 'frigo', 'lit', 'livres', 'jouets'].forEach((s, i) => spotRow(i + 2, s));
+  $('#addp').onclick = () => { const n = $('#players').children.length; if (n >= 6) return; const used = [...document.querySelectorAll('.player')].map((p) => p.dataset.av); playerRow(n, '', 'm', AVATARS.map((a) => a[0]).find((a) => !used.includes(a))); };
+  shuffle(SPOTS.map((s) => s[0])).slice(0, 5).forEach((s, i) => spotRow(i + 2, s));
   S.mode = matchMedia('(pointer: coarse)').matches ? 'cam' : 'nocam';
   const modes = document.querySelectorAll('.modes button');
   const setMode = (m) => { S.mode = m; modes.forEach((x) => x.classList.toggle('on', x.dataset.mode === m)); };
@@ -114,7 +141,8 @@ function setup() {
   $('#presume').onclick = () => { screen(null); ac?.resume(); };
   $('#pmusic').onclick = () => { S.music = !S.music; $('#pmusic').textContent = `Musique : ${S.music ? 'oui' : 'non'}`; duck(false); };
   $('#prestart').onclick = () => { forget(); location.reload(); };
-  $('#slots').innerHTML = [1, 2, 3, 4, 5, 6].map((k) => `<i style="background-image:url(parts/p${k}.png)"></i>`).join('');
+  let rec = null; try { rec = JSON.parse(localStorage.getItem(RECORD) || 'null'); } catch {}
+  if (rec?.stars) { const f = document.createElement('li'); f.innerHTML = `Record : <b>${rec.stars} étoiles</b>`; $('.facts').append(f); }
   // a hunt in progress in this tab (the page was reloaded): offer to go on
   let saved = null; try { saved = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch {}
   if (saved?.players?.length && saved.next > 1) {
@@ -123,10 +151,16 @@ function setup() {
   }
 }
 function readSetup() {
-  S.players = [...document.querySelectorAll('.player')].map((d, i) => ({ name: d.querySelector('input').value.trim() || `Explorateur ${i + 1}`, age: d.dataset.age, av: d.dataset.av, color: PCOL[i % PCOL.length] }));
+  S.players = [...document.querySelectorAll('.player')].map((d, i) => ({ name: d.querySelector('input').value.trim() || `Explorateur ${i + 1}`, age: d.dataset.age, av: d.dataset.av, color: PCOL[i % PCOL.length], stars: 0 }));
   document.querySelectorAll('.spot').forEach((d) => { S.spots[+d.dataset.k] = d.dataset.spot; });
-  S.next = 1; S.got = 0;
+  S.next = 1; S.got = 0; S.stars = 0;
+  // every hunt is different: which piece hides on which card, which mini-game guards it, when Pixo hides
+  S.order = shuffle([1, 2, 3, 4, 5, 6]);
+  const games = ['stars', 'simon', 'blow', S.mode === 'cam' ? 'color' : 'stars', 'quiz', 'quiz'];
+  let plan; do { plan = shuffle(games); } while (plan[0] === 'blow' || plan.some((g, i) => i && g === plan[i - 1]));
+  S.plan = plan; S.hides = shuffle([2, 3, 4, 5, 6]).slice(0, 3);
 }
+function drawSlots() { $('#slots').innerHTML = S.order.map((p, i) => `<i class="${i < S.got ? 'got' : ''}" style="background-image:url(parts/p${p}.png)"></i>`).join(''); $('#score b').textContent = S.stars; }
 
 // ------------------------------------------------------------------ start (a tap, so sound, video and motion sensors may start)
 function unlockAudio() {
@@ -139,11 +173,15 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 
 async function go(resume) {
   if (!resume) readSetup();
-  unlockAudio(); room.pixo.unlock(); keepAwake(); save();
+  unlockAudio(); room.pixo.unlock(); keepAwake(); save(); drawSlots();
   screen(null); document.body.classList.add('playing'); S.phase = 'start';
-  if (S.mode === 'cam') { const g = room.startGyro(); const ok = await startMind(); await g; if (!ok) S.mode = 'nocam'; }
-  if (S.mode === 'nocam') { room.drawRoom(); room.pitch = -0.42; }
-  if (!room.useGyro) $('#arrow em').innerHTML = 'Pixo est par là !<br>Glissez ou ← →';
+  if (S.mode === 'cam') {
+    const g = room.startGyro(); let ok = await startMind();
+    while (!ok) { const choice = await camFail(); if (choice === 'skip') break; ok = await startMind(); }
+    await g; if (!ok) S.mode = 'nocam';
+  }
+  if (S.mode === 'nocam') { room.drawRoom(); room.pitch = -0.42; if (!resume) S.plan = S.plan.map((g) => (g === 'color' ? 'stars' : g)); }
+  if (!room.useGyro) $('#arrow em').innerHTML = 'Par là !<br>Glissez ou ← →';
   (async () => { for (const id of Object.keys(L)) await load(vpath(id)); })(); // the voice, in the background
   if (!resume) await introFilm();
   startMusic();
@@ -151,6 +189,7 @@ async function go(resume) {
   for (let k = S.next; k <= 6; k++) await cardRound(k);
   await finale();
 }
+function camFail() { return new Promise((res) => { screen('camfail'); $('#camretry').onclick = () => { screen(null); res('retry'); }; $('#camskip').onclick = () => { screen(null); res('skip'); }; }); }
 const ahead = () => (S.mode === 'nocam' ? room.floorAhead(1.6, 2.0) : room.floorAhead(0.8, 1.5));
 
 // the opening film: Pixo's ship crashing into the house tonight
@@ -175,7 +214,10 @@ async function intro() {
 }
 
 // ------------------------------------------------------------------ the card scanner: one camera for the whole hunt, cards open portals
+// MindAR 1.2.5 has no pause: stop and restart its tracking loop by hand, the camera itself keeps running
 let onCard = null;
+const mindPause = () => { try { mind?.controller.stopProcessVideo(); } catch {} };
+const mindResume = () => { try { mind?.controller.processVideo(mind.video); } catch (e) { console.warn('scanner restart failed', e); } };
 function cardPortal() {
   const g = new THREE.Group(); g.visible = false; const uni = { t: { value: 0 }, k: { value: 0 } }; g.userData.uni = uni;
   const disc = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5), new THREE.ShaderMaterial({ uniforms: uni, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
@@ -190,18 +232,20 @@ function cardPortal() {
 }
 async function startMind() {
   try {
+    if (mind) { try { mind.stop(); } catch {} mind = null; $('#scanbox').innerHTML = ''; }
     const { MindARThree } = await import('mindar-image-three');
     const m = new MindARThree({ container: $('#scanbox'), imageTargetSrc: 'targets.mind', maxTrack: 1, uiLoading: 'no', uiScanning: 'no', uiError: 'no', filterMinCF: 0.0001, filterBeta: 0.001 });
     const portals = [];
     for (let i = 0; i < 6; i++) {
-      const a = m.addAnchor(i), p = cardPortal(); p.position.y = 0; a.group.add(p); portals.push(p);
+      const a = m.addAnchor(i), p = cardPortal(); a.group.add(p); portals.push(p);
       a.onTargetFound = () => { if (TEST) console.warn('target seen', i + 1, 'want', S.want); onCard?.(i + 1, p); };
     }
     document.body.classList.add('cam');
     await m.start();
-    m.renderer.setAnimationLoop((t) => { for (const p of portals) { const u = p.userData.uni; u.t.value = t / 1000; } m.renderer.render(m.scene, m.camera); });
-    m.pause(true); mind = m; mind.portals = portals; room.setFeed(m.video); return true;
-  } catch (e) { console.warn('camera or card scanner unavailable, playing without camera', e); document.body.classList.remove('cam'); return false; }
+    if (!m.video || !m.video.srcObject) throw new Error('no camera picture');
+    m.renderer.setAnimationLoop((t) => { for (const p of portals) p.userData.uni.t.value = t / 1000; m.renderer.render(m.scene, m.camera); });
+    mind = m; mind.portals = portals; mindPause(); room.setFeed(m.video); return true;
+  } catch (e) { console.warn('camera or card scanner unavailable', e); document.body.classList.remove('cam'); return false; }
 }
 async function scan(k) {
   S.phase = `scan${k}`; S.want = k; const sc = $('#scan'), finale = k === 1 && S.got === 6;
@@ -223,53 +267,55 @@ async function scan(k) {
         found(k);
       } else if (n !== k && performance.now() - lastWrong > 7000) { lastWrong = performance.now(); sfx('bad'); say('wrong', null); }
     };
-    mind.unpause(); scanHum(true);
+    mindResume(); scanHum(true);
   }
   say(finale ? 'e1' : 'scan', null);
   await done; clearTimeout(late); onCard = null; S.want = 0;
-  if (mind) { mind.pause(true); for (const p of mind.portals) { p.visible = false; p.userData.uni.k.value = 0; } }
+  if (mind) { mindPause(); for (const p of mind.portals) { p.visible = false; p.userData.uni.k.value = 0; } }
   scanHum(false); if (S.mode !== 'cam') sfx('portal');
   flash(); screen(null);
 }
 
-// ------------------------------------------------------------------ one card: a piece comes back, hide and seek, a challenge for each child
+// ------------------------------------------------------------------ one card: a piece comes back, maybe hide and seek, then a mini-game
 // the piece floats just above Pixo's head, a little to his side, so it is always in the picture with him
 const partPos = (p) => { const a = Math.atan2(p.x, -p.z); return p.clone().add(new THREE.Vector3(Math.cos(a) * 0.1, 0.66, Math.sin(a) * 0.1)); };
-function stickPart(k) { const s = room.sprites.get(`p${k}`); if (s) { s.userData.base.copy(partPos(room.pixo.g.position)); s.position.copy(s.userData.base); } }
+function stickPart(id) { const s = room.sprites.get(id); if (s) { s.userData.base.copy(partPos(room.pixo.g.position)); s.position.copy(s.userData.base); } }
 async function cardRound(k) {
   await scan(k);
-  S.phase = `card${k}`;
+  S.phase = `card${k}`; const part = S.order[k - 1], id = `p${part}`;
   const at = ahead(); await appear(at);
-  room.addSprite(`p${k}`, `p${k}`, partPos(at), 0.3); room.sparks(partPos(at), 34, [0xffd46a, 0xffffff], 1.0, 0.05); sfx('part');
-  await say(`f${k}`, 'hello');
-  if (k >= 2) await hideAndSeek(k);
-  const order = S.players.map((_, i) => S.players[(i + k - 1) % S.players.length]);
-  for (const p of order) await play(p, k);
+  room.addSprite(id, id, partPos(at), 0.3); room.sparks(partPos(at), 34, [0xffd46a, 0xffffff], 1.0, 0.05); sfx('part');
+  await say(`f${part}`, 'hello');
+  if (S.hides.includes(k)) await hideAndSeek(k, id);
+  const game = S.plan[k - 1] || 'quiz';
+  if (game === 'stars') await starsGame(k); else if (game === 'simon') await simonGame(k); else if (game === 'blow') await blowGame(); else if (game === 'color') await colorGame(k);
+  else for (const p of order(k)) await quiz(p, k, id);
   await say('repaired', 'amazed');
-  await partToPocket(k);
+  await partToPocket(k, id);
   S.next = k + 1; save();
   if (k < 6) await clue(k + 1);
 }
 
 // Pixo vanishes and pops up somewhere around the players; they turn with the phone to find him
-async function hideAndSeek(k) {
+async function hideAndSeek(k, id) {
   S.phase = `hide${k}`;
-  const v = say('hide', 'happy');
+  const v = say(pick(['hide', 'hide2']), 'happy');
   await wait(T(1500));
   const side = Math.random() < 0.5 ? -1 : 1, a = room.lookYaw() + side * (2.0 + Math.random() * 0.7), r = S.mode === 'nocam' ? 1.8 + Math.random() * 0.3 : 1.1 + Math.random() * 0.4;
   const to = new THREE.Vector3(Math.sin(a) * r, -FLOOR, -Math.cos(a) * r);
-  sfx('poof'); room.sprites.get(`p${k}`) && (room.sprites.get(`p${k}`).visible = false);
-  await room.teleport(to, FAST ? 30 : 450); stickPart(k); const s = room.sprites.get(`p${k}`); if (s) s.visible = true;
+  sfx('poof'); const s = room.sprites.get(id); if (s) s.visible = false;
+  await room.teleport(to, FAST ? 30 : 450); stickPart(id); if (s) s.visible = true;
   setTimeout(() => sfx('giggle', 0.7), 300);
   await v;
-  S.hunting = true; S.seen = 0; $('#arrow').classList.add('on');
+  S.hunting = true; S.seen = 0; $('#arrow em').firstChild.textContent = 'Pixo est par là !'; $('#arrow').classList.add('on');
   await new Promise((res) => { S.foundPixo = res; window.__chasse.foundPixo = res; });
   S.hunting = false; $('#arrow').classList.remove('on'); sfx('found'); room.sparks(room.pixo.g.position.clone().add(new THREE.Vector3(0, 0.3, 0)), 36, [0xff9ad0, 0xffe08a, 0x9ff3e0], 1.3, 0.06);
-  await say('gotme', 'happy');
+  addStars(S.players[(k - 1) % S.players.length], 1);
+  await say(pick(['gotme', 'gotme2', 'gotme3']), 'happy');
 }
 
-// one child's challenge, in the sheet at the bottom; Pixo cheers or encourages
-function play(p, k) {
+// --- quiz: one question per player, in the sheet at the bottom
+function quiz(p, k, id) {
   return new Promise(async (done) => {
     S.phase = `play${k}`; const c = challenge(p.age), el = $('#challenge');
     el.style.setProperty('--c', p.color); el.querySelector('.who b').textContent = p.name; el.querySelector('.who .av').src = avatarSrc(p.av);
@@ -280,8 +326,9 @@ function play(p, k) {
       b.onclick = async () => {
         if (over) return;
         if (o.ok) {
-          over = true; b.classList.add('ok'); sfx('good'); room.sparks((room.sprites.get(`p${k}`)?.position || room.pixo.g.position).clone(), 40, [0xffd46a, 0x9ff3e0, 0xff9ad0], 1.3, 0.06);
-          await say(`good${1 + Math.floor(Math.random() * 3)}`, 'happy'); el.classList.remove('on'); await wait(T(500)); done();
+          over = true; b.classList.add('ok'); sfx('good'); addStars(p, tries === 0 ? 3 : tries === 1 ? 2 : 1);
+          room.sparks((room.sprites.get(id)?.position || room.pixo.g.position).clone(), 40, [0xffd46a, 0x9ff3e0, 0xff9ad0], 1.3, 0.06);
+          await say(cheer(), 'happy'); el.classList.remove('on'); await wait(T(500)); done();
         } else {
           tries++; b.classList.add('no'); sfx('bad'); setTimeout(() => b.classList.remove('no'), 500);
           if (tries >= 2) el.querySelector('[data-ok]').classList.add('hint');
@@ -295,12 +342,133 @@ function play(p, k) {
   });
 }
 
+// --- catch the stars: they fly all around the room; turn and tap them before the time runs out
+let starSet = null;
+async function starsGame(k) {
+  S.phase = `stars${k}`; await say('stars_intro', 'sad');
+  const tex = room.img('img/ic/star.webp');
+  for (const p of order(k)) {
+    const little = p.age === 'p', secs = FAST ? 2 : little ? 20 : p.age === 'a' ? 12 : 15; let count = 0;
+    banner(p, '', null); await say('turn', 'talk'); banner(p, `${secs}`, 0);
+    say('stars_go', 'happy');
+    starSet = new Set();
+    const spawn = () => {
+      const a = room.lookYaw() + (Math.random() - 0.5) * (little ? 2.2 : 4.4), r = S.mode === 'nocam' ? 1.6 + Math.random() * 0.8 : 1.0 + Math.random() * 0.9, h = little ? 0.24 : 0.17;
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false })); s.scale.set(h, h, 1);
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: room.glow, color: 0xffe08a, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false })); halo.scale.set(h * 2.6, h * 2.6, 1); s.add(halo); halo.position.z = -0.01;
+      s.position.set(Math.sin(a) * r, -0.55 + Math.random() * 1.0, -Math.cos(a) * r); s.userData = { a, r, y: s.position.y, w: (Math.random() - 0.5) * 0.25, t0: performance.now() / 1000 };
+      room.scene.add(s); starSet.add(s);
+    };
+    for (let i = 0; i < (little ? 4 : 6); i++) spawn();
+    room.onTap = (ray) => {
+      const hit = ray.intersectObjects([...starSet], false)[0]; if (!hit) return false;
+      const s = hit.object; starSet.delete(s); room.scene.remove(s); count++; banner(p, $('#mini .timer').textContent, count);
+      sfx('found', 0.55, 1 + Math.min(count, 15) * 0.03); room.sparks(s.position.clone(), 18, [0xffe08a, 0xffffff], 0.9, 0.05); spawn(); return true;
+    };
+    if (TEST) window.__chasse.catchStar = () => { if (!starSet || !room.onTap) return; const s = [...starSet][0]; if (s) room.onTap({ intersectObjects: () => [{ object: s }] }); };
+    const t0 = performance.now();
+    await new Promise((res) => { const tick = () => { const left = Math.max(0, secs - (performance.now() - t0) / 1000), el = $('#mini .timer'); el.textContent = Math.ceil(left); el.classList.toggle('low', left < 4);
+      if (left <= 0) return res(); setTimeout(tick, 200); }; tick(); });
+    room.onTap = null; for (const s of starSet) room.scene.remove(s); starSet = null; $('#mini .timer').classList.remove('low');
+    sfx('slot'); addStars(p, Math.ceil(count / 2)); await wait(T(600)); // a caught star is worth half a score star, so this game does not outweigh the others
+  }
+  unbanner(); await say('stars_end', 'amazed');
+}
+function starsFrame(t) { // the stars drift slowly around the players
+  if (!starSet) return;
+  for (const s of starSet) { const u = s.userData, a = u.a + (t - u.t0) * u.w; s.position.set(Math.sin(a) * u.r, u.y + Math.sin(t * 1.7 + u.a * 3) * 0.08, -Math.cos(a) * u.r); s.material.rotation = Math.sin(t * 2 + u.a) * 0.3; }
+}
+
+// --- Simon: Pixo's antenna flashes a sequence of colours; repeat it; it grows each time
+const PADF = [523.25, 659.25, 783.99, 1046.5];
+async function simonGame(k) {
+  S.phase = `simon${k}`; const el = $('#simon'), pads = [...el.querySelectorAll('.pads button')], st = el.querySelector('.st');
+  await say('simon_intro', 'talk');
+  const light = async (i, ms = 420) => { pads[i].classList.add('lit'); note(PADF[i], 0.5); await wait(FAST ? 40 : ms); pads[i].classList.remove('lit'); await wait(FAST ? 20 : 140); };
+  for (const p of order(k)) {
+    const start = { p: 2, m: 3, g: 4, a: 5 }[p.age] || 3; let len = start, seqv = Array.from({ length: start }, () => R(4)), passed = 0;
+    banner(p); el.classList.add('on', 'lock'); st.textContent = `${p.name}, à toi !`; await say('turn', 'talk');
+    for (let round = 0; round < 4; round++) {
+      el.classList.add('lock'); st.textContent = 'Regarde bien…'; await say('simon_watch', null); await wait(T(300));
+      for (const i of seqv) await light(i, Math.max(260, 460 - round * 50));
+      st.textContent = 'À toi !'; say('simon_go', null); el.classList.remove('lock');
+      const ok = await new Promise((res) => {
+        let n = 0; window.__chasse.simon = seqv;
+        pads.forEach((b, i) => b.onclick = () => { light(i, 160); if (i !== seqv[n]) { res(false); return; } n++; if (n === seqv.length) res(true); });
+      });
+      pads.forEach((b) => b.onclick = null); el.classList.add('lock');
+      if (!ok) { sfx('bad'); st.textContent = 'Oups !'; await say(`bad${1 + R(2)}`, 'sad'); break; }
+      passed++; sfx('good'); st.textContent = 'Bravo !'; room.sparks(room.pixo.g.position.clone().add(new THREE.Vector3(0, 0.7, 0)), 24, [0x9ff3e0, 0xff9ad0, 0xffe08a], 1, 0.05);
+      if (round < 3) { seqv.push(R(4)); len++; await say('simon_more', 'happy'); }
+    }
+    addStars(p, passed + (passed === 4 ? 1 : 0)); el.classList.remove('on'); unbanner(); await wait(T(400));
+  }
+  await say('simon_end', 'amazed');
+}
+
+// --- cool the engine: blow on the phone together (microphone), or tap as fast as you can
+async function blowGame() {
+  S.phase = 'blow'; const el = $('#blow'), g = el.querySelector('.gauge');
+  let mic = null, an = null, data = null;
+  if (!IOS && !TEST && navigator.mediaDevices?.getUserMedia && S.mode === 'cam') {
+    try { mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }); an = ac.createAnalyser(); an.fftSize = 512; ac.createMediaStreamSource(mic).connect(an); data = new Float32Array(an.fftSize); } catch { mic = null; }
+  }
+  el.classList.toggle('mic', !!mic); el.querySelector('.bt').textContent = mic ? 'Soufflez tous très fort sur le téléphone !' : 'Tapotez tous très vite !';
+  await say(mic ? 'blow_intro' : 'tap_intro', 'sad');
+  let heat = 1; g.style.setProperty('--h', heat); el.classList.add('on');
+  const tapper = $('#tapper'); const cool = () => { heat = Math.max(0, heat - 0.035); sfx('tap', 0.4, 0.8 + Math.random() * 0.4); };
+  tapper.onclick = cool; const key = (e) => { if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); cool(); } }; addEventListener('keydown', key);
+  if (TEST) window.__chasse.cool = () => { for (let i = 0; i < 40; i++) cool(); };
+  const t0 = performance.now(), limit = FAST ? 3 : 25;
+  await new Promise((res) => { const tick = () => {
+    if (mic) { an.getFloatTimeDomainData(data); let s = 0; for (const v of data) s += v * v; const rms = Math.sqrt(s / data.length); if (rms > 0.05) heat = Math.max(0, heat - (rms - 0.05) * 0.08); }
+    heat = Math.min(1, heat + 0.0012); g.style.setProperty('--h', heat);
+    if (Math.random() < 0.25) room.sparks(room.pixo.g.position.clone().add(new THREE.Vector3(0, 0.3, 0)), 1, heat > 0.5 ? 0xff7a3c : 0x9ff3e0, 0.6, 0.05);
+    if (heat <= 0 || (performance.now() - t0) / 1000 > limit) return res(); requestAnimationFrame(tick); }; tick(); });
+  removeEventListener('keydown', key); tapper.onclick = null; for (const t of mic?.getTracks() || []) t.stop();
+  const secs = (performance.now() - t0) / 1000, stars = heat > 0 ? 1 : secs < 8 ? 5 : secs < 12 ? 4 : secs < 17 ? 3 : 2;
+  el.classList.remove('on'); sfx('good'); for (const p of S.players) addStars(p, stars);
+  await say('blow_end', 'happy');
+}
+
+// --- colour hunt: find something of this colour in the house and show it in the ring (camera)
+const HUES = { rouge: [[345, 360], [0, 12]], orange: [[13, 38]], jaune: [[40, 68]], vert: [[75, 165]], bleu: [[190, 250]], violet: [[255, 295]], rose: [[296, 344]] };
+const HCOL = { rouge: '#e8364a', orange: '#ff8a2a', jaune: '#ffd028', vert: '#2dbb5d', bleu: '#2a7de1', violet: '#9a4ee0', rose: '#ff7fb6' };
+async function colorGame(k) {
+  S.phase = `color${k}`; const el = $('#hunt'), ring = el.querySelector('.ring i'), cv = document.createElement('canvas'); cv.width = 32; cv.height = 32; const cx = cv.getContext('2d', { willReadFrequently: true });
+  await say('colhunt', 'happy'); const used = [];
+  for (const p of order(k)) {
+    const list = p.age === 'p' ? ['rouge', 'bleu', 'jaune', 'vert'] : p.age === 'm' ? ['rouge', 'bleu', 'jaune', 'vert', 'orange', 'violet'] : ['rouge', 'bleu', 'jaune', 'vert', 'orange', 'violet', 'rose'];
+    const c = pick(list.filter((x) => !used.includes(x)).length ? list.filter((x) => !used.includes(x)) : list); used.push(c);
+    el.style.setProperty('--hc', HCOL[c]); el.querySelector('.cname').textContent = c; ring.style.setProperty('--p', 0);
+    const secs = FAST ? 2 : p.age === 'a' ? 30 : 45; banner(p, `${secs}`); el.classList.add('on');
+    await say('turn', 'talk'); say(`col_${c}`, 'talk');
+    let prog = 0; const t0 = performance.now();
+    if (TEST) window.__chasse.colorOk = () => { prog = 1; };
+    const ok = await new Promise((res) => { const tick = () => {
+      const left = secs - (performance.now() - t0) / 1000; $('#mini .timer').textContent = Math.max(0, Math.ceil(left));
+      const v = mind?.video;
+      if (v && v.readyState >= 2) {
+        const vw = v.videoWidth, vh = v.videoHeight, s = Math.min(vw, vh) * 0.3; cx.drawImage(v, (vw - s) / 2, (vh - s) / 2, s, s, 0, 0, 32, 32);
+        const d = cx.getImageData(0, 0, 32, 32).data; let hit = 0;
+        for (let i = 0; i < d.length; i += 4) { const r = d[i] / 255, g = d[i + 1] / 255, b = d[i + 2] / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), dl = mx - mn; if (mx < 0.22 || dl / mx < (c === 'rose' ? 0.22 : 0.38)) continue;
+          let h = mx === r ? 60 * (((g - b) / dl) % 6) : mx === g ? 60 * ((b - r) / dl + 2) : 60 * ((r - g) / dl + 4); if (h < 0) h += 360; if (HUES[c].some(([a, z]) => h >= a && h <= z)) hit++; }
+        const frac = hit / 1024; prog = frac > 0.3 ? Math.min(1, prog + 0.12) : Math.max(0, prog - 0.04);
+      }
+      ring.style.setProperty('--p', prog);
+      if (prog >= 1) return res(true); if (left <= 0) return res(false); setTimeout(tick, 120); }; tick(); });
+    if (ok) { sfx('found'); const t = (performance.now() - t0) / 1000; addStars(p, t < 15 ? 3 : t < 30 ? 2 : 1); await say('col_found', 'happy'); }
+    else { sfx('bad'); await say('col_late', 'sad'); }
+    el.classList.remove('on'); unbanner(); await wait(T(300));
+  }
+}
+
 // the repaired piece flies up into the ship's slots
-async function partToPocket(k) {
-  const s = room.sprites.get(`p${k}`); sfx('part', 0.8);
+async function partToPocket(k, id) {
+  const s = room.sprites.get(id); sfx('part', 0.8);
   if (s) { const from = s.position.clone(), t0 = performance.now(); s.userData.float = false;
     await new Promise((r) => { const st = () => { const u = Math.min(1, (performance.now() - t0) / (FAST ? 50 : 900)); s.position.lerpVectors(from, room.cam.position.clone().add(room.forward().multiplyScalar(0.6)).add(new THREE.Vector3(0, 0.3, 0)), u * u); s.material.opacity = 1 - u * u; if (Math.random() < 0.6) room.sparks(s.position.clone(), 1, 0xffe08a, 0.2, 0.04); u < 1 ? requestAnimationFrame(st) : r(); }; st(); });
-    room.removeSprite(`p${k}`); }
+    room.removeSprite(id); }
   S.got = k; $('#slots').children[k - 1].classList.add('got'); sfx('slot');
 }
 
@@ -330,69 +498,70 @@ async function finale() {
   room.portal(at, FAST ? 200 : 4200); sfx('assemble');
   const ship = room.addSprite('ship', 'ship', shipPos, H, false); ship.userData.float = false; ship.material.opacity = 0;
   const voice = say('e2', 'amazed');
-  for (let k = 1; k <= 6; k++) {
-    const ang = a + (k - 3.5) * 0.5, from = shipPos.clone().add(new THREE.Vector3(Math.sin(ang) * 0.6, 0.5, -Math.cos(ang) * 0.6 + 0.2));
-    const s = room.addSprite(`f${k}`, `p${k}`, from, 0.24); s.userData.float = false; $('#slots').children[k - 1].classList.remove('got');
+  for (let i = 0; i < 6; i++) {
+    const part = S.order[i], ang = a + (i - 2.5) * 0.5, from = shipPos.clone().add(new THREE.Vector3(Math.sin(ang) * 0.6, 0.5, -Math.cos(ang) * 0.6 + 0.2));
+    const s = room.addSprite(`f${i}`, `p${part}`, from, 0.24); s.userData.float = false; $('#slots').children[i].classList.remove('got');
     const t0 = performance.now();
     await new Promise((r) => { const st = () => { const u = Math.min(1, (performance.now() - t0) / (FAST ? 40 : 650)); s.position.lerpVectors(from, shipPos, u * u); s.material.opacity = 1 - u * 0.8; u < 1 ? requestAnimationFrame(st) : r(); }; st(); });
-    room.removeSprite(`f${k}`); room.sparks(shipPos, 26, [0xffd46a, 0x9ff3e0], 1.2, 0.05); sfx('slot', 0.8, 0.9 + k * 0.06); ship.material.opacity = k / 6;
+    room.removeSprite(`f${i}`); room.sparks(shipPos, 26, [0xffd46a, 0x9ff3e0], 1.2, 0.05); sfx('slot', 0.8, 0.9 + i * 0.06); ship.material.opacity = (i + 1) / 6;
     await wait(T(220));
   }
   await voice;
-  // Pixo climbs in
   const P = room.pixo.g.position, from = P.clone(), t0 = performance.now();
   sfx('hop');
   await new Promise((r) => { const st = () => { const u = Math.min(1, (performance.now() - t0) / (FAST ? 40 : 1000)); P.lerpVectors(from, at, u); P.y = -FLOOR + Math.sin(u * Math.PI) * 0.4; room.pixo.uni.fade.value = 1 - u; u < 1 ? requestAnimationFrame(st) : r(); }; st(); });
   room.pixo.g.visible = false; room.pixo.uni.fade.value = 1; sfx('appear'); room.sparks(shipPos, 30, 0x9ff3e0, 1, 0.05);
   await say('e3', null);
-  // lift-off
   sfx('engine'); const b0 = shipPos.clone(), t1 = performance.now();
   await new Promise((r) => { const st = () => { const u = (performance.now() - t1) / 1000; const y = u < 1 ? Math.sin(u * 40) * 0.012 : 0.6 * (u - 1) ** 2;
     ship.position.set(b0.x, b0.y + y, b0.z); if (Math.random() < 0.9) room.flame(ship.position.clone().add(new THREE.Vector3(0, -H * 0.45, 0))); if (u > 1 && Math.random() < 0.5) room.sparks(ship.position.clone().add(new THREE.Vector3(0, -H * 0.5, 0)), 2, [0xffe08a, 0x9ff3e0], 0.5, 0.05);
     u < (FAST ? 0.1 : 5) ? requestAnimationFrame(st) : r(); }; st(); });
   room.removeSprite('ship'); sfx('fanfare');
+  // the family record, on this device
+  let rec = null; try { rec = JSON.parse(localStorage.getItem(RECORD) || 'null'); } catch {}
+  S.record = !rec || S.stars > rec.stars; if (S.record) { try { localStorage.setItem(RECORD, JSON.stringify({ stars: S.stars, date: Date.now() })); } catch {} }
   forget(); S.phase = 'end'; scanHum(false);
   try { wake?.release(); } catch {}
-  await drawDiploma();
+  await drawDiploma(rec);
   document.body.classList.remove('playing'); screen('end');
+  if (S.record && rec) say('record', null);
   if (mind) { try { mind.stop(); } catch {} } room.stopCamera(); document.body.classList.remove('cam');
 }
 
 // ------------------------------------------------------------------ the diploma: drawn here, saved as a picture on the device
 const loadImg = (src) => new Promise((r) => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
-async function drawDiploma() {
+async function drawDiploma(rec) {
   const c = $('#diploma'), x = c.getContext('2d'), W = c.width, H = c.height; await document.fonts?.ready;
-  const [pixo, ship] = await Promise.all([loadImg('img/pixo-wave.png'), loadImg('parts/ship.png')]);
+  const [pixo, ship, star] = await Promise.all([loadImg('img/pixo-wave.png'), loadImg('parts/ship.png'), loadImg('img/ic/star.webp')]);
   const avs = await Promise.all(S.players.map((p) => loadImg(avatarSrc(p.av))));
-  // paper, double gold frame, corner stars
   const bg = x.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#fffaf0'); bg.addColorStop(1, '#fdf0d8'); x.fillStyle = bg; x.fillRect(0, 0, W, H);
   x.strokeStyle = '#d9a425'; x.lineWidth = 10; x.strokeRect(36, 36, W - 72, H - 72); x.lineWidth = 3; x.strokeRect(58, 58, W - 116, H - 116);
-  const star = (cx, cy, r, col) => { x.save(); x.translate(cx, cy); x.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r; x.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } x.closePath(); x.fillStyle = col; x.fill(); x.restore(); };
-  for (const [sx, sy] of [[58, 58], [W - 58, 58], [58, H - 58], [W - 58, H - 58]]) star(sx, sy, 26, '#f5b301');
-  for (let i = 0; i < 26; i++) star(120 + Math.random() * (W - 240), 90 + Math.random() * 120, 4 + Math.random() * 6, 'rgba(245,179,1,.35)');
+  const st = (cx, cy, r, col) => { x.save(); x.translate(cx, cy); x.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r; x.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } x.closePath(); x.fillStyle = col; x.fill(); x.restore(); };
+  for (const [sx, sy] of [[58, 58], [W - 58, 58], [58, H - 58], [W - 58, H - 58]]) st(sx, sy, 26, '#f5b301');
+  for (let i = 0; i < 26; i++) st(120 + Math.random() * (W - 240), 90 + Math.random() * 120, 4 + Math.random() * 6, 'rgba(245,179,1,.35)');
   x.textAlign = 'center'; x.fillStyle = '#2a2370';
   x.font = '600 34px Fredoka, sans-serif'; x.fillText('LA GRANDE CHASSE DE PIXO', W / 2, 150);
-  x.font = '700 92px Fredoka, sans-serif'; const many = S.players.length > 1;
+  x.font = '700 88px Fredoka, sans-serif'; const many = S.players.length > 1;
   const g = x.createLinearGradient(0, 180, 0, 280); g.addColorStop(0, '#f59e0b'); g.addColorStop(1, '#d9480f'); x.fillStyle = g;
-  x.fillText(many ? 'Diplôme de Grands Explorateurs' : 'Diplôme de Grand Explorateur', W / 2, 262);
-  x.fillStyle = '#5b5590'; x.font = '700 30px Nunito, sans-serif'; x.fillText('décerné à', W / 2, 320);
-  // the children with their badges
-  const n = S.players.length, slot = Math.min(230, (W - 360) / n), y0 = 360;
+  x.fillText(many ? 'Diplôme de Grands Explorateurs' : 'Diplôme de Grand Explorateur', W / 2, 258);
+  x.fillStyle = '#5b5590'; x.font = '700 30px Nunito, sans-serif'; x.fillText('décerné à', W / 2, 316);
+  const n = S.players.length, slot = Math.min(230, (W - 360) / n), y0 = 350;
   S.players.forEach((p, i) => {
     const cx = W / 2 + (i - (n - 1) / 2) * slot;
     x.fillStyle = p.color; x.beginPath(); x.arc(cx, y0 + 80, 82, 0, Math.PI * 2); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(cx, y0 + 80, 72, 0, Math.PI * 2); x.fill();
     if (avs[i]) x.drawImage(avs[i], cx - 66, y0 + 14, 132, 132);
     x.fillStyle = '#2a2370'; x.font = `700 ${n > 4 ? 34 : 42}px Fredoka, sans-serif`; x.fillText(p.name, cx, y0 + 214);
+    if (star) x.drawImage(star, cx - 46, y0 + 230, 30, 30); x.font = '700 28px Fredoka, sans-serif'; x.fillStyle = '#d9480f'; x.textAlign = 'left'; x.fillText(`${p.stars || 0}`, cx - 10, y0 + 256); x.textAlign = 'center';
   });
-  x.fillStyle = '#4a4580'; x.font = '700 32px Nunito, sans-serif';
-  const line = many ? 'pour avoir retrouvé les six morceaux du vaisseau de Pixo' : 'pour avoir retrouvé les six morceaux du vaisseau de Pixo';
-  x.fillText(line, W / 2, 690); x.fillText('et l’avoir aidé à rentrer chez lui, dans les étoiles.', W / 2, 736);
+  x.fillStyle = '#4a4580'; x.font = '700 30px Nunito, sans-serif';
+  x.fillText('pour avoir retrouvé les six morceaux du vaisseau de Pixo', W / 2, 700); x.fillText('et l’avoir aidé à rentrer chez lui, dans les étoiles.', W / 2, 744);
   const date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-  x.font = '700 26px Nunito, sans-serif'; x.fillStyle = '#7a74a8'; x.fillText(`Le ${date}`, W / 2, 800);
-  // seal and signature
-  x.save(); x.translate(W / 2, 925); star(0, 0, 70, '#f5b301'); x.fillStyle = '#fff7d6'; x.beginPath(); x.arc(0, 0, 30, 0, Math.PI * 2); x.fill(); x.restore();
-  x.fillStyle = '#2a2370'; x.font = '600 40px Fredoka, sans-serif'; x.fillText('Pixo', W - 330, 960); x.font = '700 22px Nunito, sans-serif'; x.fillStyle = '#7a74a8'; x.fillText('Commandant de bord', W - 330, 992);
-  x.strokeStyle = '#b9b3e8'; x.lineWidth = 2; x.beginPath(); x.moveTo(W - 450, 915); x.lineTo(W - 210, 915); x.stroke();
+  x.font = '800 30px Nunito, sans-serif'; x.fillStyle = '#d9480f';
+  x.fillText(`${S.stars} étoiles en tout${S.record ? (rec ? ' · Nouveau record !' : '') : ` · Record : ${rec?.stars}`}`, W / 2, 800);
+  x.font = '700 24px Nunito, sans-serif'; x.fillStyle = '#7a74a8'; x.fillText(`Le ${date}`, W / 2, 842);
+  x.save(); x.translate(W / 2, 950); st(0, 0, 66, '#f5b301'); x.fillStyle = '#fff7d6'; x.beginPath(); x.arc(0, 0, 28, 0, Math.PI * 2); x.fill(); x.restore();
+  x.fillStyle = '#2a2370'; x.font = '600 40px Fredoka, sans-serif'; x.fillText('Pixo', W - 330, 970); x.font = '700 22px Nunito, sans-serif'; x.fillStyle = '#7a74a8'; x.fillText('Commandant de bord', W - 330, 1002);
+  x.strokeStyle = '#b9b3e8'; x.lineWidth = 2; x.beginPath(); x.moveTo(W - 450, 925); x.lineTo(W - 210, 925); x.stroke();
   if (pixo) x.drawImage(pixo, W - 240, H - 360, 170, 170 * pixo.height / pixo.width);
   if (ship) x.drawImage(ship, 90, H - 360, 210, 210 * ship.height / ship.width);
 }
@@ -400,17 +569,27 @@ function downloadDiploma() {
   $('#diploma').toBlob((b) => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'diplome-grande-chasse-de-pixo.png'; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }, 'image/png');
 }
 
-// ------------------------------------------------------------------ every frame: the voice follows Pixo, the arrow points to him
-function onFrame() {
+// ------------------------------------------------------------------ every frame: the voice follows Pixo, the arrow points to him (or to the stars)
+function pointAt(target) { // returns true when the target is on screen
+  const v = target.clone().project(room.cam), f = room.forward(), d0 = Math.atan2(target.x, -target.z) - Math.atan2(f.x, -f.z), d = Math.atan2(Math.sin(d0), Math.cos(d0));
+  const on = v.z < 1 && Math.abs(v.x) < 0.85 && Math.abs(v.y) < 0.9; const ar = $('#arrow'), sv = ar.querySelector('svg');
+  if (on) { ar.style.opacity = 0; return true; }
+  ar.style.opacity = 1;
+  if (Math.abs(d) < 0.5) { const down = v.y < 0; ar.style.left = '50%'; ar.style.top = down ? '74%' : '28%'; sv.style.transform = `rotate(${down ? 90 : -90}deg)`; }
+  else { const right = d > 0; ar.style.top = '50%'; ar.style.left = right ? 'calc(100% - 84px)' : '84px'; sv.style.transform = `rotate(${right ? 0 : 180}deg)`; }
+  return false;
+}
+function onFrame(t) {
+  starsFrame(t);
+  if (starSet) { // during the star hunt, point to the nearest star when none is on screen
+    const f = room.forward(); let best = null, bd = 9; for (const s of starSet) { const v = s.position.clone().project(room.cam); if (v.z < 1 && Math.abs(v.x) < 0.9 && Math.abs(v.y) < 0.9) { best = null; bd = -1; break; } const d = Math.abs(Math.atan2(Math.sin(s.userData.a - Math.atan2(f.x, -f.z)), Math.cos(s.userData.a - Math.atan2(f.x, -f.z)))); if (d < bd) { bd = d; best = s; } }
+    const ar = $('#arrow'); if (best) { ar.classList.add('on'); $('#arrow em').firstChild.textContent = 'Des étoiles par là !'; pointAt(best.position); } else ar.classList.remove('on');
+  }
   if (!room.pixo.g.visible) { if (voice) voice.pan.pan.value = 0; return; }
   const b = room.pixoBearing();
   if (voice) { voice.pan.pan.value = Math.max(-0.9, Math.min(0.9, Math.sin(b.d))); voice.g.gain.value = 0.7 + 0.3 * Math.cos(b.d); }
   if (!S.hunting) return;
-  const ar = $('#arrow'), sv = ar.querySelector('svg');
-  if (b.on) { ar.style.opacity = 0; if (++S.seen > 45) { S.hunting = false; S.foundPixo?.(); } return; }
-  S.seen = 0; ar.style.opacity = 1;
-  if (Math.abs(b.d) < 0.5) { const down = b.sy < 0; ar.style.left = '50%'; ar.style.top = down ? '76%' : '26%'; sv.style.transform = `rotate(${down ? 90 : -90}deg)`; }
-  else { const right = b.d > 0; ar.style.top = '50%'; ar.style.left = right ? 'calc(100% - 84px)' : '84px'; sv.style.transform = `rotate(${right ? 0 : 180}deg)`; }
+  if (pointAt(room.pixo.g.position.clone().add(new THREE.Vector3(0, 0.25, 0)))) { if (++S.seen > 45) { S.hunting = false; S.foundPixo?.(); } } else S.seen = 0;
 }
 
 // ------------------------------------------------------------------ boot

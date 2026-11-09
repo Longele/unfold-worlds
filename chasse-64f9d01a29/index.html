@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>La Grande Chasse de Pixo</title>
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0d0b2b">
@@ -22,6 +22,7 @@
 <header id="hud">
   <button id="pausebtn" class="round" aria-label="Pause"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg></button>
   <div id="slots" aria-label="Les morceaux du vaisseau"></div>
+  <div id="score" aria-label="Étoiles gagnées"><img src="img/ic/star.webp" alt=""><b>0</b></div>
 </header>
 <div id="say"><img src="img/pixo-face.png" alt=""><p></p></div>
 <div id="arrow"><span><svg viewBox="0 0 24 24"><path d="M5 12h12M12 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><em>Pixo est par là !</em></div>
@@ -31,6 +32,13 @@
   <div class="who"><img class="av" alt=""><b></b><span>à toi !</span></div>
   <div class="q"></div><div class="opts"></div>
 </section>
+
+
+<!-- mini-games -->
+<div id="mini"><img class="av" alt=""><b class="who"></b><span class="timer"></span><span class="count"><img src="img/ic/star.webp" alt=""><b>0</b></span></div>
+<section id="simon" class="panel"><p class="st"></p><div class="pads"><button data-i="0"></button><button data-i="1"></button><button data-i="2"></button><button data-i="3"></button></div></section>
+<section id="hunt" class="panel"><div class="ring"><i></i></div><div class="hbar"><span class="sw"></span><b class="cname"></b><div class="meter"><i></i></div></div></section>
+<section id="blow" class="panel"><p class="bt"></p><div class="gauge"><i></i><span>Chaleur du moteur</span></div><button class="cta" id="tapper">Tapotez vite !</button></section>
 
 <section id="scan" class="screen">
   <div class="reticle"><i></i><i></i><i></i><i></i><div class="beam"></div></div>
@@ -113,6 +121,18 @@
   </div>
 </section>
 
+
+<section id="camfail" class="screen sheetwrap">
+  <div class="sheet">
+    <h2>La caméra ne s’ouvre pas</h2>
+    <p class="lead">Autorisez la caméra pour ce site (l’icône à gauche de l’adresse), puis réessayez. Ou jouez dans le salon virtuel.</p>
+    <button class="cta" id="camretry">Réessayer</button>
+    <button class="ghost" id="camskip">Jouer sans caméra</button>
+  </div>
+</section>
+<section id="spotpick" class="screen sheetwrap">
+  <div class="sheet"><h2>Où est cachée la carte <span></span> ?</h2><div class="grid"></div></div>
+</section>
 <section id="pause" class="screen sheetwrap">
   <div class="sheet">
     <h2>Pause</h2>

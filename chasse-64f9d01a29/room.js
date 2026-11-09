@@ -113,10 +113,12 @@ export class Room {
     addEventListener('keydown', (e) => { if (this.useGyro || e.target?.tagName === 'INPUT') return; const k = { ArrowLeft: [0.12, 0], ArrowRight: [-0.12, 0], ArrowUp: [0, 0.08], ArrowDown: [0, -0.08] }[e.key]; if (k) { e.preventDefault(); this.yaw += k[0]; this.pitch = Math.max(this.pitchMin, Math.min(this.pitchMax, this.pitch + k[1])); } });
   }
   tap(e) {
-    if (!this.onPixo || !this.pixo.g.visible) return;
     const r = this.canvas.getBoundingClientRect(), v = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
-    const ray = new THREE.Raycaster(); ray.setFromCamera(v, this.cam); if (ray.intersectObject(this.pixo.card).length) this.onPixo();
+    const ray = new THREE.Raycaster(); ray.setFromCamera(v, this.cam);
+    if (this.onTap && this.onTap(ray)) return; // a mini-game took the tap
+    if (this.onPixo && this.pixo.g.visible && ray.intersectObject(this.pixo.card).length) this.onPixo();
   }
+  img(path) { if (!this.tex[path]) { const t = new THREE.TextureLoader().load(this.base + path); t.encoding = THREE.sRGBEncoding; this.tex[path] = t; } return this.tex[path]; }
   // a photographed living room when there is no camera: a half-panorama and its mirror wrapped all around
   drawRoom() {
     if (this.drawnRoom) return; const g = new THREE.Group(), R = 4, H = Math.PI * R / (3168 / 1344);
