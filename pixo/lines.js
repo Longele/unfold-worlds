@@ -91,7 +91,12 @@ export const LINES = {
   "truefalse": "Vrai ou faux ? Réfléchis bien !",
   "first": "Par quelle lettre commence ce mot ?",
   "adult": "Une question pour les grands ! Attention, c'est difficile.",
-  "record": "Nouveau record ! Vous êtes les meilleurs explorateurs de la galaxie !"
+  "record": "Nouveau record ! Vous êtes les meilleurs explorateurs de la galaxie !",
+  "out": "Youpi ! Me voilà !",
+  "tickle": "Hihihi ! Arrête, ça chatouille !",
+  "dizzy": "Wouaaah ! Ça tourne, ça tourne ! J'ai la tête qui tourne !",
+  "here": "Hé ho ! Je suis là !",
+  "here2": "Coucou ! Ne m'oubliez pas !"
  },
  "en": {
   "i1": "Beep beep! Hello, Earthlings! My name is Pixo. I come from a tiny little planet, very, very far away.",
@@ -184,6 +189,11 @@ export const LINES = {
   "truefalse": "True or false? Think carefully!",
   "first": "What letter does this word start with?",
   "adult": "A question for the grown-ups! Careful, it's a tricky one.",
-  "record": "A new record! You're the best explorers in the galaxy!"
+  "record": "A new record! You're the best explorers in the galaxy!",
+  "out": "Yippee! Here I am!",
+  "tickle": "Hee hee hee! Stop, that tickles!",
+  "dizzy": "Whoaaa! It's spinning, it's spinning! My head is going round!",
+  "here": "Hey! Over here!",
+  "here2": "Peekaboo! Don't forget me!"
  }
 };

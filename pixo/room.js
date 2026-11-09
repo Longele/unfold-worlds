@@ -24,7 +24,20 @@ function glowTex(kind) {
   const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; return t;
 }
 
+// the filmed actor's look: top half of the clip is the picture, bottom half its transparency
+export function pixoMaterial(tex) {
+  const uni = { map: { value: tex }, tint: { value: new THREE.Color(1, 1, 1) }, fade: { value: 1 }, glow: { value: 0 } };
+  const mat = new THREE.ShaderMaterial({ uniforms: uni, transparent: true, depthWrite: false,
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: `uniform sampler2D map; uniform vec3 tint; uniform float fade; uniform float glow; varying vec2 vUv;
+      void main(){ vec3 c = texture2D(map, vec2(vUv.x, 0.5 + vUv.y * 0.5)).rgb; float a = texture2D(map, vec2(vUv.x, vUv.y * 0.5)).r;
+        a = smoothstep(0.08, 0.92, a) * fade; if (a < 0.01) discard; c = c * tint + glow * vec3(0.55, 1.0, 0.9); gl_FragColor = vec4(c, a); }` });
+  mat.toneMapped = false; return { mat, uni };
+}
+
 // ------------------------------------------------------------------ Pixo, the filmed actor
+// g stands on the floor and turns to face the player; inside it, the shadow stays on the floor while the body can
+// breathe, lean, jump and squash (alive even between his clips)
 function makePixo(base) {
   const vids = {}, texs = {};
   for (const n of CLIPS) {
@@ -32,24 +45,19 @@ function makePixo(base) {
     v.setAttribute('playsinline', ''); vids[n] = v;
     const t = new THREE.VideoTexture(v); t.encoding = THREE.sRGBEncoding; texs[n] = t;
   }
-  const uni = { map: { value: texs.idle }, tint: { value: new THREE.Color(1, 1, 1) }, fade: { value: 1 }, glow: { value: 0 } };
-  const mat = new THREE.ShaderMaterial({ uniforms: uni, transparent: true, depthWrite: false,
-    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-    fragmentShader: `uniform sampler2D map; uniform vec3 tint; uniform float fade; uniform float glow; varying vec2 vUv;
-      void main(){ vec3 c = texture2D(map, vec2(vUv.x, 0.5 + vUv.y * 0.5)).rgb; float a = texture2D(map, vec2(vUv.x, vUv.y * 0.5)).r;
-        a = smoothstep(0.08, 0.92, a) * fade; if (a < 0.01) discard; c = c * tint + glow * vec3(0.55, 1.0, 0.9); gl_FragColor = vec4(c, a); }` });
-  mat.toneMapped = false;
+  const { mat, uni } = pixoMaterial(texs.idle);
   const H = 0.62, W = H * 480 / 854; // the clip frame; Pixo himself is about 0.42 m tall in it
   const card = new THREE.Mesh(new THREE.PlaneGeometry(W, H), mat); card.position.y = H / 2 - H * 145 / 854 + 0.004; // his feet are 145 px above the bottom of the 854 px frame
   const sc = document.createElement('canvas'); sc.width = sc.height = 128; const k = sc.getContext('2d'), gr = k.createRadialGradient(64, 64, 4, 64, 64, 64);
   gr.addColorStop(0, 'rgba(0,0,0,0.55)'); gr.addColorStop(0.6, 'rgba(0,0,0,0.2)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); k.fillStyle = gr; k.fillRect(0, 0, 128, 128);
   const shadow = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.13), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sc), transparent: true, depthWrite: false }));
   shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.002;
-  const g = new THREE.Group(); g.add(shadow, card);
+  const body = new THREE.Group(); body.add(card); body.rotation.order = 'YXZ';
+  const g = new THREE.Group(); g.add(shadow, body);
   let cur = 'idle', token = 0;
   vids.idle.play().catch(() => {});
   const api = {
-    g, card, uni, vids, shadow,
+    g, body, card, uni, vids, texs, shadow, hop: 0, squash: 0, lean: 0,
     // play a clip once (or 'idle' forever); resolves when it ends. Every clip starts and ends on the same pose.
     play(name) {
       const v = vids[name]; if (!v) return Promise.resolve(); const my = ++token;
@@ -75,7 +83,7 @@ export class Room {
     this.fx = []; this.sprites = new Map(); this.tex = {}; this.glow = glowTex('glow'); this.twinkle = glowTex('twinkle');
     this.yaw = 0; this.pitch = -0.25; this.pitchMin = -1.3; this.pitchMax = 0.6; this.useGyro = false; this.gq = null; this.yawOffset = null;
     this.light = new THREE.Color(1, 1, 1); this.sample = document.createElement('canvas'); this.sample.width = this.sample.height = 16; this.sk = this.sample.getContext('2d', { willReadFrequently: true });
-    this.feed = null; this.drawnRoom = null; this.last = 0;
+    this.feed = null; this.drawnRoom = null; this.last = 0; this.spin = 0; this._fwd = new THREE.Vector3(0, 0, -1);
     this.input(); addEventListener('resize', () => this.resize()); this.resize();
     const loop = (t) => { this.frame(t / 1000); requestAnimationFrame(loop); }; requestAnimationFrame(loop);
   }
@@ -124,7 +132,11 @@ export class Room {
     if (this.drawnRoom) return; const g = new THREE.Group(), R = 4, H = Math.PI * R / (3168 / 1344);
     const t = new THREE.TextureLoader().load(`${this.base}img/pano.jpg`); t.encoding = THREE.sRGBEncoding; t.wrapS = THREE.MirroredRepeatWrapping; t.repeat.set(-2, 1); t.offset.set(1, 0); t.anisotropy = 4;
     const wall = new THREE.Mesh(new THREE.CylinderGeometry(R, R, H, 96, 1, true), new THREE.MeshBasicMaterial({ map: t, side: THREE.BackSide })); wall.rotation.y = Math.PI / 2; wall.material.toneMapped = false; g.add(wall);
-    const cap = new THREE.Mesh(new THREE.CircleGeometry(R, 64), new THREE.MeshBasicMaterial({ color: 0xc9b6a0 })); cap.rotation.x = -Math.PI / 2; cap.position.y = -H / 2; g.add(cap);
+    // the floor under the panorama: the carpet's own colour (measured at the bottom of the photo), a little darker in the middle
+    const fc = document.createElement('canvas'); fc.width = fc.height = 256; const fk = fc.getContext('2d'), fg = fk.createRadialGradient(128, 128, 0, 128, 128, 128);
+    fg.addColorStop(0, '#8a6c55'); fg.addColorStop(0.55, '#a07f64'); fg.addColorStop(1, '#ab886b'); fk.fillStyle = fg; fk.fillRect(0, 0, 256, 256);
+    const ft = new THREE.CanvasTexture(fc); ft.encoding = THREE.sRGBEncoding;
+    const cap = new THREE.Mesh(new THREE.CircleGeometry(R, 64), new THREE.MeshBasicMaterial({ map: ft })); cap.material.toneMapped = false; cap.rotation.x = -Math.PI / 2; cap.position.y = -H / 2; g.add(cap);
     const top = new THREE.Mesh(new THREE.CircleGeometry(R, 64), new THREE.MeshBasicMaterial({ color: 0xe9dccb })); top.rotation.x = Math.PI / 2; top.position.y = H / 2; g.add(top);
     this.scene.add(g); this.drawnRoom = g; this.pitchMin = -0.62; this.pitchMax = 0.3; this.light.setRGB(1.0, 0.95, 0.86);
   }
@@ -200,6 +212,19 @@ export class Room {
     P.g.position.copy(to); this.sparks(to.clone().add(new THREE.Vector3(0, 0.22, 0)), 30, [0x9ff3e0, 0xffe08a], 1.1, 0.06);
     await this.fade(0, 1, ms, true);
   }
+  // a hop: from where he is to `to`, an arc `h` metres high; squash and a puff of dust when he lands
+  hop(to, h = 0.35, ms = 650) {
+    const X = this.pixo, from = X.g.position.clone(), t0 = performance.now();
+    return new Promise((res) => { const s = () => { const u = Math.min(1, (performance.now() - t0) / ms); X.g.position.lerpVectors(from, to, u); X.hop = Math.sin(u * Math.PI) * h;
+      if (u < 1) return requestAnimationFrame(s); X.hop = 0; this.land(); res(); }; s(); });
+  }
+  // he falls from `h` metres onto `at` (the end of his jump out of the card)
+  drop(at, h = 0.9, ms = 520) {
+    const X = this.pixo, t0 = performance.now(); this.placePixo(at); X.hop = h;
+    return new Promise((res) => { const s = () => { const u = Math.min(1, (performance.now() - t0) / ms); X.hop = h * (1 - u * u);
+      if (u < 1) return requestAnimationFrame(s); X.hop = 0; this.land(); res(); }; s(); });
+  }
+  land() { this.pixo.squash = 0.22; const p = this.pixo.g.position.clone().add(new THREE.Vector3(0, 0.02, 0)); this.sparks(p, 16, [0xe9e1d2, 0xfff4dd], 0.55, 0.05); }
   fade(a, b, ms, glow = false) {
     const t0 = performance.now(), U = this.pixo.uni;
     return new Promise((res) => { const s = () => { const u = Math.min(1, (performance.now() - t0) / ms); U.fade.value = a + (b - a) * u; U.glow.value = glow ? Math.sin(u * Math.PI) * 0.8 : 0; u < 1 ? requestAnimationFrame(s) : res(); }; s(); });
@@ -210,6 +235,15 @@ export class Room {
     if (this.useGyro && this.gq) this.cam.quaternion.slerp(this.gq, 0.5);
     else this.cam.quaternion.setFromEuler(new THREE.Euler(this.pitch, this.yaw, 0, 'YXZ'));
     const P = this.pixo.g; P.rotation.y = Math.atan2(-P.position.x, -P.position.z);
+    // how fast the phone turns (radians a second, smoothed), signed left/right
+    const f = this.forward(), yawNow = Math.atan2(f.x, -f.z), yawWas = Math.atan2(this._fwd.x, -this._fwd.z); let dy = yawNow - yawWas; if (dy > Math.PI) dy -= 2 * Math.PI; if (dy < -Math.PI) dy += 2 * Math.PI;
+    this._fwd.copy(f); if (dt > 0) this.spin += ((dy / dt) - this.spin) * Math.min(1, dt * 6);
+    // Pixo alive: he breathes, leans against the turn (as if the room moved), jumps and squashes; the shadow stays down
+    const X = this.pixo, B = X.body, br = Math.sin(t * 2.3) * 0.012;
+    X.lean += (Math.max(-0.22, Math.min(0.22, -this.spin * 0.05)) - X.lean) * Math.min(1, dt * 5);
+    B.position.y = X.hop; B.rotation.z = X.lean; X.squash *= Math.pow(0.02, dt);
+    B.scale.set(1 - br * 0.5 + X.squash * 0.5, 1 + br - X.squash, 1);
+    const air = Math.min(1, X.hop / 0.5); X.shadow.scale.setScalar(1 - air * 0.45); X.shadow.material.opacity = (1 - air * 0.6) * X.uni.fade.value;
     // the room's light, from the camera picture, three times a second
     const fv = this.feed;
     if (fv && fv.readyState >= 2 && Math.floor(t * 3) !== this._ls) { this._ls = Math.floor(t * 3); try { this.sk.drawImage(fv, 0, 0, 16, 16); const d = this.sk.getImageData(0, 0, 16, 16).data; let r = 0, g = 0, b = 0; for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; } const n = d.length / 4; const L = (r + g + b) / (3 * n * 255);

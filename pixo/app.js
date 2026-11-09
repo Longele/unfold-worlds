@@ -5,6 +5,7 @@
 // are alike. Everyone earns stars; the family record is kept on this device. Nothing is sent anywhere.
 import * as THREE from 'three';
 import { Room, FLOOR } from './room.js';
+import { LivingPortal } from './portal.js';
 import { LINES } from './lines.js';
 import { challenge, SPOTS, AVATARS, shuffle, pick, R } from './games.js';
 import { LANG, EN, t as tr, translatePage, switchLang } from './i18n.js';
@@ -17,6 +18,7 @@ const L = LINES[LANG];
 const PCOL = ['#ff6fa0', '#3b9cff', '#f59e0b', '#9a5cf0', '#22b98c', '#ef4f6b'];
 const AGES = EN ? [['p', '3-5 yrs', 'Little'], ['m', '6-8 yrs', 'Middle'], ['g', '9-12 yrs', 'Big'], ['a', 'Adult', 'Grown-ups']] : [['p', '3-5 ans', 'Petits'], ['m', '6-8 ans', 'Moyens'], ['g', '9-12 ans', 'Grands'], ['a', 'Adulte', 'Parents']];
 const KEY = 'grande-chasse', RECORD = 'grande-chasse-record';
+const CARDCOL = ['#2fa8e0', '#f2742b', '#f2bf1b', '#8d63e0', '#2fb86a', '#e8456f'];
 const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
 const S = { phase: 'home', players: [], spots: {}, mode: 'cam', next: 1, got: 0, order: [1, 2, 3, 4, 5, 6], plan: [], hides: [], stars: 0, hunting: false, seen: 0, music: true, want: 0 };
@@ -66,7 +68,7 @@ async function playVoice(id) {
 const clip = (name) => Promise.race([room.pixo.play(name), wait(TEST ? 100 : 7000)]);
 // Pixo says a line: the words on screen, the voice from where he stands, his body moving while he talks
 async function say(id, first = 'talk', prefix = '') {
-  const my = ++sayTok; const el = $('#say'), txt = L[id] || '';
+  const my = ++sayTok; const el = $('#say'), txt = L[id] || ''; if (TEST) console.warn('say ' + id);
   el.querySelector('p').textContent = prefix ? prefix + txt.charAt(0).toLowerCase() + txt.slice(1) : txt; el.classList.add('on');
   let ended = false; const a = playVoice(id).then(() => { ended = true; });
   if (first && room.pixo.g.visible) (async () => { let c = first; while (!ended && my === sayTok) { await clip(c); c = 'talk'; } })();
@@ -211,6 +213,10 @@ async function introFilm() {
 
 // ------------------------------------------------------------------ Pixo appears out of a portal on the floor
 async function appear(pos) {
+  if (S.fromPortal) { // he has just leapt out of the card: he falls into the room and lands at the players' feet
+    S.fromPortal = false; room.pixo.uni.fade.value = 0; const f = room.fade(0, 1, FAST ? 30 : 260, true);
+    await room.drop(pos, 0.9, FAST ? 60 : 520); await f; sfx('hop', 0.7, 0.8); return;
+  }
   flash(); sfx('portal'); const p = room.portal(pos, FAST ? 200 : 1700);
   await wait(T(500)); room.placePixo(pos); sfx('appear', 0.8); room.sparks(pos.clone().add(new THREE.Vector3(0, 0.2, 0)), 40, [0x9ff3e0, 0xffe08a, 0xff9ad0], 1.3, 0.06);
   await room.fade(0, 1, FAST ? 50 : 600, true); await p;
@@ -226,18 +232,6 @@ async function intro() {
 let onCard = null;
 const mindPause = () => { try { mind?.controller.stopProcessVideo(); } catch {} };
 const mindResume = () => { try { mind?.controller.processVideo(mind.video); } catch (e) { console.warn('scanner restart failed', e); } };
-function cardPortal() {
-  const g = new THREE.Group(); g.visible = false; const uni = { t: { value: 0 }, k: { value: 0 } }; g.userData.uni = uni;
-  const disc = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5), new THREE.ShaderMaterial({ uniforms: uni, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-    fragmentShader: `uniform float t; uniform float k; varying vec2 vUv;
-      void main(){ vec2 p = vUv - 0.5; float r = length(p) * 2.0; float a = atan(p.y, p.x);
-        float ring = smoothstep(0.06, 0.0, abs(r - 0.82)) + 0.5 * smoothstep(0.04, 0.0, abs(r - 0.62));
-        float sw = 0.5 + 0.5 * sin(a * 5.0 + r * 12.0 - t * 8.0); float core = (1.0 - smoothstep(0.0, 0.85, r)) * (0.3 + 0.5 * sw);
-        vec3 col = mix(vec3(0.35, 1.0, 0.85), vec3(1.0, 0.85, 0.4), r) * (ring + core);
-        gl_FragColor = vec4(col * k, (ring + core) * k * (1.0 - smoothstep(0.92, 1.0, r))); }` }));
-  disc.position.set(0, 0, 0.02); g.add(disc); return g;
-}
 async function startMind() {
   try {
     if (mind) { try { mind.stop(); } catch {} mind = null; $('#scanbox').innerHTML = ''; }
@@ -245,13 +239,13 @@ async function startMind() {
     const m = new MindARThree({ container: $('#scanbox'), imageTargetSrc: 'targets.mind', maxTrack: 1, uiLoading: 'no', uiScanning: 'no', uiError: 'no', filterMinCF: 0.0001, filterBeta: 0.001 });
     const portals = [];
     for (let i = 0; i < 6; i++) {
-      const a = m.addAnchor(i), p = cardPortal(); a.group.add(p); portals.push(p);
+      const a = m.addAnchor(i), p = new LivingPortal(i + 1, CARDCOL[i], room.pixo); a.group.add(p.group); portals.push(p);
       a.onTargetFound = () => { if (TEST) console.warn('target seen', i + 1, 'want', S.want); onCard?.(i + 1, p); };
     }
     document.body.classList.add('cam');
     await m.start();
     if (!m.video || !m.video.srcObject) throw new Error('no camera picture');
-    m.renderer.setAnimationLoop((t) => { for (const p of portals) p.userData.uni.t.value = t / 1000; m.renderer.render(m.scene, m.camera); });
+    m.renderer.setAnimationLoop((t) => { for (const p of portals) if (p.group.visible) p.update(t / 1000, m.camera); m.renderer.render(m.scene, m.camera); });
     mind = m; mind.portals = portals; mindPause(); room.setFeed(m.video); return true;
   } catch (e) { console.warn('camera or card scanner unavailable', e); document.body.classList.remove('cam'); return false; }
 }
@@ -259,29 +253,44 @@ async function scan(k) {
   S.phase = `scan${k}`; S.want = k; const sc = $('#scan'), finale = k === 1 && S.got === 6;
   sc.querySelector('.kick').textContent = finale ? tr('Le grand final', 'The grand finale') : tr(`Carte ${k} sur 6`, `Card ${k} of 6`);
   sc.querySelector('.t').textContent = finale ? tr('Posez la carte 1 et regardez-la', 'Put card 1 down and look at it') : tr(`Montrez la carte ${k} !`, `Show card ${k}!`);
-  sc.querySelector('.nocam img').src = `cards/c${k}.jpg`; $('#foundbtn').textContent = tr(`J’ai trouvé la carte ${k}`, `I found card ${k}`);
+  sc.querySelector('.nocam .face').src = `cards/c${k}.jpg`; sc.querySelector('.nocam .plate').src = `img/plates/p${k}.jpg`; sc.querySelector('.cardfx').className = 'cardfx'; $('#foundbtn').textContent = tr(`J’ai trouvé la carte ${k}`, `I found card ${k}`);
   room.pixo.g.visible = false; for (const id of [...room.sprites.keys()]) if (id !== 'ship') room.removeSprite(id);
   let found; const done = new Promise((r) => { found = r; });
   window.__chasse.found = (n) => found(n);
-  $('#foundbtn').onclick = () => found(k); $('#skipscan').onclick = () => found(k);
+  const partImg = finale ? null : `p${S.order[k - 1]}`;
+  $('#foundbtn').onclick = async () => { if (S.want !== k) return; S.want = 0; await domPortal(k, partImg); S.fromPortal = true; found(k); }; $('#skipscan').onclick = () => found(k);
   sc.classList.remove('late'); const late = setTimeout(() => sc.classList.add('late'), TEST ? 0 : 20000);
   sc.classList.toggle('nocam', S.mode !== 'cam'); screen('scan');
   let lastWrong = 0;
   if (S.mode === 'cam' && mind) {
     onCard = async (n, portal) => {
       if (n === k && S.want === k) {
-        S.want = 0; sfx('detect'); sfx('portal'); portal.visible = true; const u = portal.userData.uni, t0 = performance.now();
-        await new Promise((r) => { const s = () => { const x = (performance.now() - t0) / 900; u.k.value = Math.min(1, x * 1.6); portal.scale.setScalar(0.4 + 0.8 * Math.min(1, x)); x < 1 ? requestAnimationFrame(s) : r(); }; s(); });
-        found(k);
+        S.want = 0; sfx('detect'); scanHum(false); sc.classList.add('opening');
+        await Promise.race([portal.open({ part: partImg, sfx: (n) => sfx(n), fast: FAST, onOut: () => say('out', null) }), wait(FAST ? 1500 : 9000)]);
+        S.fromPortal = true; found(k);
       } else if (n !== k && performance.now() - lastWrong > 7000) { lastWrong = performance.now(); sfx('bad'); say('wrong', null); }
     };
     mindResume(); scanHum(true);
   }
   say(finale ? 'e1' : 'scan', null);
   await done; clearTimeout(late); onCard = null; S.want = 0;
-  if (mind) { mindPause(); for (const p of mind.portals) { p.visible = false; p.userData.uni.k.value = 0; } }
-  scanHum(false); if (S.mode !== 'cam') sfx('portal');
+  if (mind) { mindPause(); for (const p of mind.portals) p.reset(); }
+  sc.classList.remove('opening'); scanHum(false);
   flash(); screen(null);
+}
+
+// without a camera: the same living portal on the picture of the card (it melts, the planet shows through, the piece
+// and Pixo come out); the planet follows the mouse or the finger a little, for depth
+async function domPortal(k, part) {
+  const fx = $('#scan .cardfx'), face = fx.querySelector('.face'), pl = fx.querySelector('.plate'), pi = fx.querySelector('.part'), mini = fx.querySelector('.mini');
+  const move = (e) => { const r = fx.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5; pl.style.transform = `scale(1.18) translate(${-x * 6}%, ${-y * 6}%)`; };
+  addEventListener('pointermove', move);
+  const anim = (ms, f) => new Promise((r) => { const t0 = performance.now(); const s = () => { const u = Math.min(1, (performance.now() - t0) / T(ms)); f(u); u < 1 ? requestAnimationFrame(s) : r(); }; s(); });
+  sfx('portal'); fx.classList.add('open'); $('#scan').classList.add('opening');
+  await anim(1000, (u) => face.style.setProperty('--m', `${(u * u * (3 - 2 * u)) * 120}%`));
+  if (part) { pi.src = `parts/${part}.png`; fx.classList.add('fly'); sfx('part'); await wait(T(1000)); }
+  fx.classList.add('pixo'); sfx('hop'); say('out', null); await wait(T(1300)); sfx('appear'); fx.classList.add('leap'); await wait(T(450));
+  removeEventListener('pointermove', move); face.style.setProperty('--m', '0%');
 }
 
 // ------------------------------------------------------------------ one card: a piece comes back, maybe hide and seek, then a mini-game
@@ -290,7 +299,7 @@ const partPos = (p) => { const a = Math.atan2(p.x, -p.z); return p.clone().add(n
 function stickPart(id) { const s = room.sprites.get(id); if (s) { s.userData.base.copy(partPos(room.pixo.g.position)); s.position.copy(s.userData.base); } }
 async function cardRound(k) {
   await scan(k);
-  S.phase = `card${k}`; const part = S.order[k - 1], id = `p${part}`;
+  S.phase = `card${k}`; const part = S.order[k - 1], id = `p${part}`; S.partId = id;
   const at = ahead(); await appear(at);
   room.addSprite(id, id, partPos(at), 0.3); room.sparks(partPos(at), 34, [0xffd46a, 0xffffff], 1.0, 0.05); sfx('part');
   await say(`f${part}`, 'hello');
@@ -299,7 +308,7 @@ async function cardRound(k) {
   if (game === 'stars') await starsGame(k); else if (game === 'simon') await simonGame(k); else if (game === 'blow') await blowGame(); else if (game === 'color') await colorGame(k);
   else for (const p of order(k)) await quiz(p, k, id);
   await say('repaired', 'amazed');
-  await partToPocket(k, id);
+  await partToPocket(k, id); S.partId = null;
   S.next = k + 1; save();
   if (k < 6) await clue(k + 1);
 }
@@ -588,8 +597,37 @@ function pointAt(target) { // returns true when the target is on screen
   else { const right = d > 0; ar.style.top = '50%'; ar.style.left = right ? 'calc(100% - 84px)' : '84px'; sv.style.transform = `rotate(${right ? 0 : 180}deg)`; }
   return false;
 }
+// ------------------------------------------------------------------ Pixo alive
+const life = { off: 0, spin: 0, lastFollow: -1e9, lastDizzy: -1e9, taps: [], lastTickle: -1e9, moving: false, lastT: 0, follows: 0 };
+const calm = () => { const p = S.phase; return room.pixo.g.visible && !voice && !S.hunting && !starSet && !life.moving && !/^(hide|stars|scan|clue|finale|end|film|start)/.test(p); };
+async function follow() { // he hops back into view, beside where the phone is looking
+  life.moving = true; life.lastFollow = performance.now(); life.follows++;
+  // beside the middle of the screen, inside the picture whatever the phone's shape (half the half-width of the view)
+  const half = Math.atan(Math.tan(THREE.MathUtils.degToRad(room.cam.fov / 2)) * room.cam.aspect), side = Math.random() < 0.5 ? -1 : 1, base = ahead(), a = Math.atan2(base.x, -base.z) + side * half * 0.45, r = Math.hypot(base.x, base.z);
+  const to = new THREE.Vector3(Math.sin(a) * r, -FLOOR, -Math.cos(a) * r), far = Math.abs(room.pixoBearing().d) > 1.4;
+  const s = S.partId && room.sprites.get(S.partId); if (s) s.visible = false;
+  if (far) { sfx('poof', 0.6); await room.teleport(to, FAST ? 30 : 300); } else { sfx('hop', 0.7); await room.hop(to, 0.4, FAST ? 60 : 700); }
+  if (s) { stickPart(S.partId); s.visible = true; }
+  life.moving = false; say(life.follows % 2 ? 'here' : 'here2', 'hello');
+}
+function alive(t) {
+  const dt = Math.min(0.1, t - (life.lastT || t)); life.lastT = t; const now = performance.now();
+  if (!calm()) { life.off = 0; life.spin = 0; return; }
+  // forgotten: off screen for 6 seconds, he comes back by himself
+  life.off = room.pixoBearing().on ? 0 : life.off + dt;
+  if (life.off > 6 && now - life.lastFollow > 12000) { life.off = 0; follow(); return; }
+  // the room spins: turning the phone (or dragging the room) very fast makes him dizzy
+  life.spin = Math.abs(room.spin) > 4.5 ? life.spin + dt : Math.max(0, life.spin - dt);
+  if (life.spin > 0.35 && now - life.lastDizzy > 25000) { life.spin = 0; life.lastDizzy = now; say('dizzy', 'amazed'); }
+}
+function tickle() { // several taps on him in a row: it tickles
+  const now = performance.now(); life.taps = life.taps.filter((x) => now - x < 2500); life.taps.push(now);
+  if (life.taps.length >= 3 && !voice && now - life.lastTickle > 8000) { life.taps = []; life.lastTickle = now; say('tickle', 'happy'); return true; }
+  return false;
+}
+
 function onFrame(t) {
-  starsFrame(t);
+  starsFrame(t); alive(t);
   if (starSet) { // during the star hunt, point to the nearest star when none is on screen
     const f = room.forward(); let best = null, bd = 9; for (const s of starSet) { const v = s.position.clone().project(room.cam); if (v.z < 1 && Math.abs(v.x) < 0.9 && Math.abs(v.y) < 0.9) { best = null; bd = -1; break; } const d = Math.abs(Math.atan2(Math.sin(s.userData.a - Math.atan2(f.x, -f.z)), Math.cos(s.userData.a - Math.atan2(f.x, -f.z)))); if (d < bd) { bd = d; best = s; } }
     const ar = $('#arrow'); if (best) { ar.classList.add('on'); $('#arrow em').firstChild.textContent = tr('Des étoiles par là !', 'Stars this way!'); pointAt(best.position); } else ar.classList.remove('on');
@@ -606,6 +644,6 @@ translatePage();
 for (const b of document.querySelectorAll('.langsw button')) { b.classList.toggle('on', b.dataset.l === LANG); b.onclick = () => { if (b.dataset.l !== LANG) switchLang(b.dataset.l); }; }
 room = new Room($('#room'));
 room.onFrame = onFrame;
-room.onPixo = () => { if (S.hunting) { S.hunting = false; S.foundPixo?.(); } else if (room.pixo.clip === 'idle' && !voice) { sfx('giggle', 0.8); room.sparks(room.pixo.g.position.clone().add(new THREE.Vector3(0, 0.3, 0)), 14, 0xff9ad0, 0.8, 0.05); clip('happy'); } };
-window.__chasse = { S, room, get mind() { return mind; } };
+room.onPixo = () => { if (S.hunting) { S.hunting = false; S.foundPixo?.(); } else if (tickle()) { sfx('giggle', 0.9); room.pixo.squash = 0.12; } else if (room.pixo.clip === 'idle' && !voice) { room.pixo.squash = 0.1; sfx('giggle', 0.8); room.sparks(room.pixo.g.position.clone().add(new THREE.Vector3(0, 0.3, 0)), 14, 0xff9ad0, 0.8, 0.05); clip('happy'); } };
+window.__chasse = { S, room, life, calm: () => calm(), get mind() { return mind; } };
 setup();
