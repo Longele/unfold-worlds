@@ -6,6 +6,8 @@
 import * as THREE from 'three';
 import { Room, FLOOR } from './room.js';
 import { LivingPortal } from './portal.js';
+import { EPISODES, episode } from './episodes.js';
+import { BADGES, earn, count as badgeCount, has as hasBadge, finishEpisode, done as epDone, allDone, unlocked, unlockAll, badgeImg } from './badges.js';
 import { LINES } from './lines.js';
 import { challenge, SPOTS, AVATARS, shuffle, pick, R } from './games.js';
 import { LANG, EN, t as tr, translatePage, switchLang } from './i18n.js';
@@ -21,10 +23,21 @@ const KEY = 'grande-chasse', RECORD = 'grande-chasse-record';
 const CARDCOL = ['#2fa8e0', '#f2742b', '#f2bf1b', '#8d63e0', '#2fb86a', '#e8456f'];
 const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-const S = { phase: 'home', players: [], spots: {}, mode: 'cam', next: 1, got: 0, order: [1, 2, 3, 4, 5, 6], plan: [], hides: [], stars: 0, hunting: false, seen: 0, music: true, want: 0 };
+const S = { ep: 'e1', newBadges: [], quizN: 0, quizMiss: false, phase: 'home', players: [], spots: {}, mode: 'cam', next: 1, got: 0, order: [1, 2, 3, 4, 5, 6], plan: [], hides: [], stars: 0, hunting: false, seen: 0, music: true, want: 0 };
 let room, ac, master, musicGain, mind = null, wake = null;
-const save = () => { try { sessionStorage.setItem(KEY, JSON.stringify({ players: S.players, spots: S.spots, mode: S.mode, next: S.next, got: S.got, order: S.order, plan: S.plan, hides: S.hides, stars: S.stars })); } catch {} };
+const save = () => { try { sessionStorage.setItem(KEY, JSON.stringify({ ep: S.ep, quizN: S.quizN, quizMiss: S.quizMiss, players: S.players, spots: S.spots, mode: S.mode, next: S.next, got: S.got, order: S.order, plan: S.plan, hides: S.hides, stars: S.stars })); } catch {} };
 const forget = () => { try { sessionStorage.removeItem(KEY); } catch {} };
+
+// ------------------------------------------------------------------ the adventure being played
+const EP = () => episode(S.ep);
+const ln = (id) => (L[`${id}_${S.ep}`] ? `${id}_${S.ep}` : id);           // this adventure's version of a line, if it has one
+const item = (p) => EP().item(p);                                           // the picture of thing number p (parts/<item>.png)
+// a badge won: a little medal drops in at the top of the screen, and it waits on the end screen
+function badge(id) {
+  if (!earn(id)) return; S.newBadges.push(id); const b = BADGES.find((x) => x.id === id), t = $('#toast');
+  t.querySelector('img').src = badgeImg(id); t.querySelector('b').textContent = b.name[LANG]; t.classList.remove('on'); void t.offsetWidth; t.classList.add('on');
+  sfx('found', 0.9, 1.25); setTimeout(() => t.classList.remove('on'), 3200);
+}
 
 // ------------------------------------------------------------------ sound: voice placed in the room, real effects, a music bed
 const buf = {};
@@ -134,8 +147,13 @@ function setup() {
   const modes = document.querySelectorAll('.modes button');
   const setMode = (m) => { S.mode = m; modes.forEach((x) => x.classList.toggle('on', x.dataset.mode === m)); };
   modes.forEach((b) => b.onclick = () => { setMode(b.dataset.mode); sfx('tap', 0.6); }); setMode(S.mode);
-  $('#toSetup').onclick = () => { unlockAudio(); screen('setup'); showStep(0); };
-  $('#howbtn').onclick = () => screen('how'); $('#howok').onclick = () => { unlockAudio(); screen('setup'); showStep(0); };
+  $('#toSetup').onclick = () => { unlockAudio(); showEpisodes(); };
+  $('#bookbtn').onclick = () => { unlockAudio(); showBook(); }; $('#bookclose').onclick = () => screen(bookBack); $('#epsback').onclick = () => screen('home');
+  $('#unlockall').onclick = () => { if (confirm(tr('Débloquer toutes les aventures ?', 'Unlock every adventure?'))) { unlockAll(); showBook(); } };
+  $('#tobook').onclick = () => showBook('end'); $('#nextep').onclick = () => { forget(); S.ep = $('#nextep').dataset.ep; S.phase = 'home'; sfx('tap', 0.7); screen('setup'); showStep(2); }; // same explorers: hide the cards again and go
+  refreshHome();
+  $('#howbtn').onclick = () => screen('how'); $('#howok').onclick = () => { unlockAudio(); showEpisodes(); };
+  const want = new URLSearchParams(location.search).get('ep'); if (want && EPISODES.some((e, i) => e.id === want && unlocked(i))) { S.ep = want; }
   $('#wback').onclick = () => (step === 0 ? screen('home') : showStep(step - 1));
   $('#wnext').onclick = () => { sfx('tap', 0.7); if (step < 3) showStep(step + 1); else go(false); };
   $('#again').onclick = () => { forget(); location.reload(); };
@@ -153,6 +171,24 @@ function setup() {
     b.onclick = () => { Object.assign(S, saved); unlockAudio(); go(true); };
   }
 }
+// the adventures: a cover, a title, a little story; locked until the one before is finished
+function refreshHome() { $('#bookbtn b').textContent = `${badgeCount()}/${BADGES.length}`; }
+function showEpisodes() {
+  const list = $('#eps .list'); list.innerHTML = EPISODES.map((e, i) => { const open = unlocked(i), fin = epDone(e.id);
+    return `<button class="ep ${open ? '' : 'locked'} ${fin ? 'done' : ''}" data-ep="${e.id}" style="--c:${e.col}" ${open ? '' : 'aria-disabled="true"'}>
+      <img src="${e.cover}" alt=""><span class="num">${e.n}</span><div><b>${e.title[LANG]}</b><span>${open ? e.pitch[LANG] : tr(`Finissez l’aventure ${e.n - 1} pour l’ouvrir`, `Finish adventure ${e.n - 1} to open it`)}</span></div>
+      ${fin ? `<img class="medal" src="${badgeImg('ep_' + e.id)}" alt="">` : open ? '' : '<i class="lock">🔒</i>'}</button>`; }).join('');
+  list.querySelectorAll('.ep').forEach((b, i) => b.onclick = () => { if (!unlocked(i)) { sfx('bad', 0.5); return; } sfx('tap', 0.7); S.ep = b.dataset.ep; screen('setup'); showStep(0); });
+  screen('eps');
+}
+// the badge book: earned medals shine, the others wait in grey with how to win them
+let bookBack = 'home';
+function showBook(from = 'home') {
+  bookBack = from; $('#toast').classList.remove('on'); $('#book .count').textContent = `${badgeCount()} / ${BADGES.length}`;
+  $('#book .grid').innerHTML = BADGES.map((b) => `<div class="bd ${hasBadge(b.id) ? 'got' : ''} ${S.newBadges.includes(b.id) ? 'new' : ''}"><img src="${badgeImg(b.id)}" alt=""><b>${b.name[LANG]}</b><span>${b.how[LANG]}</span></div>`).join('');
+  $('#unlockall').hidden = EPISODES.every((e, i) => unlocked(i));
+  screen('book');
+}
 function readSetup() {
   S.players = [...document.querySelectorAll('.player')].map((d, i) => ({ name: d.querySelector('input').value.trim() || `${tr('Explorateur', 'Explorer')} ${i + 1}`, age: d.dataset.age, av: d.dataset.av, color: PCOL[i % PCOL.length], stars: 0 }));
   document.querySelectorAll('.spot').forEach((d) => { S.spots[+d.dataset.k] = d.dataset.spot; });
@@ -163,7 +199,7 @@ function readSetup() {
   let plan; do { plan = shuffle(games); } while (plan[0] === 'blow' || plan.some((g, i) => i && g === plan[i - 1]));
   S.plan = plan; S.hides = shuffle([2, 3, 4, 5, 6]).slice(0, 3);
 }
-function drawSlots() { $('#slots').innerHTML = S.order.map((p, i) => `<i class="${i < S.got ? 'got' : ''}" style="background-image:url(parts/p${p}.png)"></i>`).join(''); $('#score b').textContent = S.stars; }
+function drawSlots() { $('#slots').innerHTML = S.order.map((p, i) => `<i class="${i < S.got ? 'got' : ''}" style="background-image:url(parts/${item(p)}.png)"></i>`).join(''); $('#score b').textContent = S.stars; }
 
 // ------------------------------------------------------------------ start (a tap, so sound, video and motion sensors may start)
 function unlockAudio() {
@@ -175,7 +211,8 @@ async function keepAwake() { try { wake = await navigator.wakeLock?.request('scr
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.phase !== 'home' && S.phase !== 'end') keepAwake(); });
 
 async function go(resume) {
-  if (!resume) readSetup();
+  if (!resume) { readSetup(); S.quizN = 0; S.quizMiss = false; }
+  S.newBadges = []; $('#blow .gauge span').textContent = EP().heat[LANG];
   unlockAudio(); room.pixo.unlock(); keepAwake(); save(); drawSlots();
   screen(null); document.body.classList.add('playing'); S.phase = 'start';
   if (S.mode === 'cam') {
@@ -186,7 +223,8 @@ async function go(resume) {
   if (S.mode === 'nocam') { room.drawRoom(); room.pitch = -0.42; if (!resume) S.plan = S.plan.map((g) => (g === 'color' ? 'stars' : g)); }
   if (!room.useGyro) $('#arrow em').innerHTML = tr('Par là !<br>Glissez ou ← →', 'This way!<br>Drag or ← →');
   (async () => { for (const id of Object.keys(L)) await load(vpath(id)); })(); // the voice, in the background
-  if (!resume) await introFilm();
+  if (S.players.length >= 4) badge('team');
+  if (!resume && EP().film) await introFilm();
   startMusic();
   if (resume) { await appear(ahead()); await say('resume', 'hello'); } else await intro();
   for (let k = S.next; k <= 6; k++) await cardRound(k);
@@ -224,7 +262,7 @@ async function appear(pos) {
 async function intro() {
   S.phase = 'intro'; await wait(T(400));
   await appear(ahead());
-  await say('i1', 'hello'); await say('i2', 'sad'); await say('i3', 'talk'); await say('i4', 'talk');
+  await say(ln('i1'), 'hello'); await say(ln('i2'), 'sad'); await say(ln('i3'), 'talk'); await say(ln('i4'), 'talk');
 }
 
 // ------------------------------------------------------------------ the card scanner: one camera for the whole hunt, cards open portals
@@ -257,7 +295,7 @@ async function scan(k) {
   room.pixo.g.visible = false; for (const id of [...room.sprites.keys()]) if (id !== 'ship') room.removeSprite(id);
   let found; const done = new Promise((r) => { found = r; });
   window.__chasse.found = (n) => found(n);
-  const partImg = finale ? null : `p${S.order[k - 1]}`;
+  const partImg = finale ? null : item(S.order[k - 1]);
   $('#foundbtn').onclick = async () => { if (S.want !== k) return; S.want = 0; await domPortal(k, partImg); S.fromPortal = true; found(k); }; $('#skipscan').onclick = () => found(k);
   sc.classList.remove('late'); const late = setTimeout(() => sc.classList.add('late'), TEST ? 0 : 20000);
   sc.classList.toggle('nocam', S.mode !== 'cam'); screen('scan');
@@ -272,7 +310,7 @@ async function scan(k) {
     };
     mindResume(); scanHum(true);
   }
-  say(finale ? 'e1' : 'scan', null);
+  say(finale ? ln('e1') : 'scan', null);
   await done; clearTimeout(late); onCard = null; S.want = 0;
   if (mind) { mindPause(); for (const p of mind.portals) p.reset(); }
   sc.classList.remove('opening'); scanHum(false);
@@ -301,13 +339,13 @@ async function cardRound(k) {
   await scan(k);
   S.phase = `card${k}`; const part = S.order[k - 1], id = `p${part}`; S.partId = id;
   const at = ahead(); await appear(at);
-  room.addSprite(id, id, partPos(at), 0.3); room.sparks(partPos(at), 34, [0xffd46a, 0xffffff], 1.0, 0.05); sfx('part');
-  await say(`f${part}`, 'hello');
+  room.addSprite(id, item(part), partPos(at), S.ep === 'e1' ? 0.3 : 0.22); room.sparks(partPos(at), 34, [0xffd46a, 0xffffff], 1.0, 0.05); sfx('part');
+  await say(ln(`f${part}`), 'hello');
   if (S.hides.includes(k)) await hideAndSeek(k, id);
   const game = S.plan[k - 1] || 'quiz';
   if (game === 'stars') await starsGame(k); else if (game === 'simon') await simonGame(k); else if (game === 'blow') await blowGame(); else if (game === 'color') await colorGame(k);
   else for (const p of order(k)) await quiz(p, k, id);
-  await say('repaired', 'amazed');
+  await say(ln('repaired'), 'amazed');
   await partToPocket(k, id); S.partId = null;
   S.next = k + 1; save();
   if (k < 6) await clue(k + 1);
@@ -324,10 +362,10 @@ async function hideAndSeek(k, id) {
   await room.teleport(to, FAST ? 30 : 450); stickPart(id); if (s) s.visible = true;
   setTimeout(() => sfx('giggle', 0.7), 300);
   await v;
-  S.hunting = true; S.seen = 0; $('#arrow em').firstChild.textContent = tr('Pixo est par là !', 'Pixo is this way!'); $('#arrow').classList.add('on');
+  S.hunting = true; S.seen = 0; S.huntT = performance.now(); $('#arrow em').firstChild.textContent = tr('Pixo est par là !', 'Pixo is this way!'); $('#arrow').classList.add('on');
   await new Promise((res) => { S.foundPixo = res; window.__chasse.foundPixo = res; });
   S.hunting = false; $('#arrow').classList.remove('on'); sfx('found'); room.sparks(room.pixo.g.position.clone().add(new THREE.Vector3(0, 0.3, 0)), 36, [0xff9ad0, 0xffe08a, 0x9ff3e0], 1.3, 0.06);
-  addStars(S.players[(k - 1) % S.players.length], 1);
+  addStars(S.players[(k - 1) % S.players.length], 1); if (performance.now() - S.huntT < 4000) badge('lynx');
   await say(pick(['gotme', 'gotme2', 'gotme3']), 'happy');
 }
 
@@ -343,11 +381,11 @@ function quiz(p, k, id) {
       b.onclick = async () => {
         if (over) return;
         if (o.ok) {
-          over = true; b.classList.add('ok'); sfx('good'); addStars(p, tries === 0 ? 3 : tries === 1 ? 2 : 1);
+          over = true; S.quizN++; save(); b.classList.add('ok'); sfx('good'); addStars(p, tries === 0 ? 3 : tries === 1 ? 2 : 1);
           room.sparks((room.sprites.get(id)?.position || room.pixo.g.position).clone(), 40, [0xffd46a, 0x9ff3e0, 0xff9ad0], 1.3, 0.06);
           await say(cheer(), 'happy'); el.classList.remove('on'); await wait(T(500)); done();
         } else {
-          tries++; b.classList.add('no'); sfx('bad'); setTimeout(() => b.classList.remove('no'), 500);
+          tries++; S.quizMiss = true; b.classList.add('no'); sfx('bad'); setTimeout(() => b.classList.remove('no'), 500);
           if (tries >= 2) el.querySelector('[data-ok]').classList.add('hint');
           say(`bad${1 + (tries % 2)}`, 'sad');
         }
@@ -362,7 +400,7 @@ function quiz(p, k, id) {
 // --- catch the stars: they fly all around the room; turn and tap them before the time runs out
 let starSet = null;
 async function starsGame(k) {
-  S.phase = `stars${k}`; await say('stars_intro', 'sad');
+  S.phase = `stars${k}`; await say(ln('stars_intro'), 'sad');
   const tex = room.img('img/ic/star.webp');
   for (const p of order(k)) {
     const little = p.age === 'p', secs = FAST ? 2 : little ? 20 : p.age === 'a' ? 12 : 15; let count = 0;
@@ -387,7 +425,7 @@ async function starsGame(k) {
     await new Promise((res) => { const tick = () => { const left = Math.max(0, secs - (performance.now() - t0) / 1000), el = $('#mini .timer'); el.textContent = Math.ceil(left); el.classList.toggle('low', left < 4);
       if (left <= 0) return res(); setTimeout(tick, 200); }; tick(); });
     room.onTap = null; for (const s of starSet) room.scene.remove(s); starSet = null; $('#mini .timer').classList.remove('low');
-    sfx('slot'); addStars(p, Math.ceil(count / 2)); await wait(T(600)); // a caught star is worth half a score star, so this game does not outweigh the others
+    sfx('slot'); addStars(p, Math.ceil(count / 2)); if (count >= 12) badge('stars'); await wait(T(600)); // a caught star is worth half a score star, so this game does not outweigh the others
   }
   unbanner(); await say('stars_end', 'amazed');
 }
@@ -400,7 +438,7 @@ function starsFrame(t) { // the stars drift slowly around the players
 const PADF = [523.25, 659.25, 783.99, 1046.5];
 async function simonGame(k) {
   S.phase = `simon${k}`; const el = $('#simon'), pads = [...el.querySelectorAll('.pads button')], st = el.querySelector('.st');
-  await say('simon_intro', 'talk');
+  await say(ln('simon_intro'), 'talk');
   const light = async (i, ms = 420) => { pads[i].classList.add('lit'); note(PADF[i], 0.5); await wait(FAST ? 40 : ms); pads[i].classList.remove('lit'); await wait(FAST ? 20 : 140); };
   for (const p of order(k)) {
     const start = { p: 2, m: 3, g: 4, a: 5 }[p.age] || 3; let len = start, seqv = Array.from({ length: start }, () => R(4)), passed = 0;
@@ -418,7 +456,7 @@ async function simonGame(k) {
       passed++; sfx('good'); st.textContent = tr('Bravo !', 'Well done!'); room.sparks(room.pixo.g.position.clone().add(new THREE.Vector3(0, 0.7, 0)), 24, [0x9ff3e0, 0xff9ad0, 0xffe08a], 1, 0.05);
       if (round < 3) { seqv.push(R(4)); len++; await say('simon_more', 'happy'); }
     }
-    addStars(p, passed + (passed === 4 ? 1 : 0)); el.classList.remove('on'); unbanner(); await wait(T(400));
+    addStars(p, passed + (passed === 4 ? 1 : 0)); if (passed === 4) badge('simon'); el.classList.remove('on'); unbanner(); await wait(T(400));
   }
   await say('simon_end', 'amazed');
 }
@@ -431,7 +469,7 @@ async function blowGame() {
     try { mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }); an = ac.createAnalyser(); an.fftSize = 512; ac.createMediaStreamSource(mic).connect(an); data = new Float32Array(an.fftSize); } catch { mic = null; }
   }
   el.classList.toggle('mic', !!mic); el.querySelector('.bt').textContent = mic ? tr('Soufflez tous très fort sur le téléphone !', 'Everyone blow hard on the phone!') : tr('Tapotez tous très vite !', 'Everyone tap really fast!');
-  await say(mic ? 'blow_intro' : 'tap_intro', 'sad');
+  await say(ln(mic ? 'blow_intro' : 'tap_intro'), 'sad');
   let heat = 1; g.style.setProperty('--h', heat); el.classList.add('on');
   const tapper = $('#tapper'); const cool = () => { heat = Math.max(0, heat - 0.035); sfx('tap', 0.4, 0.8 + Math.random() * 0.4); };
   tapper.onclick = cool; const key = (e) => { if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); cool(); } }; addEventListener('keydown', key);
@@ -443,9 +481,9 @@ async function blowGame() {
     if (Math.random() < 0.25) room.sparks(room.pixo.g.position.clone().add(new THREE.Vector3(0, 0.3, 0)), 1, heat > 0.5 ? 0xff7a3c : 0x9ff3e0, 0.6, 0.05);
     if (heat <= 0 || (performance.now() - t0) / 1000 > limit) return res(); requestAnimationFrame(tick); }; tick(); });
   removeEventListener('keydown', key); tapper.onclick = null; for (const t of mic?.getTracks() || []) t.stop();
-  const secs = (performance.now() - t0) / 1000, stars = heat > 0 ? 1 : secs < 8 ? 5 : secs < 12 ? 4 : secs < 17 ? 3 : 2;
+  const secs = (performance.now() - t0) / 1000, stars = heat > 0 ? 1 : secs < 8 ? 5 : secs < 12 ? 4 : secs < 17 ? 3 : 2; if (heat <= 0 && secs < 8) badge('dragon');
   el.classList.remove('on'); sfx('good'); for (const p of S.players) addStars(p, stars);
-  await say('blow_end', 'happy');
+  await say(ln('blow_end'), 'happy');
 }
 
 // --- colour hunt: find something of this colour in the house and show it in the ring (camera)
@@ -454,7 +492,7 @@ const CNAME_EN = { rouge: 'red', orange: 'orange', jaune: 'yellow', vert: 'green
 const HCOL = { rouge: '#e8364a', orange: '#ff8a2a', jaune: '#ffd028', vert: '#2dbb5d', bleu: '#2a7de1', violet: '#9a4ee0', rose: '#ff7fb6' };
 async function colorGame(k) {
   S.phase = `color${k}`; const el = $('#hunt'), ring = el.querySelector('.ring i'), cv = document.createElement('canvas'); cv.width = 32; cv.height = 32; const cx = cv.getContext('2d', { willReadFrequently: true });
-  await say('colhunt', 'happy'); const used = [];
+  await say('colhunt', 'happy'); const used = []; let all = true;
   for (const p of order(k)) {
     const list = p.age === 'p' ? ['rouge', 'bleu', 'jaune', 'vert'] : p.age === 'm' ? ['rouge', 'bleu', 'jaune', 'vert', 'orange', 'violet'] : ['rouge', 'bleu', 'jaune', 'vert', 'orange', 'violet', 'rose'];
     const c = pick(list.filter((x) => !used.includes(x)).length ? list.filter((x) => !used.includes(x)) : list); used.push(c);
@@ -476,9 +514,10 @@ async function colorGame(k) {
       ring.style.setProperty('--p', prog);
       if (prog >= 1) return res(true); if (left <= 0) return res(false); setTimeout(tick, 120); }; tick(); });
     if (ok) { sfx('found'); const t = (performance.now() - t0) / 1000; addStars(p, t < 15 ? 3 : t < 30 ? 2 : 1); await say('col_found', 'happy'); }
-    else { sfx('bad'); await say('col_late', 'sad'); }
+    else { all = false; sfx('bad'); await say('col_late', 'sad'); }
     el.classList.remove('on'); unbanner(); await wait(T(300));
   }
+  if (all) badge('rainbow');
 }
 
 // the repaired piece flies up into the ship's slots
@@ -514,11 +553,11 @@ async function finale() {
   await appear(pixoAt);
   const H = 0.8, shipPos = at.clone().add(new THREE.Vector3(0, H / 2, 0));
   room.portal(at, FAST ? 200 : 4200); sfx('assemble');
-  const ship = room.addSprite('ship', 'ship', shipPos, H, false); ship.userData.float = false; ship.material.opacity = 0;
-  const voice = say('e2', 'amazed');
+  const ship = room.addSprite('ship', EP().trophy, shipPos, H, false); ship.userData.float = false; ship.material.opacity = 0;
+  const voice = say(ln('e2'), 'amazed');
   for (let i = 0; i < 6; i++) {
     const part = S.order[i], ang = a + (i - 2.5) * 0.5, from = shipPos.clone().add(new THREE.Vector3(Math.sin(ang) * 0.6, 0.5, -Math.cos(ang) * 0.6 + 0.2));
-    const s = room.addSprite(`f${i}`, `p${part}`, from, 0.24); s.userData.float = false; $('#slots').children[i].classList.remove('got');
+    const s = room.addSprite(`f${i}`, item(part), from, S.ep === 'e1' ? 0.24 : 0.18); s.userData.float = false; $('#slots').children[i].classList.remove('got');
     const t0 = performance.now();
     await new Promise((r) => { const st = () => { const u = Math.min(1, (performance.now() - t0) / (FAST ? 40 : 650)); s.position.lerpVectors(from, shipPos, u * u); s.material.opacity = 1 - u * 0.8; u < 1 ? requestAnimationFrame(st) : r(); }; st(); });
     room.removeSprite(`f${i}`); room.sparks(shipPos, 26, [0xffd46a, 0x9ff3e0], 1.2, 0.05); sfx('slot', 0.8, 0.9 + i * 0.06); ship.material.opacity = (i + 1) / 6;
@@ -529,20 +568,25 @@ async function finale() {
   sfx('hop');
   await new Promise((r) => { const st = () => { const u = Math.min(1, (performance.now() - t0) / (FAST ? 40 : 1000)); P.lerpVectors(from, at, u); P.y = -FLOOR + Math.sin(u * Math.PI) * 0.4; room.pixo.uni.fade.value = 1 - u; u < 1 ? requestAnimationFrame(st) : r(); }; st(); });
   room.pixo.g.visible = false; room.pixo.uni.fade.value = 1; sfx('appear'); room.sparks(shipPos, 30, 0x9ff3e0, 1, 0.05);
-  await say('e3', null);
-  sfx('engine'); const b0 = shipPos.clone(), t1 = performance.now();
+  await say(ln('e3'), null);
+  sfx(EP().flame ? 'engine' : 'appear'); const b0 = shipPos.clone(), t1 = performance.now();
   await new Promise((r) => { const st = () => { const u = (performance.now() - t1) / 1000; const y = u < 1 ? Math.sin(u * 40) * 0.012 : 0.6 * (u - 1) ** 2;
-    ship.position.set(b0.x, b0.y + y, b0.z); if (Math.random() < 0.9) room.flame(ship.position.clone().add(new THREE.Vector3(0, -H * 0.45, 0))); if (u > 1 && Math.random() < 0.5) room.sparks(ship.position.clone().add(new THREE.Vector3(0, -H * 0.5, 0)), 2, [0xffe08a, 0x9ff3e0], 0.5, 0.05);
+    ship.position.set(b0.x, b0.y + y, b0.z); if (EP().flame && Math.random() < 0.9) room.flame(ship.position.clone().add(new THREE.Vector3(0, -H * 0.45, 0))); else if (Math.random() < 0.5) room.sparks(ship.position.clone(), 2, [0xffe08a, 0xffffff, 0xff9ad0], 0.7, 0.05); if (u > 1 && Math.random() < 0.5) room.sparks(ship.position.clone().add(new THREE.Vector3(0, -H * 0.5, 0)), 2, [0xffe08a, 0x9ff3e0], 0.5, 0.05);
     u < (FAST ? 0.1 : 5) ? requestAnimationFrame(st) : r(); }; st(); });
   room.removeSprite('ship'); sfx('fanfare');
   // the family record, on this device
   let rec = null; try { rec = JSON.parse(localStorage.getItem(RECORD) || 'null'); } catch {}
   S.record = !rec || S.stars > rec.stars; if (S.record) { try { localStorage.setItem(RECORD, JSON.stringify({ stars: S.stars, date: Date.now() })); } catch {} }
+  // the badge book: this adventure, and the feats of the whole hunt
+  finishEpisode(S.ep); badge(`ep_${S.ep}`); if (S.record && rec) badge('record'); if (S.quizN >= 2 && !S.quizMiss) badge('brain'); if (allDone()) badge('collector');
+  const ni = EPISODES.findIndex((e) => e.id === S.ep) + 1, nx = EPISODES[ni];
+  $('#nextep').hidden = !nx; if (nx) { $('#nextep').dataset.ep = nx.id; $('#nextep').textContent = tr(`Aventure suivante : ${nx.title.fr}`, `Next adventure: ${nx.title.en}`); }
+  $('#endbadges').innerHTML = S.newBadges.length ? `<p>${tr('Nouveaux badges', 'New badges')}</p><div>${S.newBadges.map((id) => `<img src="${badgeImg(id)}" alt="" title="${BADGES.find((b) => b.id === id).name[LANG]}">`).join('')}</div>` : '';
   forget(); S.phase = 'end'; scanHum(false);
   try { wake?.release(); } catch {}
   await drawDiploma(rec);
   document.body.classList.remove('playing'); screen('end');
-  if (S.record && rec) say('record', null);
+  (async () => { if (S.record && rec) await say('record', null); if (S.newBadges.length) await say('badge', null); if (nx) say('next_ep', null); })();
   if (mind) { try { mind.stop(); } catch {} } room.stopCamera(); document.body.classList.remove('cam');
 }
 
@@ -550,7 +594,7 @@ async function finale() {
 const loadImg = (src) => new Promise((r) => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
 async function drawDiploma(rec) {
   const c = $('#diploma'), x = c.getContext('2d'), W = c.width, H = c.height; await document.fonts?.ready;
-  const [pixo, ship, star] = await Promise.all([loadImg('img/pixo-wave.png'), loadImg('parts/ship.png'), loadImg('img/ic/star.webp')]);
+  const [pixo, ship, star] = await Promise.all([loadImg('img/pixo-wave.png'), loadImg(`parts/${EP().trophy}.png`), loadImg('img/ic/star.webp')]);
   const avs = await Promise.all(S.players.map((p) => loadImg(avatarSrc(p.av))));
   const bg = x.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#fffaf0'); bg.addColorStop(1, '#fdf0d8'); x.fillStyle = bg; x.fillRect(0, 0, W, H);
   x.strokeStyle = '#d9a425'; x.lineWidth = 10; x.strokeRect(36, 36, W - 72, H - 72); x.lineWidth = 3; x.strokeRect(58, 58, W - 116, H - 116);
@@ -558,7 +602,7 @@ async function drawDiploma(rec) {
   for (const [sx, sy] of [[58, 58], [W - 58, 58], [58, H - 58], [W - 58, H - 58]]) st(sx, sy, 26, '#f5b301');
   for (let i = 0; i < 26; i++) st(120 + Math.random() * (W - 240), 90 + Math.random() * 120, 4 + Math.random() * 6, 'rgba(245,179,1,.35)');
   x.textAlign = 'center'; x.fillStyle = '#2a2370';
-  x.font = '600 34px Fredoka, sans-serif'; x.fillText(tr('LA GRANDE CHASSE DE PIXO', 'PIXO’S GREAT HUNT'), W / 2, 150);
+  x.font = '600 34px Fredoka, sans-serif'; x.fillText(`${tr('LA GRANDE CHASSE DE PIXO', 'PIXO’S GREAT HUNT')} · ${EP().title[LANG].toUpperCase()}`, W / 2, 150);
   x.font = '700 88px Fredoka, sans-serif'; const many = S.players.length > 1;
   const g = x.createLinearGradient(0, 180, 0, 280); g.addColorStop(0, '#f59e0b'); g.addColorStop(1, '#d9480f'); x.fillStyle = g;
   x.fillText(many ? tr('Diplôme de Grands Explorateurs', 'Great Explorers Diploma') : tr('Diplôme de Grand Explorateur', 'Great Explorer Diploma'), W / 2, 258);
@@ -572,7 +616,7 @@ async function drawDiploma(rec) {
     if (star) x.drawImage(star, cx - 46, y0 + 230, 30, 30); x.font = '700 28px Fredoka, sans-serif'; x.fillStyle = '#d9480f'; x.textAlign = 'left'; x.fillText(`${p.stars || 0}`, cx - 10, y0 + 256); x.textAlign = 'center';
   });
   x.fillStyle = '#4a4580'; x.font = '700 30px Nunito, sans-serif';
-  x.fillText(tr('pour avoir retrouvé les six morceaux du vaisseau de Pixo', 'for finding the six pieces of Pixo’s spaceship'), W / 2, 700); x.fillText(tr('et l’avoir aidé à rentrer chez lui, dans les étoiles.', 'and helping him fly home to the stars.'), W / 2, 744);
+  const dl = EP().dip[LANG]; x.fillText(dl[0], W / 2, 700); x.fillText(dl[1], W / 2, 744);
   const date = new Date().toLocaleDateString(tr('fr-FR', 'en-GB'), { day: 'numeric', month: 'long', year: 'numeric' });
   x.font = '800 30px Nunito, sans-serif'; x.fillStyle = '#d9480f';
   x.fillText(tr(`${S.stars} étoiles en tout${S.record ? (rec ? ' · Nouveau record !' : '') : ` · Record : ${rec?.stars}`}`, `${S.stars} stars in all${S.record ? (rec ? ' · New record!' : '') : ` · Record: ${rec?.stars}`}`), W / 2, 800);
@@ -584,7 +628,7 @@ async function drawDiploma(rec) {
   if (ship) x.drawImage(ship, 90, H - 360, 210, 210 * ship.height / ship.width);
 }
 function downloadDiploma() {
-  $('#diploma').toBlob((b) => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = tr('diplome-grande-chasse-de-pixo.png', 'pixo-great-hunt-diploma.png'); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }, 'image/png');
+  $('#diploma').toBlob((b) => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = tr(`diplome-pixo-aventure-${EP().n}.png`, `pixo-diploma-adventure-${EP().n}.png`); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }, 'image/png');
 }
 
 // ------------------------------------------------------------------ every frame: the voice follows Pixo, the arrow points to him (or to the stars)
@@ -618,11 +662,11 @@ function alive(t) {
   if (life.off > 6 && now - life.lastFollow > 12000) { life.off = 0; follow(); return; }
   // the room spins: turning the phone (or dragging the room) very fast makes him dizzy
   life.spin = Math.abs(room.spin) > 4.5 ? life.spin + dt : Math.max(0, life.spin - dt);
-  if (life.spin > 0.35 && now - life.lastDizzy > 25000) { life.spin = 0; life.lastDizzy = now; say('dizzy', 'amazed'); }
+  if (life.spin > 0.35 && now - life.lastDizzy > 25000) { life.spin = 0; life.lastDizzy = now; say('dizzy', 'amazed'); badge('dizzy'); }
 }
 function tickle() { // several taps on him in a row: it tickles
   const now = performance.now(); life.taps = life.taps.filter((x) => now - x < 2500); life.taps.push(now);
-  if (life.taps.length >= 3 && !voice && now - life.lastTickle > 8000) { life.taps = []; life.lastTickle = now; say('tickle', 'happy'); return true; }
+  if (life.taps.length >= 3 && !voice && now - life.lastTickle > 8000) { life.taps = []; life.lastTickle = now; say('tickle', 'happy'); badge('tickle'); return true; }
   return false;
 }
 

@@ -66,8 +66,9 @@
     <div class="logo" data-en="&lt;span class=&quot;l1&quot;&gt;Pixo’s Great&lt;/span&gt;&lt;span class=&quot;l2&quot;&gt;Hunt&lt;/span&gt;"><span class="l1">La Grande</span><span class="l2">Chasse</span><span class="l3">de Pixo</span></div>
     <p class="tag" data-en="Last night, a little alien crashed into your home. The six pieces of his spaceship are hidden around the house. Your children can help him get home.">Cette nuit, un petit extraterrestre s’est écrasé chez vous. Ses six morceaux de vaisseau sont cachés dans la maison. À vos enfants de l’aider à rentrer.</p>
     <ul class="facts"><li data-en="&lt;b&gt;Ages 3 to 12&lt;/b&gt;"><b>3 à 12 ans</b></li><li data-en="&lt;b&gt;20 to 30 min&lt;/b&gt;"><b>20 à 30 min</b></li><li data-en="&lt;b&gt;1 to 6 children&lt;/b&gt;"><b>1 à 6 enfants</b></li></ul>
-    <button class="cta" id="toSetup" data-en="Set up the hunt">Préparer la chasse</button>
+    <button class="cta" id="toSetup" data-en="Play">Jouer</button>
     <button class="ghost" id="resume" hidden></button>
+    <button class="ghost" id="bookbtn"><img src="img/badges/ep_e1.webp" alt=""><span data-en="Badge book">Carnet de badges</span><b></b></button>
     <button class="link" id="howbtn" data-en="How does it work?">Comment ça marche ?</button>
   </div>
 </section>
@@ -130,6 +131,14 @@
     <button class="ghost" id="camskip" data-en="Play without the camera">Jouer sans caméra</button>
   </div>
 </section>
+<section id="eps" class="screen sheetwrap">
+  <div class="sheet"><div class="shead"><button id="epsback" class="round" aria-label="Retour" data-en-aria="Back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button><h2 data-en="Choose an adventure">Choisissez une aventure</h2></div><div class="list"></div><p class="fine" data-en="The same six cards for every adventure.">Les mêmes six cartes pour toutes les aventures.</p></div>
+</section>
+<section id="book" class="screen sheetwrap">
+  <div class="sheet"><div class="shead"><button id="bookclose" class="round" aria-label="Fermer" data-en-aria="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button><h2 data-en="Badge book">Carnet de badges</h2><span class="count"></span></div>
+    <div class="grid"></div><button class="link" id="unlockall" data-en="Parents: unlock every adventure">Parents : débloquer toutes les aventures</button></div>
+</section>
+<div id="toast"><img alt=""><div><span data-en="New badge!">Nouveau badge !</span><b></b></div></div>
 <section id="spotpick" class="screen sheetwrap">
   <div class="sheet"><h2 data-en="Where is card &lt;span&gt;&lt;/span&gt; hidden?">Où est cachée la carte <span></span> ?</h2><div class="grid"></div></div>
 </section>
@@ -145,7 +154,8 @@
 <section id="end" class="screen">
   <div class="endbox">
     <canvas id="diploma" width="1600" height="1131"></canvas>
-    <div class="endbtns"><button class="cta" id="dl" data-en="Download the diploma">Télécharger le diplôme</button><button class="ghost" id="again" data-en="Play again">Rejouer</button></div>
+    <div id="endbadges"></div>
+    <div class="endbtns"><button class="cta" id="nextep" hidden></button><button class="cta alt" id="dl" data-en="Download the diploma">Télécharger le diplôme</button><button class="ghost" id="tobook" data-en="Badge book">Carnet de badges</button><button class="ghost" id="again" data-en="Play again">Rejouer</button></div>
   </div>
 </section>
 <noscript>Ce jeu a besoin de JavaScript. This game needs JavaScript.</noscript>
