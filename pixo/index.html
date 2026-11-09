@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>La Grande Chasse de Pixo</title>
-<meta name="description" content="La Grande Chasse de Pixo : une chasse au trésor en réalité augmentée pour toute la famille.">
 <meta name="theme-color" content="#0d0b2b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="icon" href="img/pixo-face.png">
@@ -21,15 +20,15 @@
 
 <header id="hud">
   <button id="pausebtn" class="round" aria-label="Pause"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg></button>
-  <div id="slots" aria-label="Les morceaux du vaisseau"></div>
-  <div id="score" aria-label="Étoiles gagnées"><img src="img/ic/star.webp" alt=""><b>0</b></div>
+  <div id="slots" aria-label="Les morceaux du vaisseau" data-en-aria="The ship’s pieces"></div>
+  <div id="score" aria-label="Étoiles gagnées" data-en-aria="Stars won"><img src="img/ic/star.webp" alt=""><b>0</b></div>
 </header>
 <div id="say"><img src="img/pixo-face.png" alt=""><p></p></div>
-<div id="arrow"><span><svg viewBox="0 0 24 24"><path d="M5 12h12M12 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><em>Pixo est par là !</em></div>
+<div id="arrow"><span><svg viewBox="0 0 24 24"><path d="M5 12h12M12 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><em data-en="Pixo is this way!">Pixo est par là !</em></div>
 <div id="flash"></div>
 
 <section id="challenge">
-  <div class="who"><img class="av" alt=""><b></b><span>à toi !</span></div>
+  <div class="who"><img class="av" alt=""><b></b><span data-en="your turn!">à toi !</span></div>
   <div class="q"></div><div class="opts"></div>
 </section>
 
@@ -38,13 +37,13 @@
 <div id="mini"><img class="av" alt=""><b class="who"></b><span class="timer"></span><span class="count"><img src="img/ic/star.webp" alt=""><b>0</b></span></div>
 <section id="simon" class="panel"><p class="st"></p><div class="pads"><button data-i="0"></button><button data-i="1"></button><button data-i="2"></button><button data-i="3"></button></div></section>
 <section id="hunt" class="panel"><div class="ring"><i></i></div><div class="hbar"><span class="sw"></span><b class="cname"></b><div class="meter"><i></i></div></div></section>
-<section id="blow" class="panel"><p class="bt"></p><div class="gauge"><i></i><span>Chaleur du moteur</span></div><button class="cta" id="tapper">Tapotez vite !</button></section>
+<section id="blow" class="panel"><p class="bt"></p><div class="gauge"><i></i><span data-en="Engine heat">Chaleur du moteur</span></div><button class="cta" id="tapper" data-en="Tap fast!">Tapotez vite !</button></section>
 
 <section id="scan" class="screen">
   <div class="reticle"><i></i><i></i><i></i><i></i><div class="beam"></div></div>
-  <div class="scancap"><p class="kick"></p><p class="t"></p><p class="s">Posez la carte à plat, tenez le téléphone au-dessus.</p></div>
+  <div class="scancap"><p class="kick"></p><p class="t"></p><p class="s" data-en="Lay the card flat and hold the phone above it.">Posez la carte à plat, tenez le téléphone au-dessus.</p></div>
   <div class="nocam"><div class="cardfx"><img alt=""></div><button class="cta" id="foundbtn"></button></div>
-  <button id="skipscan" class="ghost">La carte ne se détecte pas ? Continuer</button>
+  <button id="skipscan" class="ghost" data-en="Card not detected? Carry on">La carte ne se détecte pas ? Continuer</button>
 </section>
 
 <section id="clue" class="screen">
@@ -52,103 +51,104 @@
     <div class="cardmini"><img alt=""></div>
     <p class="kick"></p>
     <p class="riddle"></p>
-    <button id="peek" class="chip">Indice pour les petits</button>
+    <button id="peek" class="chip" data-en="Hint for the little ones">Indice pour les petits</button>
     <div class="pic"><img alt=""><span></span></div>
     <button class="cta" id="cluego"></button>
   </div>
 </section>
 
-<section id="intro" class="screen"><video playsinline muted preload="auto"></video><button id="skipintro" class="ghost small">Passer</button></section>
+<section id="intro" class="screen"><video playsinline muted preload="auto"></video><button id="skipintro" class="ghost small" data-en="Skip">Passer</button></section>
 
 <section id="home" class="screen on">
-  <picture class="hero"><source media="(min-width: 900px)" srcset="img/keyart.jpg"><img src="img/keyart-sm.jpg" alt="Pixo, un petit extraterrestre, à côté de son vaisseau écrasé dans un salon"></picture>
+  <div class="langsw" role="group" aria-label="Langue / Language"><button data-l="fr">FR</button><button data-l="en">EN</button></div>
+  <picture class="hero"><source media="(min-width: 900px)" srcset="img/keyart.jpg"><img src="img/keyart-sm.jpg" alt="Pixo, un petit extraterrestre, à côté de son vaisseau écrasé dans un salon" data-en-alt="Pixo, a little alien, next to his crashed spaceship in a living room"></picture>
   <div class="homebox">
-    <div class="logo"><span class="l1">La Grande</span><span class="l2">Chasse</span><span class="l3">de Pixo</span></div>
-    <p class="tag">Cette nuit, un petit extraterrestre s’est écrasé chez vous. Ses six morceaux de vaisseau sont cachés dans la maison. À vos enfants de l’aider à rentrer.</p>
-    <ul class="facts"><li><b>3 à 12 ans</b></li><li><b>20 à 30 min</b></li><li><b>1 à 6 enfants</b></li></ul>
-    <button class="cta" id="toSetup">Préparer la chasse</button>
+    <div class="logo" data-en="&lt;span class=&quot;l1&quot;&gt;Pixo’s Great&lt;/span&gt;&lt;span class=&quot;l2&quot;&gt;Hunt&lt;/span&gt;"><span class="l1">La Grande</span><span class="l2">Chasse</span><span class="l3">de Pixo</span></div>
+    <p class="tag" data-en="Last night, a little alien crashed into your home. The six pieces of his spaceship are hidden around the house. Your children can help him get home.">Cette nuit, un petit extraterrestre s’est écrasé chez vous. Ses six morceaux de vaisseau sont cachés dans la maison. À vos enfants de l’aider à rentrer.</p>
+    <ul class="facts"><li data-en="&lt;b&gt;Ages 3 to 12&lt;/b&gt;"><b>3 à 12 ans</b></li><li data-en="&lt;b&gt;20 to 30 min&lt;/b&gt;"><b>20 à 30 min</b></li><li data-en="&lt;b&gt;1 to 6 children&lt;/b&gt;"><b>1 à 6 enfants</b></li></ul>
+    <button class="cta" id="toSetup" data-en="Set up the hunt">Préparer la chasse</button>
     <button class="ghost" id="resume" hidden></button>
-    <button class="link" id="howbtn">Comment ça marche ?</button>
+    <button class="link" id="howbtn" data-en="How does it work?">Comment ça marche ?</button>
   </div>
 </section>
 
 <section id="how" class="screen sheetwrap">
   <div class="sheet">
-    <h2>Comment ça marche</h2>
+    <h2 data-en="How it works">Comment ça marche</h2>
     <ol class="how">
-      <li><img src="cards/c1.jpg" alt=""><div><b>Imprimez les 6 cartes</b><span>Deux feuilles A4, papier mat. Cachez les cartes 2 à 6 dans la maison.</span></div></li>
-      <li><img src="img/pixo-face.png" alt=""><div><b>Pixo apparaît chez vous</b><span>Avec la caméra du téléphone, il se pose dans votre salon, parle et se cache autour des enfants.</span></div></li>
-      <li><img src="img/ic/star.webp" alt=""><div><b>Chaque enfant relève son défi</b><span>Couleurs et formes pour les petits, calculs et lecture pour les moyens, énigmes et codes secrets pour les grands.</span></div></li>
+      <li><img src="cards/c1.jpg" alt=""><div data-en="&lt;b&gt;Print the 6 cards&lt;/b&gt;&lt;span&gt;Two A4 sheets, double-sided, matte paper. Hide cards 2 to 6 around the house.&lt;/span&gt;"><b>Imprimez les 6 cartes</b><span>Deux feuilles A4 en recto verso, papier mat. Cachez les cartes 2 à 6 dans la maison.</span></div></li>
+      <li><img src="img/pixo-face.png" alt=""><div data-en="&lt;b&gt;Pixo appears in your home&lt;/b&gt;&lt;span&gt;Through the phone’s camera, he lands in your living room, talks and hides around the children.&lt;/span&gt;"><b>Pixo apparaît chez vous</b><span>Avec la caméra du téléphone, il se pose dans votre salon, parle et se cache autour des enfants.</span></div></li>
+      <li><img src="img/ic/star.webp" alt=""><div data-en="&lt;b&gt;Every child takes on a challenge&lt;/b&gt;&lt;span&gt;Colours and shapes for the little ones, sums and reading for the middle ones, riddles and secret codes for the big ones.&lt;/span&gt;"><b>Chaque enfant relève son défi</b><span>Couleurs et formes pour les petits, calculs et lecture pour les moyens, énigmes et codes secrets pour les grands.</span></div></li>
     </ol>
-    <p class="fine">Rien n’est envoyé ni enregistré : l’image de la caméra reste sur le téléphone.</p>
-    <button class="cta" id="howok">C’est parti</button>
+    <p class="fine" data-en="Nothing is sent or saved: the camera picture stays on the phone.">Rien n’est envoyé ni enregistré : l’image de la caméra reste sur le téléphone.</p>
+    <button class="cta" id="howok" data-en="Let’s go">C’est parti</button>
   </div>
 </section>
 
 <section id="setup" class="screen">
   <div class="wiz">
-    <div class="wtop"><button id="wback" class="round" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="dots"><i></i><i></i><i></i><i></i></div><span class="wstep"></span></div>
+    <div class="wtop"><button id="wback" class="round" aria-label="Retour" data-en-aria="Back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="dots"><i></i><i></i><i></i><i></i></div><span class="wstep"></span></div>
 
     <div class="step" data-step="0">
-      <p class="kick">Étape 1</p><h2>Imprimez les cartes</h2>
+      <p class="kick" data-en="Step 1">Étape 1</p><h2 data-en="Print the cards">Imprimez les cartes</h2>
       <div class="fan"><img src="cards/c1.jpg" alt=""><img src="cards/c2.jpg" alt=""><img src="cards/c3.jpg" alt=""><img src="cards/c4.jpg" alt=""><img src="cards/c5.jpg" alt=""><img src="cards/c6.jpg" alt=""></div>
-      <a class="cta alt" href="cartes.pdf" target="_blank" rel="noopener">Ouvrir les cartes à imprimer</a>
-      <ul class="tips"><li>Papier <b>mat</b> de préférence (le brillant fait des reflets).</li><li>Imprimez en couleur, puis découpez les 6 cartes.</li><li>Pas d’imprimante ? Jouez sur ordinateur, à l’étape 4.</li></ul>
+      <a class="cta alt" href="cartes.pdf" target="_blank" rel="noopener" data-en-href="cards.pdf" data-en="Open the cards to print">Ouvrir les cartes à imprimer</a>
+      <ul class="tips" data-en="&lt;li&gt;&lt;b&gt;Matte&lt;/b&gt; paper if you can (glossy paper reflects).&lt;/li&gt;&lt;li&gt;Print in colour and &lt;b&gt;double-sided&lt;/b&gt; (flip on the long edge), then cut out the 6 cards.&lt;/li&gt;&lt;li&gt;No printer? Play on a computer, in step 4.&lt;/li&gt;"><li>Papier <b>mat</b> de préférence (le brillant fait des reflets).</li><li>Imprimez en couleur et en <b>recto verso</b> (bord long), puis découpez les 6 cartes.</li><li>Pas d’imprimante ? Jouez sur ordinateur, à l’étape 4.</li></ul>
     </div>
 
     <div class="step" data-step="1">
-      <p class="kick">Étape 2</p><h2>Les explorateurs</h2>
+      <p class="kick" data-en="Step 2">Étape 2</p><h2 data-en="The explorers">Les explorateurs</h2>
       <div id="players"></div>
-      <button id="addp" class="ghost">+ Ajouter un enfant</button>
+      <button id="addp" class="ghost" data-en="+ Add a child">+ Ajouter un enfant</button>
     </div>
 
     <div class="step" data-step="2">
-      <p class="kick">Étape 3</p><h2>Cachez les cartes</h2>
-      <p class="lead">Gardez la carte <b>1</b> dans votre poche. Cachez les autres, puis dites où.</p>
+      <p class="kick" data-en="Step 3">Étape 3</p><h2 data-en="Hide the cards">Cachez les cartes</h2>
+      <p class="lead" data-en="Keep card &lt;b&gt;1&lt;/b&gt; in your pocket. Hide the others, then say where.">Gardez la carte <b>1</b> dans votre poche. Cachez les autres, puis dites où.</p>
       <div id="spots"></div>
     </div>
 
     <div class="step" data-step="3">
-      <p class="kick">Étape 4</p><h2>Prêts ?</h2>
+      <p class="kick" data-en="Step 4">Étape 4</p><h2 data-en="Ready?">Prêts ?</h2>
       <div class="modes">
-        <button data-mode="cam"><img src="img/pixo-face.png" alt=""><b>Avec la caméra</b><span>Pixo apparaît dans votre salon. Le plus magique.</span></button>
-        <button data-mode="nocam"><img src="img/ic/canape.webp" alt=""><b>Sur ordinateur</b><span>Sans caméra ni carte imprimée, dans un salon virtuel.</span></button>
+        <button data-mode="cam"><img src="img/pixo-face.png" alt=""><b data-en="With the camera">Avec la caméra</b><span data-en="Pixo appears in your living room. The most magical.">Pixo apparaît dans votre salon. Le plus magique.</span></button>
+        <button data-mode="nocam"><img src="img/ic/canape.webp" alt=""><b data-en="On a computer">Sur ordinateur</b><span data-en="No camera or printed cards, in a virtual living room.">Sans caméra ni carte imprimée, dans un salon virtuel.</span></button>
       </div>
-      <ul class="tips"><li>Montez le son.</li><li>Allumez bien la pièce.</li><li>Rien n’est enregistré, rien ne quitte l’appareil.</li></ul>
+      <ul class="tips" data-en="&lt;li&gt;Turn the sound up.&lt;/li&gt;&lt;li&gt;Light the room well.&lt;/li&gt;&lt;li&gt;Nothing is saved, nothing leaves the device.&lt;/li&gt;"><li>Montez le son.</li><li>Allumez bien la pièce.</li><li>Rien n’est enregistré, rien ne quitte l’appareil.</li></ul>
     </div>
 
-    <div class="wnav"><button class="cta" id="wnext">Suivant</button></div>
+    <div class="wnav"><button class="cta" id="wnext" data-en="Next">Suivant</button></div>
   </div>
 </section>
 
 
 <section id="camfail" class="screen sheetwrap">
   <div class="sheet">
-    <h2>La caméra ne s’ouvre pas</h2>
-    <p class="lead">Autorisez la caméra pour ce site (l’icône à gauche de l’adresse), puis réessayez. Ou jouez dans le salon virtuel.</p>
-    <button class="cta" id="camretry">Réessayer</button>
-    <button class="ghost" id="camskip">Jouer sans caméra</button>
+    <h2 data-en="The camera won’t open">La caméra ne s’ouvre pas</h2>
+    <p class="lead" data-en="Allow the camera for this site (the icon to the left of the address), then try again. Or play in the virtual living room.">Autorisez la caméra pour ce site (l’icône à gauche de l’adresse), puis réessayez. Ou jouez dans le salon virtuel.</p>
+    <button class="cta" id="camretry" data-en="Try again">Réessayer</button>
+    <button class="ghost" id="camskip" data-en="Play without the camera">Jouer sans caméra</button>
   </div>
 </section>
 <section id="spotpick" class="screen sheetwrap">
-  <div class="sheet"><h2>Où est cachée la carte <span></span> ?</h2><div class="grid"></div></div>
+  <div class="sheet"><h2 data-en="Where is card &lt;span&gt;&lt;/span&gt; hidden?">Où est cachée la carte <span></span> ?</h2><div class="grid"></div></div>
 </section>
 <section id="pause" class="screen sheetwrap">
   <div class="sheet">
     <h2>Pause</h2>
-    <button class="cta" id="presume">Reprendre</button>
-    <button class="ghost" id="pmusic">Musique : oui</button>
-    <button class="ghost" id="prestart">Recommencer depuis le début</button>
+    <button class="cta" id="presume" data-en="Resume">Reprendre</button>
+    <button class="ghost" id="pmusic" data-en="Music: on">Musique : oui</button>
+    <button class="ghost" id="prestart" data-en="Start again from the beginning">Recommencer depuis le début</button>
   </div>
 </section>
 
 <section id="end" class="screen">
   <div class="endbox">
     <canvas id="diploma" width="1600" height="1131"></canvas>
-    <div class="endbtns"><button class="cta" id="dl">Télécharger le diplôme</button><button class="ghost" id="again">Rejouer</button></div>
+    <div class="endbtns"><button class="cta" id="dl" data-en="Download the diploma">Télécharger le diplôme</button><button class="ghost" id="again" data-en="Play again">Rejouer</button></div>
   </div>
 </section>
-<noscript>Ce jeu a besoin de JavaScript.</noscript>
+<noscript>Ce jeu a besoin de JavaScript. This game needs JavaScript.</noscript>
 <script type="module" src="app.js"></script>
 </body>
 </html>

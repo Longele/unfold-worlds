@@ -2,6 +2,7 @@
 // rest come from large banks, and what was asked is remembered on this device so the next hunts ask new things.
 //   p = 3 to 5 (no reading, all said aloud), m = 6 to 8, g = 9 to 12, a = adults.
 // A challenge: { voice: [line ids], text, options: [{ html, ok }], big }. Pictures are illustrated icons (img/ic).
+import { EN, t as tr } from './i18n.js';
 const R = (n) => Math.floor(Math.random() * n);
 const pick = (a) => a[R(a.length)];
 const shuffle = (a) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = R(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -10,6 +11,7 @@ let seen = new Set(); try { seen = new Set(JSON.parse(localStorage.getItem(SEEN_
 const remember = (k) => { seen.add(k); try { localStorage.setItem(SEEN_KEY, JSON.stringify([...seen].slice(-600))); } catch {} };
 // a bank item not asked yet on this device (when all were asked, start the bank again)
 function fresh(bank, list) {
+  if (EN) bank = 'en.' + bank;
   let left = list.filter((x, i) => !seen.has(bank + i));
   if (!left.length) { for (let i = 0; i < list.length; i++) seen.delete(bank + i); left = list; }
   const x = pick(left); remember(bank + list.indexOf(x)); return x;
@@ -28,13 +30,13 @@ const SHAPES = {
 const shape = (n) => `<svg class="shape" viewBox="0 0 100 100"><defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb259"/><stop offset="1" stop-color="#ff6f3c"/></linearGradient></defs><g fill="url(#sg)">${SHAPES[n]}</g></svg>`;
 const ANIMALS = ['cat', 'dog', 'rabbit', 'fish'], FOOD = ['apple', 'banana', 'cake'], SKY = ['sun', 'moon', 'star', 'rocket'], HOME = ['canape', 'lit', 'frigo', 'table', 'porte', 'bain', 'coussin', 'plante', 'livres', 'jouets', 'chaussures'];
 const ALLPICS = [...ANIMALS, ...FOOD, ...SKY, 'tree', 'bike', ...HOME];
-const WORDS = [['CHAT', 'cat'], ['LUNE', 'moon'], ['FUSÉE', 'rocket'], ['SOLEIL', 'sun'], ['POMME', 'apple'], ['ÉTOILE', 'star'], ['POISSON', 'fish'], ['ARBRE', 'tree'], ['GÂTEAU', 'cake'], ['VÉLO', 'bike'], ['CHIEN', 'dog'], ['LAPIN', 'rabbit'],
+const WORDS_FR = [['CHAT', 'cat'], ['LUNE', 'moon'], ['FUSÉE', 'rocket'], ['SOLEIL', 'sun'], ['POMME', 'apple'], ['ÉTOILE', 'star'], ['POISSON', 'fish'], ['ARBRE', 'tree'], ['GÂTEAU', 'cake'], ['VÉLO', 'bike'], ['CHIEN', 'dog'], ['LAPIN', 'rabbit'],
   ['BANANE', 'banana'], ['LIT', 'lit'], ['PORTE', 'porte'], ['PLANTE', 'plante'], ['LIVRES', 'livres'], ['FRIGO', 'frigo'], ['TABLE', 'table'], ['BAIN', 'bain'], ['COUSSIN', 'coussin'], ['CANAPÉ', 'canape'], ['JOUETS', 'jouets'], ['BASKETS', 'chaussures']];
 const PATTERNS = [['ball:rouge', 'ball:bleu'], ['moon', 'star', 'star'], ['cat', 'dog', 'rabbit'], ['apple', 'apple', 'banana'], ['ball:vert', 'ball:jaune', 'ball:violet'], ['sun', 'moon'], ['fish', 'fish', 'cat'], ['rocket', 'star'], ['tree', 'apple', 'apple'], ['ball:jaune', 'ball:jaune', 'ball:rouge'], ['dog', 'bike'], ['cake', 'star', 'moon']];
-const CODE = ['LUNE', 'FUSEE', 'ROBOT', 'PLANETE', 'COMETE', 'ETOILE', 'GALAXIE', 'SATURNE', 'JUPITER', 'NEPTUNE', 'SOLEIL', 'ORBITE', 'ASTRONAUTE', 'METEORE', 'TELESCOPE', 'MARTIEN', 'CRATERE', 'NEBULEUSE', 'URANUS', 'MERCURE'];
-const SPACEWORDS = ['FUSEE', 'PLANETE', 'COMETE', 'ETOILE', 'GALAXIE', 'SATURNE', 'ORBITE', 'METEORE', 'CRATERE', 'SOLEIL', 'ESPACE', 'CASQUE', 'MOTEUR', 'ANTENNE', 'VAISSEAU', 'PILOTE'];
+const CODE_FR = ['LUNE', 'FUSEE', 'ROBOT', 'PLANETE', 'COMETE', 'ETOILE', 'GALAXIE', 'SATURNE', 'JUPITER', 'NEPTUNE', 'SOLEIL', 'ORBITE', 'ASTRONAUTE', 'METEORE', 'TELESCOPE', 'MARTIEN', 'CRATERE', 'NEBULEUSE', 'URANUS', 'MERCURE'];
+const SPACEWORDS_FR = ['FUSEE', 'PLANETE', 'COMETE', 'ETOILE', 'GALAXIE', 'SATURNE', 'ORBITE', 'METEORE', 'CRATERE', 'SOLEIL', 'ESPACE', 'CASQUE', 'MOTEUR', 'ANTENNE', 'VAISSEAU', 'PILOTE'];
 
-const RIDDLES = [
+const RIDDLES_FR = [
   { q: 'Pixo a 3 sœurs. Chaque sœur a 1 seul frère. Combien d’enfants y a-t-il dans sa famille ?', a: '4', o: ['4', '6', '7'] },
   { q: 'Un escargot grimpe un mur de 5 mètres. Le jour il monte de 3 mètres, la nuit il glisse de 2 mètres. En combien de jours arrive-t-il en haut ?', a: '3 jours', o: ['3 jours', '5 jours', '2 jours'] },
   { q: 'Qu’est-ce qui est le plus lourd : un kilo de plumes ou un kilo de pierres ?', a: 'Pareil', o: ['Pareil', 'Les pierres', 'Les plumes'] },
@@ -51,7 +53,7 @@ const RIDDLES = [
   { q: 'Un avion s’écrase pile sur la frontière entre deux pays. Où enterre-t-on les survivants ?', a: 'Nulle part', o: ['Nulle part', 'Dans le premier pays', 'Dans le second pays'] },
   { q: 'Une maman a 5 enfants. La moitié sont des garçons. Est-ce possible ?', a: 'Non, c’est impossible', o: ['Non, c’est impossible', 'Oui, bien sûr', 'Seulement avec des jumeaux'] },
 ];
-const SCIENCE = [
+const SCIENCE_FR = [
   { q: 'Quelle est la plus grosse planète du système solaire ?', a: 'Jupiter', o: ['Jupiter', 'La Terre', 'Mars'] },
   { q: 'Combien de planètes tournent autour du Soleil ?', a: '8', o: ['8', '9', '12'] },
   { q: 'Quelle planète a les anneaux les plus visibles ?', a: 'Saturne', o: ['Saturne', 'Vénus', 'Mercure'] },
@@ -78,13 +80,13 @@ const SCIENCE = [
   { q: 'Combien d’os a le corps d’un adulte ?', a: '206', o: ['206', '52', '1000'] },
   { q: 'Que fabrique une abeille ?', a: 'Du miel', o: ['Du miel', 'Du lait', 'De la soie'] },
 ];
-const TRUEFALSE = [
+const TRUEFALSE_FR = [
   ['Le Soleil est une étoile.', true], ['La Lune produit sa propre lumière.', false], ['Il n’y a pas d’air pour respirer dans l’espace.', true], ['Mars est plus grosse que la Terre.', false],
   ['Les astronautes flottent dans la station spatiale.', true], ['Jupiter est faite surtout de roche.', false], ['Une baleine est un mammifère.', true], ['Les araignées sont des insectes.', false],
   ['La Terre est ronde.', true], ['Les plantes ont besoin de lumière pour vivre.', true], ['Le son voyage dans le vide de l’espace.', false], ['Saturne flotterait dans une baignoire géante remplie d’eau.', true],
   ['Un jour sur Vénus dure plus longtemps qu’une année sur Vénus.', true], ['Les étoiles filantes sont des étoiles qui tombent.', false], ['La glace prend plus de place que l’eau liquide.', true], ['Le cœur a quatre cavités.', true],
 ];
-const ADULT = [
+const ADULT_FR = [
   { q: 'Combien de temps met la lumière de la Lune pour nous parvenir ?', a: 'Environ 1 seconde', o: ['Environ 1 seconde', 'Environ 8 minutes', 'Environ 1 heure'] },
   { q: 'Quelle planète tourne sur elle-même dans le sens inverse des autres ?', a: 'Vénus', o: ['Vénus', 'Mars', 'Neptune'] },
   { q: 'Quel est l’objet fabriqué par l’humain le plus lointain ?', a: 'La sonde Voyager 1', o: ['La sonde Voyager 1', 'Le télescope Hubble', 'La station spatiale'] },
@@ -115,6 +117,94 @@ const ADULT = [
   { q: 'Combien de planètes naines l’Union astronomique internationale reconnaît-elle ?', a: '5', o: ['5', '1', '12'] },
 ];
 
+// ---- the same banks in English (written for English speakers, not word for word)
+const WORDS_EN = [['CAT', 'cat'], ['MOON', 'moon'], ['ROCKET', 'rocket'], ['SUN', 'sun'], ['APPLE', 'apple'], ['STAR', 'star'], ['FISH', 'fish'], ['TREE', 'tree'], ['CAKE', 'cake'], ['BIKE', 'bike'], ['DOG', 'dog'], ['RABBIT', 'rabbit'],
+  ['BANANA', 'banana'], ['BED', 'lit'], ['DOOR', 'porte'], ['PLANT', 'plante'], ['BOOKS', 'livres'], ['FRIDGE', 'frigo'], ['TABLE', 'table'], ['BATH', 'bain'], ['PILLOW', 'coussin'], ['SOFA', 'canape'], ['TOYS', 'jouets'], ['SHOES', 'chaussures']];
+const CODE_EN = ['MOON', 'ROCKET', 'ROBOT', 'PLANET', 'COMET', 'STAR', 'GALAXY', 'SATURN', 'JUPITER', 'NEPTUNE', 'ORBIT', 'ASTRONAUT', 'METEOR', 'TELESCOPE', 'MARTIAN', 'CRATER', 'NEBULA', 'URANUS', 'MERCURY', 'SPACESHIP'];
+const SPACEWORDS_EN = ['ROCKET', 'PLANET', 'COMET', 'GALAXY', 'SATURN', 'ORBIT', 'METEOR', 'CRATER', 'ENGINE', 'HELMET', 'ANTENNA', 'PILOT', 'SPACE', 'ALIEN', 'LAUNCH', 'MOON'];
+const RIDDLES_EN = [
+  { q: 'Pixo has 3 sisters. Each sister has just 1 brother. How many children are in his family?', a: '4', o: ['4', '6', '7'] },
+  { q: 'A snail climbs a 5 metre wall. By day it goes up 3 metres, at night it slides down 2. How many days until it reaches the top?', a: '3 days', o: ['3 days', '5 days', '2 days'] },
+  { q: 'Which is heavier: a kilo of feathers or a kilo of stones?', a: 'The same', o: ['The same', 'The stones', 'The feathers'] },
+  { q: 'If yesterday was Monday, what day will it be the day after tomorrow?', a: 'Thursday', o: ['Thursday', 'Wednesday', 'Friday'] },
+  { q: 'The more you take away from me, the bigger I get. What am I?', a: 'A hole', o: ['A hole', 'A balloon', 'A shadow'] },
+  { q: 'I follow you everywhere when the sun shines, but I vanish at night. What am I?', a: 'Your shadow', o: ['Your shadow', 'Your cat', 'The Moon'] },
+  { q: 'What goes up and down but never moves?', a: 'The stairs', o: ['The stairs', 'A lift', 'A ball'] },
+  { q: 'What has hands but cannot clap?', a: 'A clock', o: ['A clock', 'A monkey', 'A glove'] },
+  { q: 'In a race, you overtake the person in second place. What place are you in now?', a: 'Second', o: ['Second', 'First', 'Third'] },
+  { q: 'How many months have 28 days?', a: 'All of them', o: ['All of them', 'Just one', 'Two'] },
+  { q: 'What has teeth but never eats?', a: 'A comb', o: ['A comb', 'A shark', 'A fork'] },
+  { q: 'What gets wetter the more it dries?', a: 'A towel', o: ['A towel', 'The sun', 'An umbrella'] },
+  { q: 'What belongs to you, but other people use it more than you do?', a: 'Your name', o: ['Your name', 'Your toothbrush', 'Your bike'] },
+  { q: 'A plane crashes exactly on the border between two countries. Where do they bury the survivors?', a: 'Nowhere', o: ['Nowhere', 'In the first country', 'In the second country'] },
+  { q: 'A mum has 5 children. Half of them are boys. Is that possible?', a: 'No, it’s impossible', o: ['No, it’s impossible', 'Yes, of course', 'Only with twins'] },
+];
+const SCIENCE_EN = [
+  { q: 'What is the biggest planet in the Solar System?', a: 'Jupiter', o: ['Jupiter', 'Earth', 'Mars'] },
+  { q: 'How many planets go around the Sun?', a: '8', o: ['8', '9', '12'] },
+  { q: 'Which planet has the easiest rings to see?', a: 'Saturn', o: ['Saturn', 'Venus', 'Mercury'] },
+  { q: 'On the Moon, you would weigh…', a: '6 times less', o: ['6 times less', 'The same', '2 times more'] },
+  { q: 'How long does sunlight take to reach the Earth?', a: 'About 8 minutes', o: ['About 8 minutes', '1 second', '1 day'] },
+  { q: 'What is the closest star to the Earth?', a: 'The Sun', o: ['The Sun', 'The Moon', 'The North Star'] },
+  { q: 'Which planet is called the Red Planet?', a: 'Mars', o: ['Mars', 'Jupiter', 'Neptune'] },
+  { q: 'Which planet is closest to the Sun?', a: 'Mercury', o: ['Mercury', 'Venus', 'Earth'] },
+  { q: 'Which is the hottest planet?', a: 'Venus', o: ['Venus', 'Mercury', 'Mars'] },
+  { q: 'How long does the Earth take to go once around the Sun?', a: 'A year', o: ['A year', 'A day', 'A month'] },
+  { q: 'How long does the Earth take to spin around once?', a: 'A day', o: ['A day', 'A week', 'A year'] },
+  { q: 'Who was the first person to walk on the Moon, in 1969?', a: 'Neil Armstrong', o: ['Neil Armstrong', 'Yuri Gagarin', 'Christopher Columbus'] },
+  { q: 'What is our galaxy called?', a: 'The Milky Way', o: ['The Milky Way', 'Andromeda', 'The Great Bear'] },
+  { q: 'Which planet has a Great Red Spot, a giant storm?', a: 'Jupiter', o: ['Jupiter', 'Mars', 'Uranus'] },
+  { q: 'At what temperature does water boil at sea level?', a: '100 °C', o: ['100 °C', '50 °C', '200 °C'] },
+  { q: 'What is the biggest animal in the world?', a: 'The blue whale', o: ['The blue whale', 'The elephant', 'The great white shark'] },
+  { q: 'How many legs does a spider have?', a: '8', o: ['8', '6', '10'] },
+  { q: 'What is the biggest ocean?', a: 'The Pacific', o: ['The Pacific', 'The Atlantic', 'The Indian Ocean'] },
+  { q: 'What is the highest mountain in the world?', a: 'Mount Everest', o: ['Mount Everest', 'Mont Blanc', 'Kilimanjaro'] },
+  { q: 'Which gas do plants take in to grow?', a: 'Carbon dioxide', o: ['Carbon dioxide', 'Helium', 'Neon'] },
+  { q: 'How many days are there in a leap year?', a: '366', o: ['366', '365', '364'] },
+  { q: 'How many sides does a hexagon have?', a: '6', o: ['6', '5', '8'] },
+  { q: 'What is the Earth’s natural satellite?', a: 'The Moon', o: ['The Moon', 'Mars', 'The Sun'] },
+  { q: 'How many bones are in an adult’s body?', a: '206', o: ['206', '52', '1000'] },
+  { q: 'What does a bee make?', a: 'Honey', o: ['Honey', 'Milk', 'Silk'] },
+];
+const TRUEFALSE_EN = [
+  ['The Sun is a star.', true], ['The Moon makes its own light.', false], ['There is no air to breathe in space.', true], ['Mars is bigger than the Earth.', false],
+  ['Astronauts float inside the space station.', true], ['Jupiter is made mostly of rock.', false], ['A whale is a mammal.', true], ['Spiders are insects.', false],
+  ['The Earth is round.', true], ['Plants need light to live.', true], ['Sound travels through empty space.', false], ['Saturn would float in a giant bath full of water.', true],
+  ['A day on Venus lasts longer than a year on Venus.', true], ['Shooting stars are stars that fall.', false], ['Ice takes up more room than liquid water.', true], ['The heart has four chambers.', true],
+];
+const ADULT_EN = [
+  { q: 'How long does moonlight take to reach us?', a: 'About 1 second', o: ['About 1 second', 'About 8 minutes', 'About 1 hour'] },
+  { q: 'Which planet spins the opposite way to the others?', a: 'Venus', o: ['Venus', 'Mars', 'Neptune'] },
+  { q: 'What is the most distant object ever made by humans?', a: 'The Voyager 1 probe', o: ['The Voyager 1 probe', 'The Hubble telescope', 'The space station'] },
+  { q: 'What is the most abundant element in the Universe?', a: 'Hydrogen', o: ['Hydrogen', 'Oxygen', 'Carbon'] },
+  { q: 'Roughly how many days is a year on Mars?', a: '687 days', o: ['687 days', '365 days', '88 days'] },
+  { q: 'What is the largest known volcano in the Solar System?', a: 'Olympus Mons', o: ['Olympus Mons', 'Etna', 'Mauna Kea'] },
+  { q: 'What is the big galaxy next door to ours?', a: 'Andromeda', o: ['Andromeda', 'Orion', 'Centaurus'] },
+  { q: 'Who was the first woman in space, in 1963?', a: 'Valentina Tereshkova', o: ['Valentina Tereshkova', 'Sally Ride', 'Mae Jemison'] },
+  { q: 'Which planet is less dense than water?', a: 'Saturn', o: ['Saturn', 'Jupiter', 'Mercury'] },
+  { q: 'How many hearts does an octopus have?', a: '3', o: ['3', '1', '2'] },
+  { q: 'What is the smallest bone in the human body?', a: 'The stirrup, in the ear', o: ['The stirrup, in the ear', 'A bone in the little toe', 'The tailbone'] },
+  { q: 'Which metal is liquid at room temperature?', a: 'Mercury', o: ['Mercury', 'Aluminium', 'Lead'] },
+  { q: 'Roughly how fast does light travel?', a: '300,000 km a second', o: ['300,000 km a second', '3,000 km a second', '300 km a second'] },
+  { q: 'How long does the space station take to go around the Earth?', a: 'About 90 minutes', o: ['About 90 minutes', 'About 24 hours', 'About a week'] },
+  { q: 'Which country launched Sputnik, the first satellite, in 1957?', a: 'The USSR', o: ['The USSR', 'The United States', 'The United Kingdom'] },
+  { q: 'How many chromosomes does a human being have?', a: '46', o: ['46', '23', '64'] },
+  { q: 'Which tiny animal can survive in the vacuum of space?', a: 'The tardigrade', o: ['The tardigrade', 'The ant', 'The cockroach'] },
+  { q: 'What is the largest moon in the Solar System?', a: 'Ganymede', o: ['Ganymede', 'Our Moon', 'Titan'] },
+  { q: 'In what year did Pluto lose its planet status?', a: '2006', o: ['2006', '1992', '2015'] },
+  { q: 'What is the brightest star in the night sky?', a: 'Sirius', o: ['Sirius', 'The North Star', 'Betelgeuse'] },
+  { q: 'A farmer has 17 sheep. All but 9 run away. How many are left?', a: '9', o: ['9', '8', '0'] },
+  { q: 'A bat and a ball cost $1.10 in total. The bat costs $1 more than the ball. How much is the ball?', a: '5 cents', o: ['5 cents', '10 cents', '1 cent'] },
+  { q: '5 machines make 5 widgets in 5 minutes. How long do 100 machines take to make 100 widgets?', a: '5 minutes', o: ['5 minutes', '100 minutes', '20 minutes'] },
+  { q: 'Water lilies double every day and cover the lake in 48 days. How many days until they cover half of it?', a: '47 days', o: ['47 days', '24 days', '36 days'] },
+  { q: 'Mary’s father has 5 daughters: Nana, Nene, Nini, Nono. What is the fifth one called?', a: 'Mary', o: ['Mary', 'Nunu', 'Nyny'] },
+  { q: 'What has keys but opens no doors?', a: 'A piano', o: ['A piano', 'A keyring', 'A lock'] },
+  { q: 'Which planet has the fastest winds in the Solar System?', a: 'Neptune', o: ['Neptune', 'Earth', 'Mercury'] },
+  { q: 'How many dwarf planets does the International Astronomical Union recognise?', a: '5', o: ['5', '1', '12'] },
+];
+const WORDS = EN ? WORDS_EN : WORDS_FR, CODE = EN ? CODE_EN : CODE_FR, SPACEWORDS = EN ? SPACEWORDS_EN : SPACEWORDS_FR, RIDDLES = EN ? RIDDLES_EN : RIDDLES_FR,
+  SCIENCE = EN ? SCIENCE_EN : SCIENCE_FR, TRUEFALSE = EN ? TRUEFALSE_EN : TRUEFALSE_FR, ADULT = EN ? ADULT_EN : ADULT_FR;
+
 const shift = (w, n = 1) => w.split('').map((c) => String.fromCharCode(65 + ((c.charCodeAt(0) - 65 + n) % 26))).join('');
 const scramble = (w) => { let s; do { s = shuffle(w.split('')).join(''); } while (s === w); return s; };
 const nums = (r, spread, n = 3) => { const o = new Set([r]); while (o.size < n) { const x = r + (R(2 * spread + 1) - spread); if (x !== r && x >= 0) o.add(x); } return shuffle([...o]); };
@@ -124,7 +214,7 @@ const textOpts = (o, a) => shuffle(o).map((x) => ({ html: x, ok: x === a }));
 function little() { // 3 to 5: everything is a picture and said aloud
   const kind = pick(['col', 'count', 'shape', 'odd', 'size', 'match']);
   if (kind === 'col') { const names = shuffle(Object.keys(BALLS)).slice(0, 4), t = pick(names); return { voice: ['col', `col_${t}`], text: '', big: true, options: names.map((n) => ({ html: ball(n), ok: n === t })) }; }
-  if (kind === 'count') { const n = 1 + R(5), what = pick(['star', 'apple', 'fish', 'cat', 'moon', 'rabbit']), o = nums(n, 2).map((x) => Math.max(1, x)); const opts = [...new Set(o)]; while (opts.length < 3) opts.push(n + opts.length);
+  if (kind === 'count') { const n = 1 + R(5), what = pick(['star', 'apple', 'fish', 'cat', 'moon', 'rabbit']), o = nums(n, 2).map((x) => Math.max(1, x)); const opts = [...new Set(o)]; for (let x = 1; opts.length < 3; x++) if (!opts.includes(x)) opts.push(x);
     return { voice: ['count2'], text: `<div class="stars">${ic(what, 'twk').repeat(n)}</div>`, big: true, options: shuffle(opts.slice(0, 3)).map((x) => ({ html: `<b class="num">${x}</b>`, ok: x === n })) }; }
   if (kind === 'shape') { const names = shuffle(Object.keys(SHAPES)), t = pick(names); return { voice: ['shape', `shape_${t}`], text: '', big: true, options: names.map((n) => ({ html: shape(n), ok: n === t })) }; }
   if (kind === 'odd') { const same = pick(ALLPICS), other = pick(ALLPICS.filter((x) => x !== same)), pos = R(4);
@@ -151,13 +241,13 @@ function middle() { // 6 to 8: small sums, patterns, reading
 function older() { // 9 to 12: codes, riddles, science, numbers
   const kind = pick(['cipher', 'riddle', 'science', 'seq', 'mult', 'anagram', 'tf']);
   if (kind === 'cipher') { const w = fresh('c', CODE), others = shuffle(CODE.filter((x) => x !== w && Math.abs(x.length - w.length) < 3)).slice(0, 2);
-    return { voice: ['cipher'], text: `<p class="code">${shift(w).split('').map((c) => `<span>${c}</span>`).join('')}</p><p class="small">A → B, B → C… Recule chaque lettre d’un cran.</p>`, options: textOpts([w, ...others], w) }; }
+    return { voice: ['cipher'], text: `<p class="code">${shift(w).split('').map((c) => `<span>${c}</span>`).join('')}</p><p class="small">${tr('A → B, B → C… Recule chaque lettre d’un cran.', 'A → B, B → C… Move each letter back by one.')}</p>`, options: textOpts([w, ...others], w) }; }
   if (kind === 'riddle') { const r = fresh('r', RIDDLES); return { voice: ['riddle'], text: `<p class="q">${r.q}</p>`, options: textOpts(r.o, r.a) }; }
   if (kind === 'science') { const r = fresh('s', SCIENCE); return { voice: ['science'], text: `<p class="q">${r.q}</p>`, options: textOpts(r.o, r.a) }; }
   if (kind === 'mult') { const a = 2 + R(9), b = 2 + R(9); return { voice: ['mult'], text: `<p class="huge">${a} × ${b} = <span class="qm">?</span></p>`, options: numOpts(a * b, 6) }; }
   if (kind === 'anagram') { const w = fresh('an', SPACEWORDS), others = shuffle(SPACEWORDS.filter((x) => x !== w)).slice(0, 2);
     return { voice: ['anagram'], text: `<p class="code">${scramble(w).split('').map((c) => `<span>${c}</span>`).join('')}</p>`, options: textOpts([w, ...others], w) }; }
-  if (kind === 'tf') { const [s, v] = fresh('tf', TRUEFALSE); return { voice: ['truefalse'], text: `<p class="q">${s}</p>`, options: [{ html: 'Vrai', ok: v }, { html: 'Faux', ok: !v }] }; }
+  if (kind === 'tf') { const [s, v] = fresh('tf', TRUEFALSE); return { voice: ['truefalse'], text: `<p class="q">${s}</p>`, options: [{ html: tr('Vrai', 'True'), ok: v }, { html: tr('Faux', 'False'), ok: !v }] }; }
   return seq(false);
 }
 // number sequences, generated: add, double, squares, two-step
@@ -176,15 +266,15 @@ function adult() { // grown-ups: real trivia and logic traps
   if (kind === 'trivia') { const r = fresh('ad', ADULT); return { voice: ['adult'], text: `<p class="q">${r.q}</p>`, options: textOpts(r.o, r.a) }; }
   if (kind === 'mult') { const a = 12 + R(38), b = 3 + R(7); return { voice: ['mult'], text: `<p class="huge">${a} × ${b} = <span class="qm">?</span></p>`, options: numOpts(a * b, 12) }; }
   if (kind === 'cipher') { const w = fresh('ca', CODE.filter((x) => x.length >= 7)), n = 3, others = shuffle(CODE.filter((x) => x !== w && x.length >= 6)).slice(0, 2);
-    return { voice: ['cipher'], text: `<p class="code">${shift(w, n).split('').map((c) => `<span>${c}</span>`).join('')}</p><p class="small">Code de César : chaque lettre a avancé de 3 crans.</p>`, options: textOpts([w, ...others], w) }; }
+    return { voice: ['cipher'], text: `<p class="code">${shift(w, n).split('').map((c) => `<span>${c}</span>`).join('')}</p><p class="small">${tr('Code de César : chaque lettre a avancé de 3 crans.', 'Caesar code: every letter moved forward 3 places.')}</p>`, options: textOpts([w, ...others], w) }; }
   return seq(true);
 }
 export function challenge(age) { return age === 'p' ? little() : age === 'm' ? middle() : age === 'g' ? older() : adult(); }
 
 // where the parent can hide a card: an illustrated picture for the little ones, a riddle for everyone
 export const SPOTS = [
-  ['canape', 'Le canapé'], ['frigo', 'Le frigo'], ['lit', 'Le lit'], ['table', 'La table'], ['livres', 'Les livres'], ['bain', 'La salle de bain'],
-  ['porte', 'La porte d’entrée'], ['coussin', 'Sous un coussin'], ['plante', 'Une plante'], ['jouets', 'Les jouets'], ['chaussures', 'Les chaussures'],
-];
-export const AVATARS = [['fox', 'Renard'], ['panda', 'Panda'], ['lion', 'Lion'], ['bunny', 'Lapin'], ['owl', 'Hibou'], ['turtle', 'Tortue']];
+  ['canape', 'Le canapé', 'The sofa'], ['frigo', 'Le frigo', 'The fridge'], ['lit', 'Le lit', 'The bed'], ['table', 'La table', 'The table'], ['livres', 'Les livres', 'The books'], ['bain', 'La salle de bain', 'The bathroom'],
+  ['porte', 'La porte d’entrée', 'The front door'], ['coussin', 'Sous un coussin', 'Under a cushion'], ['plante', 'Une plante', 'A plant'], ['jouets', 'Les jouets', 'The toys'], ['chaussures', 'Les chaussures', 'The shoes'],
+].map(([id, fr, en]) => [id, EN ? en : fr]);
+export const AVATARS = [['fox', 'Renard', 'Fox'], ['panda', 'Panda', 'Panda'], ['lion', 'Lion', 'Lion'], ['bunny', 'Lapin', 'Bunny'], ['owl', 'Hibou', 'Owl'], ['turtle', 'Tortue', 'Turtle']].map(([id, fr, en]) => [id, EN ? en : fr]);
 export { shuffle, pick, R };

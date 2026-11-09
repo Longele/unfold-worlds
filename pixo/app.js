@@ -7,14 +7,15 @@ import * as THREE from 'three';
 import { Room, FLOOR } from './room.js';
 import { LINES } from './lines.js';
 import { challenge, SPOTS, AVATARS, shuffle, pick, R } from './games.js';
+import { LANG, EN, t as tr, translatePage, switchLang } from './i18n.js';
 
 const $ = (s) => document.querySelector(s);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const Q = new URLSearchParams(location.search), TEST = Q.has('test'), FAST = TEST && !Q.has('anim'); // test hooks: short voices, and short animations unless &anim
 const T = (ms) => (FAST ? Math.min(ms, 120) : ms);
-const L = LINES.fr;
+const L = LINES[LANG];
 const PCOL = ['#ff6fa0', '#3b9cff', '#f59e0b', '#9a5cf0', '#22b98c', '#ef4f6b'];
-const AGES = [['p', '3-5 ans', 'Petits'], ['m', '6-8 ans', 'Moyens'], ['g', '9-12 ans', 'Grands'], ['a', 'Adulte', 'Parents']];
+const AGES = EN ? [['p', '3-5 yrs', 'Little'], ['m', '6-8 yrs', 'Middle'], ['g', '9-12 yrs', 'Big'], ['a', 'Adult', 'Grown-ups']] : [['p', '3-5 ans', 'Petits'], ['m', '6-8 ans', 'Moyens'], ['g', '9-12 ans', 'Grands'], ['a', 'Adulte', 'Parents']];
 const KEY = 'grande-chasse', RECORD = 'grande-chasse-record';
 const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
@@ -29,7 +30,7 @@ function load(path) {
   if (!buf[path]) buf[path] = fetch(path).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject())).then((b) => ac.decodeAudioData(b)).catch(() => null);
   return buf[path];
 }
-const vpath = (id) => `audio/fr/${id}.mp3`, spath = (n) => `sfx/${n}.mp3`;
+const vpath = (id) => `audio/${LANG}/${id}.mp3`, spath = (n) => `sfx/${n}.mp3`;
 async function sfx(name, vol = 1, rate = 1) {
   if (!ac) return; const b = await load(spath(name)); if (!b) return;
   const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = b; s.playbackRate.value = rate; g.gain.value = vol; s.connect(g).connect(master); s.start(); return s;
@@ -97,7 +98,7 @@ let step = 0;
 function playerRow(i, name = '', age = 'm', av) {
   av = av || AVATARS[i % AVATARS.length][0];
   const d = document.createElement('div'); d.className = 'player'; d.dataset.av = av; d.dataset.age = age;
-  d.innerHTML = `<div class="top"><input maxlength="14" placeholder="Prénom" autocomplete="off" enterkeyhint="done"><button class="x" aria-label="Retirer">✕</button></div>
+  d.innerHTML = `<div class="top"><input maxlength="14" placeholder="${tr('Prénom', 'First name')}" autocomplete="off" enterkeyhint="done"><button class="x" aria-label="${tr('Retirer', 'Remove')}">✕</button></div>
     <div class="avs">${AVATARS.map(([a, l]) => `<button data-a="${a}" aria-label="${l}" class="${a === av ? 'on' : ''}"><img src="${avatarSrc(a)}" alt=""></button>`).join('')}</div>
     <div class="ages">${AGES.map(([a, l, s]) => `<button data-g="${a}" class="${a === age ? 'on' : ''}">${l}<small>${s}</small></button>`).join('')}</div>`;
   d.querySelector('input').value = name;
@@ -109,7 +110,7 @@ function playerRow(i, name = '', age = 'm', av) {
 const spotLabel = (id) => (SPOTS.find((s) => s[0] === id) || SPOTS[0])[1];
 function spotRow(k, def) {
   const d = document.createElement('div'); d.className = 'spot'; d.dataset.k = k; d.dataset.spot = def;
-  const draw = () => { d.innerHTML = `<img src="cards/c${k}.jpg" alt="Carte ${k}"><button class="pickbtn"><img src="img/ic/${d.dataset.spot}.webp" alt="">${spotLabel(d.dataset.spot)}<em>Changer</em></button>`; d.querySelector('.pickbtn').onclick = open; };
+  const draw = () => { d.innerHTML = `<img src="cards/c${k}.jpg" alt="${tr('Carte', 'Card')} ${k}"><button class="pickbtn"><img src="img/ic/${d.dataset.spot}.webp" alt="">${spotLabel(d.dataset.spot)}<em>${tr('Changer', 'Change')}</em></button>`; d.querySelector('.pickbtn').onclick = open; };
   const open = () => {
     $('#spotpick h2 span').textContent = k; const g = $('#spotpick .grid');
     g.innerHTML = SPOTS.map(([id, l]) => `<button data-s="${id}" class="${id === d.dataset.spot ? 'on' : ''}"><img src="img/ic/${id}.webp" alt="">${l}</button>`).join('');
@@ -121,7 +122,7 @@ function spotRow(k, def) {
 function showStep(n) {
   step = n; document.querySelectorAll('.step').forEach((s) => s.classList.toggle('on', +s.dataset.step === n));
   document.querySelectorAll('.dots i').forEach((d, i) => d.classList.toggle('on', i <= n)); $('.wstep').textContent = `${n + 1}/4`;
-  $('#wnext').textContent = n === 3 ? 'Lancer la chasse' : 'Suivant'; $('#setup').scrollTop = 0;
+  $('#wnext').textContent = n === 3 ? tr('Lancer la chasse', 'Start the hunt') : tr('Suivant', 'Next'); $('#setup').scrollTop = 0;
 }
 function setup() {
   playerRow(0);
@@ -139,19 +140,19 @@ function setup() {
   $('#dl').onclick = downloadDiploma;
   $('#pausebtn').onclick = () => { screen('pause'); ac?.suspend(); };
   $('#presume').onclick = () => { screen(null); ac?.resume(); };
-  $('#pmusic').onclick = () => { S.music = !S.music; $('#pmusic').textContent = `Musique : ${S.music ? 'oui' : 'non'}`; duck(false); };
+  $('#pmusic').onclick = () => { S.music = !S.music; $('#pmusic').textContent = tr(`Musique : ${S.music ? 'oui' : 'non'}`, `Music: ${S.music ? 'on' : 'off'}`); duck(false); };
   $('#prestart').onclick = () => { forget(); location.reload(); };
   let rec = null; try { rec = JSON.parse(localStorage.getItem(RECORD) || 'null'); } catch {}
-  if (rec?.stars) { const f = document.createElement('li'); f.innerHTML = `Record : <b>${rec.stars} étoiles</b>`; $('.facts').append(f); }
+  if (rec?.stars) { const f = document.createElement('li'); f.innerHTML = tr(`Record : <b>${rec.stars} étoiles</b>`, `Record: <b>${rec.stars} stars</b>`); $('.facts').append(f); }
   // a hunt in progress in this tab (the page was reloaded): offer to go on
   let saved = null; try { saved = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch {}
   if (saved?.players?.length && saved.next > 1) {
-    const b = $('#resume'); b.hidden = false; b.textContent = saved.next > 6 ? 'Reprendre : le grand final' : `Reprendre la chasse (carte ${saved.next} sur 6)`;
+    const b = $('#resume'); b.hidden = false; b.textContent = saved.next > 6 ? tr('Reprendre : le grand final', 'Resume: the grand finale') : tr(`Reprendre la chasse (carte ${saved.next} sur 6)`, `Resume the hunt (card ${saved.next} of 6)`);
     b.onclick = () => { Object.assign(S, saved); unlockAudio(); go(true); };
   }
 }
 function readSetup() {
-  S.players = [...document.querySelectorAll('.player')].map((d, i) => ({ name: d.querySelector('input').value.trim() || `Explorateur ${i + 1}`, age: d.dataset.age, av: d.dataset.av, color: PCOL[i % PCOL.length], stars: 0 }));
+  S.players = [...document.querySelectorAll('.player')].map((d, i) => ({ name: d.querySelector('input').value.trim() || `${tr('Explorateur', 'Explorer')} ${i + 1}`, age: d.dataset.age, av: d.dataset.av, color: PCOL[i % PCOL.length], stars: 0 }));
   document.querySelectorAll('.spot').forEach((d) => { S.spots[+d.dataset.k] = d.dataset.spot; });
   S.next = 1; S.got = 0; S.stars = 0;
   // every hunt is different: which piece hides on which card, which mini-game guards it, when Pixo hides
@@ -166,7 +167,7 @@ function drawSlots() { $('#slots').innerHTML = S.order.map((p, i) => `<i class="
 function unlockAudio() {
   if (ac) return; ac = new (window.AudioContext || window.webkitAudioContext)(); master = ac.createGain(); master.gain.value = 0.95; master.connect(ac.destination); ac.resume();
   try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch {} // iPhone: play even with the silent switch on
-  for (const n of ['tap', 'portal', 'appear', 'part', 'good', 'bad', 'poof', 'found', 'slot', 'detect', 'giggle']) load(spath(n));
+  for (const n of ['engine', 'poof', 'appear', 'tap', 'portal', 'part', 'good', 'bad', 'found', 'slot', 'detect', 'giggle']) load(spath(n));
 }
 async function keepAwake() { try { wake = await navigator.wakeLock?.request('screen'); } catch {} }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.phase !== 'home' && S.phase !== 'end') keepAwake(); });
@@ -181,7 +182,7 @@ async function go(resume) {
     await g; if (!ok) S.mode = 'nocam';
   }
   if (S.mode === 'nocam') { room.drawRoom(); room.pitch = -0.42; if (!resume) S.plan = S.plan.map((g) => (g === 'color' ? 'stars' : g)); }
-  if (!room.useGyro) $('#arrow em').innerHTML = 'Par là !<br>Glissez ou ← →';
+  if (!room.useGyro) $('#arrow em').innerHTML = tr('Par là !<br>Glissez ou ← →', 'This way!<br>Drag or ← →');
   (async () => { for (const id of Object.keys(L)) await load(vpath(id)); })(); // the voice, in the background
   if (!resume) await introFilm();
   startMusic();
@@ -196,8 +197,15 @@ const ahead = () => (S.mode === 'nocam' ? room.floorAhead(1.6, 2.0) : room.floor
 async function introFilm() {
   if (FAST) return; S.phase = 'film';
   const v = $('#intro video'); v.src = 'img/intro.mp4'; screen('intro');
-  sfx('engine', 0.5, 1.1); setTimeout(() => sfx('poof', 0.9), 4300); setTimeout(() => sfx('appear', 0.9), 4700);
-  await new Promise((res) => { let done = false; const end = () => { if (!done) { done = true; res(); } }; v.onended = end; $('#skipintro').onclick = end; setTimeout(end, 9000); v.play().catch(end); });
+  // the sounds follow the film's own clock (not a timer started before the video was ready), decoded beforehand
+  await Promise.race([Promise.all(['engine', 'poof', 'appear'].map((n) => load(spath(n)))), wait(2500)]);
+  const cues = [[0, 'engine', 0.5, 1.1], [4.3, 'poof', 0.9, 1], [4.7, 'appear', 0.9, 1]]; let ci = 0;
+  await new Promise((res) => {
+    let done = false; const end = () => { if (!done) { done = true; res(); } };
+    v.onended = end; $('#skipintro').onclick = end; setTimeout(end, 14000);
+    const tick = () => { if (done) return; while (ci < cues.length && !v.paused && v.currentTime >= cues[ci][0]) { const [, n, vol, rate] = cues[ci++]; sfx(n, vol, rate); if (TEST) console.warn('intro cue', n, v.currentTime.toFixed(2)); } requestAnimationFrame(tick); };
+    v.addEventListener('playing', tick, { once: true }); v.play().catch(end);
+  });
   v.pause(); flash(); screen(null);
 }
 
@@ -249,9 +257,9 @@ async function startMind() {
 }
 async function scan(k) {
   S.phase = `scan${k}`; S.want = k; const sc = $('#scan'), finale = k === 1 && S.got === 6;
-  sc.querySelector('.kick').textContent = finale ? 'Le grand final' : `Carte ${k} sur 6`;
-  sc.querySelector('.t').textContent = finale ? 'Posez la carte 1 et regardez-la' : `Montrez la carte ${k} !`;
-  sc.querySelector('.nocam img').src = `cards/c${k}.jpg`; $('#foundbtn').textContent = `J’ai trouvé la carte ${k}`;
+  sc.querySelector('.kick').textContent = finale ? tr('Le grand final', 'The grand finale') : tr(`Carte ${k} sur 6`, `Card ${k} of 6`);
+  sc.querySelector('.t').textContent = finale ? tr('Posez la carte 1 et regardez-la', 'Put card 1 down and look at it') : tr(`Montrez la carte ${k} !`, `Show card ${k}!`);
+  sc.querySelector('.nocam img').src = `cards/c${k}.jpg`; $('#foundbtn').textContent = tr(`J’ai trouvé la carte ${k}`, `I found card ${k}`);
   room.pixo.g.visible = false; for (const id of [...room.sprites.keys()]) if (id !== 'ship') room.removeSprite(id);
   let found; const done = new Promise((r) => { found = r; });
   window.__chasse.found = (n) => found(n);
@@ -307,7 +315,7 @@ async function hideAndSeek(k, id) {
   await room.teleport(to, FAST ? 30 : 450); stickPart(id); if (s) s.visible = true;
   setTimeout(() => sfx('giggle', 0.7), 300);
   await v;
-  S.hunting = true; S.seen = 0; $('#arrow em').firstChild.textContent = 'Pixo est par là !'; $('#arrow').classList.add('on');
+  S.hunting = true; S.seen = 0; $('#arrow em').firstChild.textContent = tr('Pixo est par là !', 'Pixo is this way!'); $('#arrow').classList.add('on');
   await new Promise((res) => { S.foundPixo = res; window.__chasse.foundPixo = res; });
   S.hunting = false; $('#arrow').classList.remove('on'); sfx('found'); room.sparks(room.pixo.g.position.clone().add(new THREE.Vector3(0, 0.3, 0)), 36, [0xff9ad0, 0xffe08a, 0x9ff3e0], 1.3, 0.06);
   addStars(S.players[(k - 1) % S.players.length], 1);
@@ -387,18 +395,18 @@ async function simonGame(k) {
   const light = async (i, ms = 420) => { pads[i].classList.add('lit'); note(PADF[i], 0.5); await wait(FAST ? 40 : ms); pads[i].classList.remove('lit'); await wait(FAST ? 20 : 140); };
   for (const p of order(k)) {
     const start = { p: 2, m: 3, g: 4, a: 5 }[p.age] || 3; let len = start, seqv = Array.from({ length: start }, () => R(4)), passed = 0;
-    banner(p); el.classList.add('on', 'lock'); st.textContent = `${p.name}, à toi !`; await say('turn', 'talk');
+    banner(p); el.classList.add('on', 'lock'); st.textContent = tr(`${p.name}, à toi !`, `${p.name}, your turn!`); await say('turn', 'talk');
     for (let round = 0; round < 4; round++) {
-      el.classList.add('lock'); st.textContent = 'Regarde bien…'; await say('simon_watch', null); await wait(T(300));
+      el.classList.add('lock'); st.textContent = tr('Regarde bien…', 'Watch closely…'); await say('simon_watch', null); await wait(T(300));
       for (const i of seqv) await light(i, Math.max(260, 460 - round * 50));
-      st.textContent = 'À toi !'; say('simon_go', null); el.classList.remove('lock');
+      st.textContent = tr('À toi !', 'Your turn!'); say('simon_go', null); el.classList.remove('lock');
       const ok = await new Promise((res) => {
         let n = 0; window.__chasse.simon = seqv;
         pads.forEach((b, i) => b.onclick = () => { light(i, 160); if (i !== seqv[n]) { res(false); return; } n++; if (n === seqv.length) res(true); });
       });
       pads.forEach((b) => b.onclick = null); el.classList.add('lock');
-      if (!ok) { sfx('bad'); st.textContent = 'Oups !'; await say(`bad${1 + R(2)}`, 'sad'); break; }
-      passed++; sfx('good'); st.textContent = 'Bravo !'; room.sparks(room.pixo.g.position.clone().add(new THREE.Vector3(0, 0.7, 0)), 24, [0x9ff3e0, 0xff9ad0, 0xffe08a], 1, 0.05);
+      if (!ok) { sfx('bad'); st.textContent = tr('Oups !', 'Oops!'); await say(`bad${1 + R(2)}`, 'sad'); break; }
+      passed++; sfx('good'); st.textContent = tr('Bravo !', 'Well done!'); room.sparks(room.pixo.g.position.clone().add(new THREE.Vector3(0, 0.7, 0)), 24, [0x9ff3e0, 0xff9ad0, 0xffe08a], 1, 0.05);
       if (round < 3) { seqv.push(R(4)); len++; await say('simon_more', 'happy'); }
     }
     addStars(p, passed + (passed === 4 ? 1 : 0)); el.classList.remove('on'); unbanner(); await wait(T(400));
@@ -413,7 +421,7 @@ async function blowGame() {
   if (!IOS && !TEST && navigator.mediaDevices?.getUserMedia && S.mode === 'cam') {
     try { mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }); an = ac.createAnalyser(); an.fftSize = 512; ac.createMediaStreamSource(mic).connect(an); data = new Float32Array(an.fftSize); } catch { mic = null; }
   }
-  el.classList.toggle('mic', !!mic); el.querySelector('.bt').textContent = mic ? 'Soufflez tous très fort sur le téléphone !' : 'Tapotez tous très vite !';
+  el.classList.toggle('mic', !!mic); el.querySelector('.bt').textContent = mic ? tr('Soufflez tous très fort sur le téléphone !', 'Everyone blow hard on the phone!') : tr('Tapotez tous très vite !', 'Everyone tap really fast!');
   await say(mic ? 'blow_intro' : 'tap_intro', 'sad');
   let heat = 1; g.style.setProperty('--h', heat); el.classList.add('on');
   const tapper = $('#tapper'); const cool = () => { heat = Math.max(0, heat - 0.035); sfx('tap', 0.4, 0.8 + Math.random() * 0.4); };
@@ -433,6 +441,7 @@ async function blowGame() {
 
 // --- colour hunt: find something of this colour in the house and show it in the ring (camera)
 const HUES = { rouge: [[345, 360], [0, 12]], orange: [[13, 38]], jaune: [[40, 68]], vert: [[75, 165]], bleu: [[190, 250]], violet: [[255, 295]], rose: [[296, 344]] };
+const CNAME_EN = { rouge: 'red', orange: 'orange', jaune: 'yellow', vert: 'green', bleu: 'blue', violet: 'purple', rose: 'pink' };
 const HCOL = { rouge: '#e8364a', orange: '#ff8a2a', jaune: '#ffd028', vert: '#2dbb5d', bleu: '#2a7de1', violet: '#9a4ee0', rose: '#ff7fb6' };
 async function colorGame(k) {
   S.phase = `color${k}`; const el = $('#hunt'), ring = el.querySelector('.ring i'), cv = document.createElement('canvas'); cv.width = 32; cv.height = 32; const cx = cv.getContext('2d', { willReadFrequently: true });
@@ -440,7 +449,7 @@ async function colorGame(k) {
   for (const p of order(k)) {
     const list = p.age === 'p' ? ['rouge', 'bleu', 'jaune', 'vert'] : p.age === 'm' ? ['rouge', 'bleu', 'jaune', 'vert', 'orange', 'violet'] : ['rouge', 'bleu', 'jaune', 'vert', 'orange', 'violet', 'rose'];
     const c = pick(list.filter((x) => !used.includes(x)).length ? list.filter((x) => !used.includes(x)) : list); used.push(c);
-    el.style.setProperty('--hc', HCOL[c]); el.querySelector('.cname').textContent = c; ring.style.setProperty('--p', 0);
+    el.style.setProperty('--hc', HCOL[c]); el.querySelector('.cname').textContent = EN ? CNAME_EN[c] : c; ring.style.setProperty('--p', 0);
     const secs = FAST ? 2 : p.age === 'a' ? 30 : 45; banner(p, `${secs}`); el.classList.add('on');
     await say('turn', 'talk'); say(`col_${c}`, 'talk');
     let prog = 0; const t0 = performance.now();
@@ -475,14 +484,14 @@ async function partToPocket(k, id) {
 // where the next card is: a riddle for everyone, a picture for the little ones
 async function clue(k) {
   S.phase = `clue${k}`; const spot = SPOTS.find((s) => s[0] === S.spots[k]) || SPOTS[0];
-  $('#clue .kick').textContent = `La carte ${k} est cachée…`; $('#clue .cardmini img').src = `cards/c${k}.jpg`;
+  $('#clue .kick').textContent = tr(`La carte ${k} est cachée…`, `Card ${k} is hidden…`); $('#clue .cardmini img').src = `cards/c${k}.jpg`;
   $('#clue .riddle').textContent = (L[`h_${spot[0]}`] || '').replace(/^./, (c) => c.toUpperCase());
   const pic = $('#clue .pic'); pic.querySelector('img').src = `img/ic/${spot[0]}.webp`; pic.querySelector('span').textContent = spot[1]; pic.classList.remove('on'); $('#peek').hidden = false;
   $('#peek').onclick = () => { pic.classList.add('on'); $('#peek').hidden = true; sfx('found', 0.7); };
-  $('#cluego').textContent = `On a trouvé la carte ${k} !`;
+  $('#cluego').textContent = tr(`On a trouvé la carte ${k} !`, `We found card ${k}!`);
   screen('clue');
   const go = new Promise((r) => { $('#cluego').onclick = () => { sfx('tap'); r(); }; });
-  await say('next_card', 'talk'); await say(`h_${spot[0]}`, 'talk', 'La carte suivante est cachée ');
+  await say('next_card', 'talk'); await say(`h_${spot[0]}`, 'talk', tr('La carte suivante est cachée ', 'The next card is hidden '));
   say('go_find', 'happy');
   await go; screen(null);
 }
@@ -540,11 +549,11 @@ async function drawDiploma(rec) {
   for (const [sx, sy] of [[58, 58], [W - 58, 58], [58, H - 58], [W - 58, H - 58]]) st(sx, sy, 26, '#f5b301');
   for (let i = 0; i < 26; i++) st(120 + Math.random() * (W - 240), 90 + Math.random() * 120, 4 + Math.random() * 6, 'rgba(245,179,1,.35)');
   x.textAlign = 'center'; x.fillStyle = '#2a2370';
-  x.font = '600 34px Fredoka, sans-serif'; x.fillText('LA GRANDE CHASSE DE PIXO', W / 2, 150);
+  x.font = '600 34px Fredoka, sans-serif'; x.fillText(tr('LA GRANDE CHASSE DE PIXO', 'PIXO’S GREAT HUNT'), W / 2, 150);
   x.font = '700 88px Fredoka, sans-serif'; const many = S.players.length > 1;
   const g = x.createLinearGradient(0, 180, 0, 280); g.addColorStop(0, '#f59e0b'); g.addColorStop(1, '#d9480f'); x.fillStyle = g;
-  x.fillText(many ? 'Diplôme de Grands Explorateurs' : 'Diplôme de Grand Explorateur', W / 2, 258);
-  x.fillStyle = '#5b5590'; x.font = '700 30px Nunito, sans-serif'; x.fillText('décerné à', W / 2, 316);
+  x.fillText(many ? tr('Diplôme de Grands Explorateurs', 'Great Explorers Diploma') : tr('Diplôme de Grand Explorateur', 'Great Explorer Diploma'), W / 2, 258);
+  x.fillStyle = '#5b5590'; x.font = '700 30px Nunito, sans-serif'; x.fillText(tr('décerné à', 'awarded to'), W / 2, 316);
   const n = S.players.length, slot = Math.min(230, (W - 360) / n), y0 = 350;
   S.players.forEach((p, i) => {
     const cx = W / 2 + (i - (n - 1) / 2) * slot;
@@ -554,19 +563,19 @@ async function drawDiploma(rec) {
     if (star) x.drawImage(star, cx - 46, y0 + 230, 30, 30); x.font = '700 28px Fredoka, sans-serif'; x.fillStyle = '#d9480f'; x.textAlign = 'left'; x.fillText(`${p.stars || 0}`, cx - 10, y0 + 256); x.textAlign = 'center';
   });
   x.fillStyle = '#4a4580'; x.font = '700 30px Nunito, sans-serif';
-  x.fillText('pour avoir retrouvé les six morceaux du vaisseau de Pixo', W / 2, 700); x.fillText('et l’avoir aidé à rentrer chez lui, dans les étoiles.', W / 2, 744);
-  const date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  x.fillText(tr('pour avoir retrouvé les six morceaux du vaisseau de Pixo', 'for finding the six pieces of Pixo’s spaceship'), W / 2, 700); x.fillText(tr('et l’avoir aidé à rentrer chez lui, dans les étoiles.', 'and helping him fly home to the stars.'), W / 2, 744);
+  const date = new Date().toLocaleDateString(tr('fr-FR', 'en-GB'), { day: 'numeric', month: 'long', year: 'numeric' });
   x.font = '800 30px Nunito, sans-serif'; x.fillStyle = '#d9480f';
-  x.fillText(`${S.stars} étoiles en tout${S.record ? (rec ? ' · Nouveau record !' : '') : ` · Record : ${rec?.stars}`}`, W / 2, 800);
-  x.font = '700 24px Nunito, sans-serif'; x.fillStyle = '#7a74a8'; x.fillText(`Le ${date}`, W / 2, 842);
+  x.fillText(tr(`${S.stars} étoiles en tout${S.record ? (rec ? ' · Nouveau record !' : '') : ` · Record : ${rec?.stars}`}`, `${S.stars} stars in all${S.record ? (rec ? ' · New record!' : '') : ` · Record: ${rec?.stars}`}`), W / 2, 800);
+  x.font = '700 24px Nunito, sans-serif'; x.fillStyle = '#7a74a8'; x.fillText(tr(`Le ${date}`, date), W / 2, 842);
   x.save(); x.translate(W / 2, 950); st(0, 0, 66, '#f5b301'); x.fillStyle = '#fff7d6'; x.beginPath(); x.arc(0, 0, 28, 0, Math.PI * 2); x.fill(); x.restore();
-  x.fillStyle = '#2a2370'; x.font = '600 40px Fredoka, sans-serif'; x.fillText('Pixo', W - 330, 970); x.font = '700 22px Nunito, sans-serif'; x.fillStyle = '#7a74a8'; x.fillText('Commandant de bord', W - 330, 1002);
+  x.fillStyle = '#2a2370'; x.font = '600 40px Fredoka, sans-serif'; x.fillText('Pixo', W - 330, 970); x.font = '700 22px Nunito, sans-serif'; x.fillStyle = '#7a74a8'; x.fillText(tr('Commandant de bord', 'Ship’s captain'), W - 330, 1002);
   x.strokeStyle = '#b9b3e8'; x.lineWidth = 2; x.beginPath(); x.moveTo(W - 450, 925); x.lineTo(W - 210, 925); x.stroke();
   if (pixo) x.drawImage(pixo, W - 240, H - 360, 170, 170 * pixo.height / pixo.width);
   if (ship) x.drawImage(ship, 90, H - 360, 210, 210 * ship.height / ship.width);
 }
 function downloadDiploma() {
-  $('#diploma').toBlob((b) => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'diplome-grande-chasse-de-pixo.png'; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }, 'image/png');
+  $('#diploma').toBlob((b) => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = tr('diplome-grande-chasse-de-pixo.png', 'pixo-great-hunt-diploma.png'); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }, 'image/png');
 }
 
 // ------------------------------------------------------------------ every frame: the voice follows Pixo, the arrow points to him (or to the stars)
@@ -583,7 +592,7 @@ function onFrame(t) {
   starsFrame(t);
   if (starSet) { // during the star hunt, point to the nearest star when none is on screen
     const f = room.forward(); let best = null, bd = 9; for (const s of starSet) { const v = s.position.clone().project(room.cam); if (v.z < 1 && Math.abs(v.x) < 0.9 && Math.abs(v.y) < 0.9) { best = null; bd = -1; break; } const d = Math.abs(Math.atan2(Math.sin(s.userData.a - Math.atan2(f.x, -f.z)), Math.cos(s.userData.a - Math.atan2(f.x, -f.z)))); if (d < bd) { bd = d; best = s; } }
-    const ar = $('#arrow'); if (best) { ar.classList.add('on'); $('#arrow em').firstChild.textContent = 'Des étoiles par là !'; pointAt(best.position); } else ar.classList.remove('on');
+    const ar = $('#arrow'); if (best) { ar.classList.add('on'); $('#arrow em').firstChild.textContent = tr('Des étoiles par là !', 'Stars this way!'); pointAt(best.position); } else ar.classList.remove('on');
   }
   if (!room.pixo.g.visible) { if (voice) voice.pan.pan.value = 0; return; }
   const b = room.pixoBearing();
@@ -593,6 +602,8 @@ function onFrame(t) {
 }
 
 // ------------------------------------------------------------------ boot
+translatePage();
+for (const b of document.querySelectorAll('.langsw button')) { b.classList.toggle('on', b.dataset.l === LANG); b.onclick = () => { if (b.dataset.l !== LANG) switchLang(b.dataset.l); }; }
 room = new Room($('#room'));
 room.onFrame = onFrame;
 room.onPixo = () => { if (S.hunting) { S.hunting = false; S.foundPixo?.(); } else if (room.pixo.clip === 'idle' && !voice) { sfx('giggle', 0.8); room.sparks(room.pixo.g.position.clone().add(new THREE.Vector3(0, 0.3, 0)), 14, 0xff9ad0, 0.8, 0.05); clip('happy'); } };
