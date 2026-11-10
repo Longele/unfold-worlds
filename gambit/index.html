@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gambit · Unfold Worlds</title>
+<meta name="description" content="Les échecs, de zéro au jeu des maîtres. Un cours guidé par la voix sur un vrai échiquier en bois, puis des parties contre Gambit, avec un coach.">
+<meta name="theme-color" content="#08070a">
+<meta property="og:title" content="Gambit">
+<meta property="og:description" content="Chess, from zero to the masters' game. A voice-guided course on a real wooden board, then games against Gambit, with a coach.">
+<meta property="og:image" content="https://unfoldworlds.com/covers/gambit.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Cpath d=%22M5 14h6l-.6-2.2c1-.8 1.4-2 1.2-3.3L10.4 5 8.8 3.4 8 2 6.6 4.2 5.4 5.6l.8 1.3L4.8 9l1 .6 1.6-1L6 11.8z%22 fill=%22%23f0dcb4%22/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/cormorant-garamond-latin-300-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-mode="intro">
+<canvas id="gl"></canvas>
+<div id="veil"></div>
+
+<header>
+  <a class="brand" href="../" aria-label="Unfold Worlds">GAMBIT</a>
+  <div class="tools">
+    <button id="b-voice" class="ic on" aria-label="voice"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="w" d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12"/></svg></button>
+    <div class="langs"><button data-lang="en">EN</button><button data-lang="fr">FR</button></div>
+  </div>
+</header>
+
+<main id="intro">
+  <p class="kick" id="kick"></p>
+  <h1>Gambit</h1>
+  <p class="tag" id="tag"></p>
+  <div class="load"><i id="load"></i></div>
+  <div class="choices">
+    <button id="go-learn" class="choice primary"><span class="t" id="t-learn"></span><span class="s" id="s-learn"></span></button>
+    <button id="go-play" class="choice"><span class="t" id="t-play"></span><span class="s" id="s-play"></span></button>
+  </div>
+  <button id="go-map" class="link"></button>
+  <p class="hp"><svg viewBox="0 0 24 24"><path d="M4 15v-3a8 8 0 0116 0v3"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/></svg><span id="hp"></span></p>
+</main>
+
+<!-- lesson -->
+<div id="lhead"><p class="ch" id="l-ch"></p><p class="ln" id="l-ln"></p><div id="steps"></div></div>
+<div id="target"></div>
+<div id="side"><div id="cap" aria-live="polite"></div><div id="cont"></div></div>
+<nav id="lessonbar">
+  <button id="b-map"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span></span></button>
+  <button id="b-replay"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 108-8H8"/><path d="M10 1L7 4l3 3"/></svg><span></span></button>
+  <button id="b-hint"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 00-3.6 10.8c.6.5.9 1.2.9 2V16h5.4v-.2c0-.8.3-1.5.9-2A6 6 0 0012 3z"/></svg><span></span></button>
+  <button id="b-skip"><svg viewBox="0 0 24 24"><path d="M6 5l7 7-7 7M13 5l7 7-7 7"/></svg><span></span></button>
+  <button id="b-exit"><svg viewBox="0 0 24 24"><path d="M5 19V9l7-5 7 5v10"/><path d="M9 19v-6h6v6"/></svg><span></span></button>
+</nav>
+<div id="values"></div>
+<div id="lessonend"><p class="k" id="le-k"></p><p id="le-t"></p><button id="le-next" class="pl"></button><button id="le-map"></button></div>
+
+<!-- play -->
+<aside id="panel">
+  <div id="setup">
+    <h2 id="p-h"></h2>
+    <p class="lbl" id="p-level-l"></p>
+    <div class="lvl"><input id="p-level" type="range" min="1" max="10" value="3"><output id="p-level-o"></output></div>
+    <p class="lvd" id="p-level-d"></p>
+    <p class="lbl" id="p-color-l"></p>
+    <div class="seg" id="p-color"><button data-c="w"></button><button data-c="r"></button><button data-c="b"></button></div>
+    <label class="tog"><input type="checkbox" id="p-coach" checked><span id="p-coach-l"></span></label>
+    <button id="p-start" class="pl"></button>
+  </div>
+  <div id="game">
+    <div class="who"><span id="g-them"></span><span id="g-think"></span></div>
+    <div id="evalbar"><i></i></div>
+    <ol id="moves"></ol>
+    <div class="gbtns">
+      <button id="g-undo"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-3"/></svg><span></span></button>
+      <button id="g-hint"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 00-3.6 10.8c.6.5.9 1.2.9 2V16h5.4v-.2c0-.8.3-1.5.9-2A6 6 0 0012 3z"/></svg><span></span></button>
+      <button id="g-flip"><svg viewBox="0 0 24 24"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3"/></svg><span></span></button>
+      <button id="g-new"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span></span></button>
+      <button id="g-exit"><svg viewBox="0 0 24 24"><path d="M5 19V9l7-5 7 5v10"/><path d="M9 19v-6h6v6"/></svg><span></span></button>
+    </div>
+  </div>
+</aside>
+
+<div id="promo"><button data-p="q"></button><button data-p="r"></button><button data-p="b"></button><button data-p="n"></button></div>
+<section id="course"><div class="sh"><h2 id="course-h"></h2><button id="course-x" aria-label="×"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><ul id="course-l"></ul></section>
+<div id="toast"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
