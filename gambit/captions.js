@@ -111,7 +111,13 @@ export const CAPTIONS = {
   "c_best": "Excellent coup.",
   "win": "Échec et mat. Vous avez gagné !",
   "lose": "Échec et mat. Gambit gagne cette fois. Regardez votre partie et rejouez.",
-  "draw": "Partie nulle."
+  "draw": "Partie nulle.",
+  "pz_hello": "Voici vos trois problèmes du jour : un facile, un moyen, un difficile. Prenez votre temps, et regardez d'abord les échecs, les prises et les menaces.",
+  "pz_white": "Les blancs jouent et gagnent.",
+  "pz_black": "Les noirs jouent et gagnent.",
+  "pz_mate": "Trouvez le mat.",
+  "pz_solution": "Voici la solution. Rejouez-la dans votre tête.",
+  "pz_done": "Vos trois problèmes du jour sont faits. Revenez demain pour trois nouveaux, ou continuez à vous entraîner."
  },
  "en": {
   "w_hello": "Welcome to Gambit. Here you'll learn chess step by step, from your very first move to the ideas of the great players.",
@@ -224,6 +230,12 @@ export const CAPTIONS = {
   "c_best": "Excellent move.",
   "win": "Checkmate. You win!",
   "lose": "Checkmate. Gambit wins this time. Look over your game and play again.",
-  "draw": "It's a draw."
+  "draw": "It's a draw.",
+  "pz_hello": "Here are your three puzzles of the day: one easy, one medium, one hard. Take your time, and look at checks, captures and threats first.",
+  "pz_white": "White to play and win.",
+  "pz_black": "Black to play and win.",
+  "pz_mate": "Find the mate.",
+  "pz_solution": "Here's the solution. Replay it in your head.",
+  "pz_done": "Your three puzzles of the day are done. Come back tomorrow for three new ones, or keep training."
  }
 };

@@ -6,6 +6,7 @@ import { Chess } from './chess.js';
 import { COURSE, LESSONS } from './course.js';
 import { CAPTIONS } from './captions.js';
 import { SOLVED } from './puzzles.js';
+import { BANK } from './bank.js';
 
 const $ = (id) => document.getElementById(id);
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
@@ -31,6 +32,9 @@ const T = {
     lessonT: { board1: 'Les 64 cases', rook: 'La tour', bishop: 'Le fou', queen: 'La dame', king: 'Le roi', knight: 'Le cavalier', pawn: 'Le pion', values1: 'Prendre et échanger', check: 'L\'échec', mate1: 'Le mat', stalemate: 'Le pat', castle: 'Le roque', enpassant: 'La prise en passant', promotion: 'La promotion', kq: 'Mater avec la dame', rr: 'Le mat des deux tours', kr: 'Mater avec la tour', principles: 'Trois principes', italian: 'La partie italienne', scholar: 'Le coup du berger', firstgame: 'Votre première partie', fork: 'La fourchette', pin: 'Le clouage', skewer: 'L\'enfilade', discovered: 'L\'attaque à la découverte', backrank: 'Le mat du couloir', ccc: 'Échecs, prises, menaces', square: 'La règle du carré', opposition: 'L\'opposition', opera: 'La partie de l\'Opéra, 1858' },
     pieceN: { q: 'Dame', r: 'Tour', b: 'Fou', n: 'Cavalier' },
     review: { centre: 'Centre', pieces: 'Pièces sorties', castle: 'Roque', errors: 'Erreurs' },
+    pz: 'Problèmes du jour', pzS: 'Trois par jour, du facile au difficile', train: 'Entraînement', sol: 'Solution', nextPz: 'Suivant', diff: ['', 'Facile', 'Moyen', 'Difficile'],
+    themes: { mate: 'Mat', fork: 'Fourchette', promo: 'Promotion', material: 'Gain de matériel', tactic: 'Coup tactique' }, goalWin: (w) => `${w ? 'Les blancs' : 'Les noirs'} gagnent`, inN: (n) => `en ${n}`, toPlay: (w) => `Trait aux ${w ? 'blancs' : 'noirs'}`, win: 'Gagnez', mateIn: (n) => `Mat en ${n}`, moves: (n) => `en ${n} coups`,
+    pzDone: 'Problèmes du jour terminés', pzScore: (a, b) => `${a} sur 3 trouvés${b ? `, dont ${b} du premier coup` : ''}`, more: 'Encore un problème', back: 'Demain : trois nouveaux',
   },
   en: {
     kick: 'Unfold Worlds · chess', tag: 'Chess, from zero to the masters\' game. A voice guides you on a real wooden board, then you take on Gambit.',
@@ -46,6 +50,9 @@ const T = {
     lessonT: { board1: 'The 64 squares', rook: 'The rook', bishop: 'The bishop', queen: 'The queen', king: 'The king', knight: 'The knight', pawn: 'The pawn', values1: 'Taking and trading', check: 'Check', mate1: 'Checkmate', stalemate: 'Stalemate', castle: 'Castling', enpassant: 'En passant', promotion: 'Promotion', kq: 'Mate with the queen', rr: 'The two-rook mate', kr: 'Mate with the rook', principles: 'Three principles', italian: 'The Italian Game', scholar: 'Scholar\'s mate', firstgame: 'Your first game', fork: 'The fork', pin: 'The pin', skewer: 'The skewer', discovered: 'Discovered attack', backrank: 'Back-rank mate', ccc: 'Checks, captures, threats', square: 'The rule of the square', opposition: 'Opposition', opera: 'The Opera Game, 1858' },
     pieceN: { q: 'Queen', r: 'Rook', b: 'Bishop', n: 'Knight' },
     review: { centre: 'Centre', pieces: 'Pieces out', castle: 'Castled', errors: 'Mistakes' },
+    pz: 'Puzzles of the day', pzS: 'Three a day, easy to hard', train: 'Training', sol: 'Solution', nextPz: 'Next', diff: ['', 'Easy', 'Medium', 'Hard'],
+    themes: { mate: 'Mate', fork: 'Fork', promo: 'Promotion', material: 'Winning material', tactic: 'Tactical shot' }, goalWin: (w) => `${w ? 'White' : 'Black'} wins`, inN: (n) => `in ${n}`, toPlay: (w) => `${w ? 'White' : 'Black'} to play`, win: 'Win', mateIn: (n) => `Mate in ${n}`, moves: (n) => `in ${n} moves`,
+    pzDone: 'Puzzles of the day done', pzScore: (a, b) => `${a} of 3 solved${b ? `, ${b} at first try` : ''}`, more: 'One more puzzle', back: 'Tomorrow: three new ones',
   },
 };
 const t = () => T[lang];
@@ -161,7 +168,7 @@ const alive = (r) => r === run;
 function cancel() {
   run++; audio.stop(); for (const f of cancelers.splice(0)) f(); if (contRes) contRes(null);
   board.interactive = null; board.onMove = null; board.onSquare = null; board.select(null); board.arrows([]); board.stars([]);
-  target(null); $('values').classList.remove('on'); $('lessonend').classList.remove('on'); $('promo').classList.remove('on'); hintFn = null; $('b-hint').classList.add('off');
+  target(null); $('values').classList.remove('on'); $('lessonend').classList.remove('on'); $('promo').classList.remove('on'); hintFn = null; $('b-hint').classList.add('off'); solFn = null;
   return run;
 }
 function mode(m) { document.body.dataset.mode = m; board.setCine(m === 'intro'); layout(); }
@@ -169,7 +176,7 @@ function layout() {
   const m = document.body.dataset.mode, w = innerWidth, h = innerHeight, narrow = w <= 760 || h > w, wide = !narrow && w / h > 1.25 && w >= 900;
   document.body.classList.toggle('wide', wide);
   board.tilt = narrow ? 1.13 : 0.98;
-  if (m === 'lesson') board.setMargins(wide ? { top: 56, bottom: 84, left: Math.min(420, w * 0.33), right: 24 } : narrow ? { top: 120, bottom: 230 } : { top: 110, bottom: 220 });
+  if (m === 'lesson' || m === 'puzzles') board.setMargins(wide ? { top: 56, bottom: 84, left: Math.min(420, w * 0.33), right: 24 } : narrow ? { top: 120, bottom: 230 } : { top: 110, bottom: 220 });
   else if (m === 'play') { const p = $('panel').getBoundingClientRect(); board.setMargins(narrow ? { top: 64, bottom: Math.min(h * 0.46, p.height) + 8 } : { top: 40, bottom: 30, right: 330 }); }
   else board.setMargins({ top: 0, bottom: 0 });
   if ($('values').classList.contains('on')) placeValues();
@@ -203,7 +210,7 @@ async function step(r, L, s) {
     say(r, st.say); await cont(r); $('values').classList.remove('on'); return;
   }
   if (st.demo) return demo(r, st);
-  return ({ squares, collect, move: moveTask, puzzle, play: playTask, quiz })[st.task](r, st, L, s);
+  return ({ squares, collect, move: moveTask, puzzle: (r, st, L, s) => puzzle(r, st, SOLVED[`${L.id}#${s}`]), play: playTask, quiz })[st.task](r, st, L, s);
 }
 
 // ------------------------------------------------------------------ step kinds
@@ -294,32 +301,84 @@ async function moveTask(r, st) {
   }
 }
 
-async function puzzle(r, st, L, s) {
-  const key = `${L.id}#${s}`, start = st.fen; let node = SOLVED[key], fails = 0;
+// a puzzle judged by its solution tree {san: 1 | {reply, next}}: right moves get the best defence, a miss gets punished
+// by the engine then taken back. Resolves {fails, revealed} (revealed: the solution was shown), or null if cancelled.
+let solFn = null;
+async function puzzle(r, st, tree) {
+  const start = st.fen; let node = tree, fails = 0, revealed = false;
   show(start, { flip: !!st.flip }); say(r, st.say);
-  const goal = st.goal === 'mate' ? t().goalMate : null; if (goal) target(goal, st.n === 1 ? (lang === 'fr' ? 'en 1 coup' : 'in 1') : `${st.n}`);
-  setHint(() => { const keys = Object.keys(node), m = sanToMove(chess.fen(), keys.includes(clean(st.hint)) ? st.hint : keys[0]); if (m) board.arrows([{ ...m, color: GOLD }]); say(r, 'hint'); });
+  if (st.goalText) target(...st.goalText);
+  else if (st.goal === 'mate') target(t().goalMate, t().inN(st.n));
+  const pick = () => { const keys = Object.keys(node); return keys.includes(clean(st.hint)) ? st.hint : keys[0]; };
+  setHint(() => { const m = sanToMove(chess.fen(), pick()); if (m) board.arrows([{ ...m, color: GOLD }]); say(r, 'hint'); });
+  const auto = () => setTimeout(() => { if (!alive(r)) return; const m = sanToMove(chess.fen(), pick()); if (m && board.onMove) board.onMove(m.from, m.to); }, 650);
+  solFn = () => { if (revealed) return; revealed = true; board.arrows([]); auto(); };
   const side = chess.turn();
   for (;;) {
-    const before = chess.fen(); const v = await userMove(r, side); if (!alive(r) || !v) return;
+    const before = chess.fen(); const vp = userMove(r, side); if (revealed) auto(); const v = await vp; if (!alive(r) || !v) return null;
     const next = node[clean(v.san)];
     if (next) {
       board.arrows([]);
       if (next === 1 || chess.isGameOver()) {
-        audio.chime(); board.sparks(v.to, 0xfff0b0, 36); target(null);
-        await say(r, chess.isCheckmate() ? 'mate_done' : ['ok1', 'ok2', 'ok3'][Math.floor(Math.random() * 3)]); await cont(r); return;
+        audio.chime(); board.sparks(v.to, 0xfff0b0, 36); target(null); solFn = null; setHint(null);
+        await say(r, revealed ? 'pz_solution' : chess.isCheckmate() ? 'mate_done' : ['ok1', 'ok2', 'ok3'][Math.floor(Math.random() * 3)]);
+        if (st.after) st.after(); await cont(r); return { fails, revealed };
       }
-      audio.knock(); await sleep(450); if (!alive(r)) return;
+      audio.knock(); await sleep(450); if (!alive(r)) return null;
       const rv = chess.move(next.reply); await play(rv); node = next.next; continue;
     }
-    // a miss: the opponent shows why (its best reply), then the position comes back
     fails++; audio.low();
     const rep = await ask({ op: 'think', fen: chess.fen(), depth: 5, time: 700, keys: chess.pos.keys });
-    if (!alive(r)) return;
+    if (!alive(r)) return null;
     if (rep.move) { const rv = chess.move({ from: rep.from, to: rep.to, promotion: rep.promotion }); if (rv) { await sleep(250); await play(rv); } }
-    await say(r, st.fail || (st.goal === 'mate' ? 'bad1' : 'bad2')); if (!alive(r)) return;
+    await say(r, st.fail || (st.goal === 'mate' ? 'bad1' : 'bad2')); if (!alive(r)) return null;
     await sleep(600); chess = new Chess(before); show(null, { flip: !!st.flip, fade: false }); board.setBase({});
     if (fails >= 2) hintFn?.();
+  }
+}
+
+// ------------------------------------------------------------------ puzzles of the day: the same three for everyone on a given
+// day (picked from the bank by the date: one easy, one medium, one hard), then endless training. Nothing is kept between visits.
+const BUCKETS = [null, 1, 2, 3].map((k) => (k ? BANK.map((p, i) => ({ ...p, i })).filter((p) => p.lvl === k) : null));
+function today() { const d = new Date(); return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5); }
+function dailySet() { const day = today(); return [1, 2, 3].map((k, j) => BUCKETS[k][(day * [7919, 104729, 1299709][j]) % BUCKETS[k].length]); }
+const PZ = { set: [], k: 0, res: [], training: false, seen: new Set(), cur: null };
+function pzHead() {
+  const L = t(), p = PZ.cur;
+  $('l-ch').textContent = PZ.training ? L.train : innerWidth < 600 ? L.pz : `${L.pz} · ${new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', { day: 'numeric', month: 'long' })}`;
+  $('l-ln').textContent = p ? `${PZ.training ? '' : `${PZ.k + 1} · `}${L.diff[p.lvl]}` : '';
+  $('steps').innerHTML = PZ.training ? '' : [0, 1, 2].map((k) => `<i class="${k < PZ.k ? 'done' : k === PZ.k ? 'now' : ''}"></i>`).join('');
+  $('b-skip').querySelector('span').textContent = L.nextPz;
+}
+function runPuzzle(r, p) {
+  PZ.cur = p; PZ.seen.add(p.i); pzHead(); const white = p.fen.split(' ')[1] === 'w';
+  const goalText = [t().toPlay(white), p.goal === 'mate' ? t().mateIn(p.n) : t().win, p.goal !== 'mate' && p.n > 1 ? t().moves(p.n) : ''];
+  // once solved, the theme is named: the learner sees the pattern they just used
+  const after = () => caption(`<b>${t().themes[p.theme]}</b>`);
+  return puzzle(r, { fen: p.fen, goal: p.goal, n: p.n, flip: !white, say: p.goal === 'mate' ? 'pz_mate' : white ? 'pz_white' : 'pz_black', goalText, after }, p.tree);
+}
+async function startPuzzles() {
+  const r = cancel(); mode('puzzles'); closeMap(); PZ.training = false; PZ.set = dailySet(); PZ.res = []; PZ.k = 0;
+  audio.preload(['pz_hello', 'pz_white', 'pz_black', 'pz_mate', 'pz_solution', 'pz_done', 'ok1', 'ok2', 'ok3', 'bad1', 'bad2', 'hint', 'mate_done']);
+  PZ.cur = PZ.set[0]; show(PZ.cur.fen, { flip: PZ.cur.fen.split(' ')[1] === 'b' }); pzHead();
+  await say(r, 'pz_hello'); if (!alive(r)) return;
+  for (; PZ.k < 3; PZ.k++) { const res = await runPuzzle(r, PZ.set[PZ.k]); if (!alive(r) && !PZ.skip) return; PZ.res[PZ.k] = res || { skipped: true }; if (PZ.skip) { PZ.skip = false; } }
+  pzEnd(r);
+}
+function pzEnd(r) {
+  const L = t(), ok = (x) => x && !x.skipped && !x.revealed, solved = PZ.res.filter(ok).length, first = PZ.res.filter((x) => ok(x) && !x.fails).length;
+  $('le-k').textContent = L.pzDone;
+  $('le-t').innerHTML = `<span class="sc">${PZ.res.map((x) => `<i class="${ok(x) ? (x.fails ? 'h' : 'y') : ''}">${ok(x) ? '✓' : '·'}</i>`).join('')}</span>${L.pzScore(solved, first)}`;
+  $('le-next').textContent = L.more; $('le-next').onclick = () => { audio.init(); train(); };
+  $('le-map').textContent = L.back; $('le-map').onclick = () => idle();
+  $('lessonend').classList.add('on'); audio.chime(); say(r, 'pz_done'); caption(null); target(null);
+}
+async function train() { // endless: a fresh puzzle each time, harder after a clean solve, easier after a struggle
+  const r = cancel(); mode('puzzles'); PZ.training = true; let level = 2;
+  while (alive(r)) {
+    const pool = BUCKETS[level].filter((p) => !PZ.seen.has(p.i)), list = pool.length ? pool : BUCKETS[level];
+    const res = await runPuzzle(r, list[Math.floor(Math.random() * list.length)]); if (!alive(r)) return;
+    if (res && !res.revealed && !res.fails) level = Math.min(3, level + 1); else if (!res || res.revealed || res.fails > 1) level = Math.max(1, level - 1);
   }
 }
 
@@ -477,12 +536,12 @@ async function idle() {
 function applyLang() {
   const L = t(); document.documentElement.lang = lang;
   $('kick').textContent = L.kick; $('tag').textContent = L.tag; $('t-learn').textContent = L.learn; $('s-learn').textContent = L.learnS(COURSE.length, LESSONS.length);
-  $('t-play').textContent = L.play; $('s-play').textContent = L.playS; $('go-map').textContent = L.map; $('hp').textContent = L.hp;
-  for (const [id, k] of [['b-map', 'lessons'], ['b-replay', 'replay'], ['b-hint', 'hint'], ['b-skip', 'skip'], ['b-exit', 'home'], ['g-undo', 'undo'], ['g-hint', 'hint'], ['g-flip', 'flip'], ['g-new', 'newG'], ['g-exit', 'home']]) $(id).querySelector('span').textContent = L[k];
+  $('t-pz').textContent = L.pz; $('s-pz').textContent = L.pzS; $('t-play').textContent = L.play; $('s-play').textContent = L.playS; $('go-map').textContent = L.map; $('hp').textContent = L.hp;
+  for (const [id, k] of [['b-map', 'lessons'], ['b-replay', 'replay'], ['b-hint', 'hint'], ['b-skip', 'skip'], ['b-sol', 'sol'], ['b-exit', 'home'], ['g-undo', 'undo'], ['g-hint', 'hint'], ['g-flip', 'flip'], ['g-new', 'newG'], ['g-exit', 'home']]) $(id).querySelector('span').textContent = L[k];
   $('p-h').textContent = L.setupH; $('p-level-l').textContent = L.level; $('p-color-l').textContent = L.color; $('p-coach-l').textContent = L.coach; $('p-start').textContent = L.start;
   $('p-color').querySelectorAll('button').forEach((b, k) => (b.textContent = L.colors[k]));
   document.querySelectorAll('.langs button').forEach((b) => b.classList.toggle('on', b.dataset.lang === lang));
-  levelUI(); if (document.body.dataset.mode === 'lesson') lessonHead(cur.i, cur.s); if (capLast && $('cap').classList.contains('on')) caption(line(capLast));
+  levelUI(); if (document.body.dataset.mode === 'lesson') lessonHead(cur.i, cur.s); if (document.body.dataset.mode === 'puzzles') pzHead(); if (capLast && $('cap').classList.contains('on')) caption(line(capLast));
   $('g-them').textContent = t().vs(G.level);
 }
 document.querySelectorAll('.langs button').forEach((b) => (b.onclick = () => { lang = b.dataset.lang; store.set('uw-lang', lang); applyLang(); if ($('course').classList.contains('on')) openMap(); }));
@@ -490,12 +549,14 @@ $('b-voice').onclick = () => { audio.on = !audio.on; $('b-voice').classList.togg
 const start = (f) => async () => { audio.init(); if (!document.body.classList.contains('loaded')) { document.body.classList.add('waiting'); await board.ready; document.body.classList.remove('waiting'); } f(); };
 $('go-learn').onclick = start(() => runLesson(0));
 $('go-play').onclick = start(() => startPlay());
+$('go-pz').onclick = start(() => startPuzzles());
+$('b-sol').onclick = () => solFn?.();
 $('go-map').onclick = start(() => openMap());
 $('course-x').onclick = closeMap;
 $('b-map').onclick = () => openMap();
 $('b-replay').onclick = () => { audio.init(); if (capLast) { caption(line(capLast)); audio.say(capLast); } };
 $('b-hint').onclick = () => hintFn?.();
-$('b-skip').onclick = () => { const L = LESSONS[cur.i]; if (cur.s + 1 < L.steps.length) runLesson(cur.i, cur.s + 1); else { cancel(); lessonEnd(run, cur.i); } };
+$('b-skip').onclick = () => { if (document.body.dataset.mode === 'puzzles') { if (contRes) return contRes('go'); for (const f of cancelers.splice(0)) f(); return; } const L = LESSONS[cur.i]; if (cur.s + 1 < L.steps.length) runLesson(cur.i, cur.s + 1); else { cancel(); lessonEnd(run, cur.i); } };
 $('b-exit').onclick = () => idle();
 $('g-exit').onclick = () => idle();
 $('p-level').oninput = (e) => { G.level = +e.target.value; levelUI(); };
@@ -511,6 +572,7 @@ addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT') return;
   if ((e.code === 'Enter' || e.code === 'Space') && $('cont').classList.contains('on')) { e.preventDefault(); $('cont').querySelector('.main, button:last-child')?.click(); }
   if (e.code === 'KeyR' && document.body.dataset.mode === 'lesson') $('b-replay').click();
+  if (e.code === 'KeyS' && document.body.dataset.mode === 'puzzles') solFn?.();
   if (e.code === 'KeyH') (document.body.dataset.mode === 'play' ? $('g-hint') : $('b-hint')).click();
   if (e.code === 'Escape') closeMap();
 });
@@ -518,4 +580,4 @@ addEventListener('keydown', (e) => {
 applyLang();
 board.ready.then(() => { document.body.classList.add('loaded'); $('load').parentElement.style.setProperty('--p', '100%'); idle(); });
 // test hooks (the QA bot drives the app through these)
-window.gambit = { board, get chess() { return chess; }, runLesson, startPlay, newGame, G, SOLVED, LESSONS, get cur() { return cur; }, audio, Chess, pieceMoves, ask, clean };
+window.gambit = { board, get chess() { return chess; }, runLesson, startPlay, newGame, G, SOLVED, LESSONS, get cur() { return cur; }, audio, BANK, PZ, startPuzzles, train, dailySet, Chess, pieceMoves, ask, clean };

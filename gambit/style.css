@@ -59,8 +59,8 @@ body.waiting .choice { opacity: .5; }
 
 /* ---------------------------------------------------------------- lesson */
 #lhead, #cap, #cont, #lessonbar, #target, #values { opacity: 0; pointer-events: none; transition: opacity .6s var(--ease), transform .6s var(--ease); }
-body[data-mode="lesson"] #lhead, body[data-mode="lesson"] #lessonbar { opacity: 1; pointer-events: auto; }
-body[data-mode="lesson"] #cap.on, body[data-mode="play"] #cap.on { opacity: 1; }
+body[data-mode="lesson"] #lhead, body[data-mode="lesson"] #lessonbar, body[data-mode="puzzles"] #lhead, body[data-mode="puzzles"] #lessonbar { opacity: 1; pointer-events: auto; }
+body[data-mode="lesson"] #cap.on, body[data-mode="puzzles"] #cap.on, body[data-mode="play"] #cap.on { opacity: 1; }
 #lhead { position: fixed; top: max(58px, calc(env(safe-area-inset-top) + 44px)); left: 22px; z-index: 5; max-width: 46vw; }
 #lhead .ch { margin: 0; font-family: var(--mono); font-size: 10.5px; letter-spacing: .3em; text-transform: uppercase; color: var(--acc); }
 #lhead .ln { margin: 6px 0 10px; font-size: 26px; line-height: 1.1; }
@@ -79,9 +79,9 @@ body[data-mode="lesson"] #cap.on, body[data-mode="play"] #cap.on { opacity: 1; }
 #cont button { padding: 13px 28px; border-radius: 999px; font-size: 20px; border: 1px solid var(--faint); background: var(--glass); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: transform .3s var(--ease); }
 #cont button.main { background: linear-gradient(140deg, var(--acc), var(--acc2)); color: var(--ink); border-color: transparent; box-shadow: 0 14px 40px rgba(228, 160, 70, .22); }
 #cont button:hover { transform: translateY(-2px); }
-body.wide[data-mode="lesson"] #side { left: max(28px, env(safe-area-inset-left)); bottom: auto; top: 50%; transform: translateY(-42%); width: min(380px, 31vw); align-items: flex-start; }
-body.wide[data-mode="lesson"] #cap { text-align: left; font-size: clamp(22px, 1.9vw, 28px); line-height: 1.3; padding: 0; background: none; border: 0; backdrop-filter: none; -webkit-backdrop-filter: none; text-shadow: 0 2px 18px rgba(0, 0, 0, .6); }
-body.wide[data-mode="lesson"] #cont { justify-content: flex-start; }
+body.wide[data-mode="lesson"] #side, body.wide[data-mode="puzzles"] #side { left: max(28px, env(safe-area-inset-left)); bottom: auto; top: 50%; transform: translateY(-42%); width: min(380px, 31vw); align-items: flex-start; }
+body.wide[data-mode="lesson"] #cap, body.wide[data-mode="puzzles"] #cap { text-align: left; font-size: clamp(22px, 1.9vw, 28px); line-height: 1.3; padding: 0; background: none; border: 0; backdrop-filter: none; -webkit-backdrop-filter: none; text-shadow: 0 2px 18px rgba(0, 0, 0, .6); }
+body.wide[data-mode="lesson"] #cont, body.wide[data-mode="puzzles"] #cont { justify-content: flex-start; }
 body.wide[data-mode="play"] #side { left: auto; right: 22px; bottom: 150px; transform: none; width: 296px; align-items: stretch; }
 body.wide[data-mode="play"] #cap { font-size: 19px; text-align: left; padding: 12px 16px; }
 body.wide[data-mode="play"] #moves { flex: none; max-height: calc(100vh - 480px); }
@@ -181,3 +181,12 @@ body[data-mode="play"] #panel { opacity: 1; pointer-events: auto; transform: non
   body[data-mode="play"] #side { bottom: auto; top: max(56px, calc(env(safe-area-inset-top) + 42px)); }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* puzzles of the day */
+body:not([data-mode="puzzles"]) #b-sol { display: none; }
+body[data-mode="puzzles"] #b-map { display: none; }
+#lessonend .sc { display: flex; justify-content: center; gap: 10px; margin: 4px 0 14px; }
+#lessonend .sc i { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 20px; border: 1px solid var(--faint); }
+#lessonend .sc i.y { background: linear-gradient(140deg, var(--acc), var(--acc2)); color: var(--ink); border-color: transparent; }
+#lessonend .sc i.h { border-color: rgba(228, 181, 106, .6); color: var(--acc2); }
+@media (max-width: 760px) { .choice { min-width: 230px; padding: 14px 24px 12px; } .choice .t { font-size: 22px; } .choices { gap: 10px; } }
