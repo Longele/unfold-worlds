@@ -308,11 +308,14 @@ async function scan(k) {
         S.fromPortal = true; found(k);
       } else if (n !== k && performance.now() - lastWrong > 7000) { lastWrong = performance.now(); sfx('bad'); say('wrong', null); }
     };
+    // the scanner looks for this card only: the six cards share the same frame, and comparing them all could mistake one
+    // for another ("not the right card" on the right one), then stay locked on the wrong one
+    try { mind.controller.interestedTargetIndex = k - 1; } catch {}
     mindResume(); scanHum(true);
   }
   say(finale ? ln('e1') : 'scan', null);
   await done; clearTimeout(late); onCard = null; S.want = 0;
-  if (mind) { mindPause(); for (const p of mind.portals) p.reset(); }
+  if (mind) { mindPause(); try { mind.controller.interestedTargetIndex = -1; } catch {} for (const p of mind.portals) p.reset(); }
   sc.classList.remove('opening'); scanHum(false);
   flash(); screen(null);
 }
