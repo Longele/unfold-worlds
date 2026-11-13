@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CO-STAGE · Écran</title>
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="../icon-192.png">
+<link rel="stylesheet" href="costage.css">
+<script src="../lib/qrcode.js"></script>
+</head>
+<body class="screen lobby">
+<canvas id="crowd"></canvas>
+<div class="s-brand" id="brand">CO-STAGE</div>
+<div class="s-count"><b id="n">0</b><span class="mono" id="nl"></span></div>
+<div class="s-qr" id="sqr"></div>
+<section class="layer on" id="lobby"><div class="lobby-in"><div class="mono" id="lb-k"></div><div class="artist" id="lb-a"></div><div class="title" id="lb-t"></div><div class="qr" id="qr"></div><div class="url" id="url"></div></div></section>
+<section class="layer" id="mo"><div class="mo-in" id="mo-in"></div></section>
+<div class="banner" id="banner"></div>
+<div id="blackout"></div>
+<div class="wait" id="wait"><div class="mono">CO-STAGE</div><b id="wait-t"></b><div class="mono" id="wait-r"></div></div>
+<button class="btn micbtn" id="mic"></button>
+<script type="module" src="ecran.js"></script>
+</body>
+</html>

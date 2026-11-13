@@ -1,7 +1,7 @@
 // One menu for every portal page, shaped by who is looking:
 //   visitor      Explorer · Se connecter · FR/EN
-//   member       Explorer · Mes mondes · [name, role ▾]
-//   super-admin  Explorer · Mes mondes · Console · [name, role ▾]
+//   member       Explorer · Mes mondes · CO-STAGE · [name, role ▾]
+//   super-admin  Explorer · Mes mondes · CO-STAGE · Console · [name, role ▾]
 // The account chip shows the person's name and role; the e-mail only appears inside its menu.
 import { sb, esc } from './config.js';
 import { lang, onLang, setLang } from './i18n.js';
@@ -36,6 +36,7 @@ function draw(nav, active, user, isSuper) {
     h += active === 'login' ? '' : `<a class="btn small gold" href="login.html">${L.login}</a>`;
   } else {
     h += link('app.html', L.mine, 'mine');
+    h += link('costage.html', 'CO-STAGE', 'costage');
     if (isSuper) h += link('admin.html', L.console, 'console');
     const name = displayName(user);
     h += `<div class="acct"><button class="acct-btn" aria-haspopup="true" aria-expanded="false"><span class="av">${esc(initials(name))}</span><span class="who"><b>${esc(name)}</b><small>${isSuper ? L.superAdmin : L.member}</small></span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>

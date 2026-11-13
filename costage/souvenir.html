@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CO-STAGE · Souvenir</title>
+<meta name="theme-color" content="#050507">
+<link rel="icon" href="../icon-192.png">
+<link rel="stylesheet" href="costage.css">
+<script src="../lib/supabase.js"></script>
+</head>
+<body class="memory">
+<div class="mem" id="mem"><div class="mono">CO-STAGE</div></div>
+<script type="module">
+import * as D from './data.js';
+import * as M from './moments.js';
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const tok = (new URLSearchParams(location.search).get('e') || '').replace(/[^a-f0-9]/g, '');
+let m = null; try { m = tok ? await D.memory(tok) : null; } catch {}
+let lang = (() => { try { return localStorage.getItem('uw-lang'); } catch { return null; } })() || m?.lang || 'fr'; if (lang !== 'en') lang = 'fr';
+const W = {
+  fr: { none: 'Cette soirée n\'est pas (encore) publique.', ed: (n) => `Édition n° ${n}`, peak: (n) => `${n} téléphones allumés en même temps`, joined: (n) => `${n} participants`, part: (p) => `${p} % de la salle`, once: 'Cette soirée n\'a eu lieu qu\'une fois.',
+    r: { vote: (r) => `La salle a choisi « ${r.label} » (${r.pct} %)${r.imposed ? ', choix de l\'artiste' : ''}`, pulse: (r) => `Tempo tenu à ${r.bpm} BPM, ${r.sync} % ensemble`, battle: (r) => `${r.win === 'L' ? 'La gauche' : 'La droite'} a gagné la bataille`, chorus: (r) => (r.loud ? `La section ${({ g: 'gauche', c: 'centre', d: 'droite' })[r.loud] || ''} a chanté le plus fort` : 'Toute la salle a chanté'), challenge: (r) => (r.ok ? `Défi réussi (${r.pct} %) : ${r.reward}` : `Défi manqué de peu (${r.pct} %)`), reveal: (r) => `La salle a révélé « ${r.secret} »`, draw: (r) => `Un téléphone de la section ${({ g: 'gauche', c: 'centre', d: 'droite' })[r.zone] || ''} a été choisi`, words: (r) => (r.words?.length ? r.words.join(' · ') : 'Les mots de la salle'), lights: () => 'La salle est devenue l\'écran', finale: () => 'One Night Only' } },
+  en: { none: 'This night is not public (yet).', ed: (n) => `Edition no. ${n}`, peak: (n) => `${n} phones lit at once`, joined: (n) => `${n} participants`, part: (p) => `${p} % of the room`, once: 'This night only happened once.',
+    r: { vote: (r) => `The room chose "${r.label}" (${r.pct} %)${r.imposed ? ', artist\'s pick' : ''}`, pulse: (r) => `Beat held at ${r.bpm} BPM, ${r.sync} % together`, battle: (r) => `${r.win === 'L' ? 'Left' : 'Right'} won the battle`, chorus: (r) => (r.loud ? `The ${({ g: 'left', c: 'centre', d: 'right' })[r.loud] || ''} section sang loudest` : 'The whole room sang'), challenge: (r) => (r.ok ? `Challenge met (${r.pct} %): ${r.reward}` : `Challenge just missed (${r.pct} %)`), reveal: (r) => `The room revealed "${r.secret}"`, draw: (r) => `A phone in the ${({ g: 'left', c: 'centre', d: 'right' })[r.zone] || ''} section was chosen`, words: (r) => (r.words?.length ? r.words.join(' · ') : 'The room\'s words'), lights: () => 'The room became the screen', finale: () => 'One Night Only' } },
+};
+const L = W[lang];
+if (!m) $('mem').innerHTML = `<div class="mono">CO-STAGE</div><h1>${L.none}</h1>`;
+else {
+  document.documentElement.style.setProperty('--h', m.hue); document.title = `${m.artist || m.title} · CO-STAGE`;
+  const s = m.summary || {}, res = (s.res || []).filter((r) => r.type !== 'finale');
+  const date = new Date(m.started_at).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  $('mem').innerHTML = `<div class="ed">${esc(L.ed(m.edition))} · ${esc(date)}</div><h1>${esc(m.artist || m.title)}</h1><div class="mono">${esc([m.artist ? m.title : '', m.venue].filter(Boolean).join(' · '))}</div>
+    <canvas id="sig" width="1200" height="1200"></canvas>
+    <div class="mono" style="text-align:center">${esc(L.joined(s.joined || 0))} · ${esc(L.peak(s.peak || 0))}</div>
+    <ol>${res.map((r) => `<li><div class="k">${esc(M.TYPE_INFO[r.type]?.[lang] || '')}${r.part != null ? ` · ${esc(L.part(r.part))}` : ''}</div><div class="r">${esc((L.r[r.type] || (() => ''))(r))}</div></li>`).join('')}</ol>
+    <p class="mono" style="text-align:center;margin-top:30px">${L.once}</p>`;
+  const cv = $('sig'), g = cv.getContext('2d');
+  const draw = (t) => { g.clearRect(0, 0, 1200, 1200); M.drawSignature(g, 1200, 1200, s.res || [], t, { seed: m.edition || 1 }); requestAnimationFrame(draw); };
+  requestAnimationFrame(draw);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CO-STAGE · Régie</title>
+<meta name="theme-color" content="#050507">
+<link rel="icon" href="../icon-192.png">
+<link rel="stylesheet" href="costage.css">
+<script src="../lib/supabase.js"></script>
+</head>
+<body class="regie">
+<div class="rg">
+  <aside class="rg-side">
+    <div class="rg-head"><b id="h-title"></b><a class="btn" href="../costage.html" id="b-back"></a></div>
+    <div class="card"><div class="kv"><span class="mono" id="l-n"></span><b id="v-n">0</b></div><div class="kv"><span class="mono" id="l-peak"></span><span id="v-peak">0</span></div><div class="kv"><span class="mono" id="l-room"></span><span class="mono" style="color:var(--acc2);letter-spacing:.4em" id="v-room"></span></div><div class="kv"><span class="mono" id="l-screen"></span><span class="mono" id="v-screen"></span></div></div>
+    <div class="card" id="c-start">
+      <label class="row" style="gap:8px;font-size:18px"><input type="checkbox" id="reh"><span id="l-reh"></span></label>
+      <div class="ctrls"><button class="btn gold" id="b-start"></button><button class="btn" id="b-screen"></button></div>
+    </div>
+    <div class="prog" id="prog"></div>
+  </aside>
+  <main class="rg-main">
+    <div class="card live" id="live"></div>
+    <div class="card">
+      <div class="ctrls"><button class="btn" id="b-lobby"></button><button class="btn" id="b-pocket"></button><button class="btn red" id="b-black"></button><button class="btn" id="b-qr"></button><button class="btn" id="b-screen2"></button></div>
+      <div class="row" style="margin-top:12px"><input type="text" id="msg" maxlength="140"><button class="btn" id="b-msg"></button><button class="btn" id="b-msgx">×</button></div>
+    </div>
+    <div class="card" id="c-sim"><div class="row"><span class="mono" id="l-sim"></span><input type="text" id="sim" value="0" style="max-width:90px"><button class="btn" id="b-sim"></button></div></div>
+    <div class="card" id="c-end"><div class="ctrls"><button class="btn red" id="b-end"></button><a class="btn" id="b-mem" target="_blank" rel="noopener" style="display:none"></a></div></div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script type="module" src="regie.js"></script>
+</body>
+</html>

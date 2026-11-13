@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CO-STAGE · Unfold Worlds</title>
+<meta name="theme-color" content="#07090d">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="stylesheet" href="portal.css">
+<style>
+  .hello { font-weight: 300; font-size: clamp(38px, 5vw, 60px); margin: 18px 0 4px; }
+  #view { min-height: 40vh; margin-top: 26px; }
+  .bar2 { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 18px 0; }
+  .swatch { width: 14px; height: 14px; border-radius: 50%; display: inline-block; vertical-align: middle; margin-right: 6px; }
+  .ed-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 16px; }
+  .moments { display: grid; gap: 10px; margin-top: 14px; }
+  .mrow { border: 1px solid rgba(255, 255, 255, .12); border-radius: 16px; background: rgba(255, 255, 255, .025); }
+  .mrow > .h { display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; }
+  .mrow > .h .n { font-family: ui-monospace, monospace; font-size: 11px; opacity: .55; width: 22px; }
+  .mrow > .h svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; opacity: .8; }
+  .mrow > .h .t { flex: 1; font-size: 18px; }
+  .mrow > .h .ty { font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; opacity: .55; }
+  .mrow > .b { padding: 0 14px 14px; display: none; }
+  .mrow.open > .b { display: block; }
+  .mini { display: flex; gap: 4px; }
+  .mini button { width: 30px; height: 30px; border-radius: 9px; border: 1px solid rgba(255, 255, 255, .14); background: none; color: inherit; cursor: pointer; font-size: 14px; }
+  .sub2 { display: grid; gap: 8px; margin-top: 8px; }
+  .sub2 .line { display: flex; gap: 8px; align-items: center; }
+  .sub2 .line .input { flex: 1; }
+  input[type=range].input { padding: 0; height: 30px; }
+  .types { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .types button { text-align: left; padding: 14px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .03); color: inherit; cursor: pointer; }
+  .types button b { display: block; font-weight: 400; font-size: 18px; }
+  .types button span { font-size: 13px; opacity: .65; }
+  .evs { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 15px; }
+  .evs td, .evs th { padding: 8px 6px; border-bottom: 1px solid rgba(255, 255, 255, .08); text-align: left; }
+  .evs th { font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .6; font-weight: 400; }
+  dialog.wide { width: min(760px, 94vw); }
+  .tpls { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; margin: 12px 0; }
+  .tpls button { text-align: left; padding: 14px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .03); color: inherit; cursor: pointer; }
+  .tpls button b { display: block; font-weight: 400; font-size: 18px; margin-bottom: 4px; }
+  .tpls button small { opacity: .6; font-size: 12px; }
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas><div class="veil"></div>
+<div class="wrap">
+  <header class="top">
+    <a class="logo" href="./"><i></i><b>UNFOLD WORLDS</b></a>
+    <nav id="nav"></nav>
+  </header>
+  <h1 class="hello">CO-STAGE</h1>
+  <div class="mono" id="sub"></div>
+  <div id="view"></div>
+</div>
+<dialog id="d-new" class="wide"><form method="dialog"><h3 id="new-h"></h3><div class="tpls" id="tpls"></div><div class="row"><button class="btn" value="cancel" id="new-x"></button></div></form></dialog>
+<dialog id="d-add" class="wide"><form method="dialog"><h3 id="add-h"></h3><div class="types" id="types"></div><div class="row"><button class="btn" value="cancel" id="add-x"></button></div></form></dialog>
+<div class="toast" id="toast"></div>
+<script src="lib/supabase.js"></script>
+<script type="module">
+import { esc } from './config.js';
+import { mountNav } from './nav.js';
+import { setBg } from './bg.js';
+import { lang, onLang } from './i18n.js';
+import * as D from './costage/data.js';
+import * as M from './costage/moments.js';
+
+const T = {
+  fr: { title: 'CO-STAGE · Unfold Worlds', sub: 'Concerts interactifs', newShow: 'Nouveau concert', none: 'Aucun concert.', edit: 'Modifier', regie: 'Régie', dup: 'Dupliquer', del: 'Supprimer', confirmDel: 'Supprimer ce concert et ses soirées ?', moments: (n) => `${n} moment${n > 1 ? 's' : ''}`, nights: (n) => `${n} soirée${n > 1 ? 's' : ''}`, tplH: 'Partir de', blank: 'Vide', mine: 'Mes modèles', cancel: 'FERMER',
+    f: { title: 'Titre', artist: 'Artiste', venue: 'Lieu', starts: 'Date', hue: 'Couleur', lang: 'Langue du public' }, prog: 'Programme', add: 'Ajouter un moment', addH: 'Moment', save: 'ENREGISTRER', saveTpl: 'Enregistrer comme modèle', back: 'Concerts', saved: 'enregistré', tplSaved: 'modèle enregistré', copy: 'copie',
+    k: { title: 'Titre', q: 'Question', options: 'Options', label: 'Option', dur: 'Durée (s)', auto: 'Révéler seul à la fin', fx: 'Effet', hue: 'Couleur', bpm: 'Tempo (BPM)', goal: 'Objectif', target: 'Seuil', stake: 'Enjeu', lines: 'Lignes', who: 'Qui', text: 'Texte', reward: 'Récompense', secret: 'Secret', taps: 'Taps par personne', reason: 'Pour', approve: 'Valider les mots en régie', thanks: 'Mot de fin' },
+    fx: { wave: 'Vague', breathe: 'Respiration', sections: 'Sections', night: 'Couleurs de la soirée' }, goals: { light: 'Lumières allumées (%)', taps: 'Taps par personne', noise: 'Bruit de la salle (%)' }, who: { all: 'Tous', g: 'Gauche', c: 'Centre', d: 'Droite', L: 'Moitié gauche', R: 'Moitié droite' },
+    evs: 'Soirées', ev: { date: 'Date', ed: 'Édition', peak: 'Pic', joined: 'Participants', part: 'Participation', page: 'Souvenir', reh: 'répétition', live: 'en cours', open: 'ouvrir' }, delEv: 'Supprimer cette soirée ?' },
+  en: { title: 'CO-STAGE · Unfold Worlds', sub: 'Interactive concerts', newShow: 'New show', none: 'No shows.', edit: 'Edit', regie: 'Control desk', dup: 'Duplicate', del: 'Delete', confirmDel: 'Delete this show and its nights?', moments: (n) => `${n} moment${n > 1 ? 's' : ''}`, nights: (n) => `${n} night${n > 1 ? 's' : ''}`, tplH: 'Start from', blank: 'Blank', mine: 'My templates', cancel: 'CLOSE',
+    f: { title: 'Title', artist: 'Artist', venue: 'Venue', starts: 'Date', hue: 'Colour', lang: 'Audience language' }, prog: 'Programme', add: 'Add a moment', addH: 'Moment', save: 'SAVE', saveTpl: 'Save as template', back: 'Shows', saved: 'saved', tplSaved: 'template saved', copy: 'copy',
+    k: { title: 'Title', q: 'Question', options: 'Options', label: 'Option', dur: 'Duration (s)', auto: 'Reveal by itself at the end', fx: 'Effect', hue: 'Colour', bpm: 'Tempo (BPM)', goal: 'Goal', target: 'Threshold', stake: 'Stake', lines: 'Lines', who: 'Who', text: 'Text', reward: 'Reward', secret: 'Secret', taps: 'Taps per person', reason: 'For', approve: 'Approve words at the desk', thanks: 'Closing words' },
+    fx: { wave: 'Wave', breathe: 'Breathing', sections: 'Sections', night: 'Tonight\'s colours' }, goals: { light: 'Lights on (%)', taps: 'Taps per person', noise: 'Room noise (%)' }, who: { all: 'All', g: 'Left', c: 'Centre', d: 'Right', L: 'Left half', R: 'Right half' },
+    evs: 'Nights', ev: { date: 'Date', ed: 'Edition', peak: 'Peak', joined: 'Participants', part: 'Participation', page: 'Memory', reh: 'rehearsal', live: 'running', open: 'open' }, delEv: 'Delete this night?' },
+};
+const t = () => T[lang];
+setBg({ hue: [255, 122, 26], fx: 0.3, fy: 0.2, mode: 'drift', pull: 0.3, speed: 0.4, amt: 0.6 });
+const $ = (id) => document.getElementById(id);
+const toast = (s) => { $('toast').textContent = s; $('toast').classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => $('toast').classList.remove('on'), 2200); };
+
+const user = await D.me();
+if (!user) { location.replace(`login.html?next=${encodeURIComponent(location.pathname)}`); await new Promise(() => {}); }
+await mountNav('costage');
+let shows = [], events = [], editing = null, open = new Set();
+
+async function reload() { shows = await D.listShows(user.id); events = await D.listEvents(shows.map((s) => s.id)); }
+const route = () => { const m = location.hash.match(/^#edit=(.+)$/); return m ? m[1] : null; };
+async function draw() {
+  document.title = t().title; $('sub').textContent = t().sub;
+  const id = route();
+  if (id) { if (!editing || editing.id !== id) { const s = id === 'new' ? editing : shows.find((x) => x.id === id); if (!s) { location.hash = ''; return; } editing = structuredClone(s); editing.program = M.cleanProgram(editing.program, editing.lang); } drawEditor(); }
+  else { editing = null; drawList(); }
+}
+
+// ---------------------------------------------------------------- my shows
+function drawList() {
+  const L = t(), mine = shows.filter((s) => !s.is_template);
+  let h = `<div class="bar2"><button class="btn gold" id="b-new">${L.newShow}</button></div>`;
+  h += mine.length ? '<div class="grid">' + mine.map((s) => {
+    const evs = events.filter((e) => e.show_id === s.id && !e.rehearsal);
+    return `<div class="card"><div class="mono org"><i class="swatch" style="background:hsl(${s.hue} 90% 60%)"></i>${esc(s.artist || '')}</div><h3>${esc(s.title)}</h3><p>${esc([s.venue, s.starts_at ? new Date(s.starts_at).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB') : ''].filter(Boolean).join(' · '))}</p>
+      <div class="mono">${L.moments(M.cleanProgram(s.program, s.lang).length)} · ${L.nights(evs.length)}</div>
+      <div class="foot"><a class="btn small gold" href="costage/regie.html?s=${s.id}" target="_blank" rel="noopener">${L.regie}</a><a class="btn small" href="#edit=${s.id}">${L.edit}</a><button class="btn small" data-dup="${s.id}">${L.dup}</button><button class="btn small danger" data-del="${s.id}">${L.del}</button></div></div>`;
+  }).join('') + '</div>' : `<div class="empty">${L.none}</div>`;
+  $('view').innerHTML = h;
+  $('b-new').onclick = openNew;
+  $('view').querySelectorAll('[data-dup]').forEach((b) => (b.onclick = async () => { const s = shows.find((x) => x.id === b.dataset.dup); await D.saveShow({ ...s, id: undefined, title: `${s.title} (${t().copy})` }); await reload(); draw(); }));
+  $('view').querySelectorAll('[data-del]').forEach((b) => (b.onclick = async () => { if (!confirm(t().confirmDel)) return; await D.deleteShow(b.dataset.del); await reload(); draw(); }));
+}
+function openNew() {
+  const L = t(), tpls = shows.filter((s) => s.is_template);
+  $('new-h').textContent = L.tplH; $('new-x').textContent = L.cancel;
+  $('tpls').innerHTML = Object.entries(M.TEMPLATES).map(([k, v]) => `<button type="button" data-t="${k}"><b>${esc(v[lang])}</b><small>${v.moments.map((m) => esc(M.TYPE_INFO[m][lang])).join(' · ')}</small></button>`).join('')
+    + tpls.map((s) => `<button type="button" data-own="${s.id}"><b>${esc(s.title)}</b><small>${esc(L.mine)} · ${L.moments(M.cleanProgram(s.program, s.lang).length)}</small></button>`).join('')
+    + `<button type="button" data-t="blank"><b>${L.blank}</b><small>&nbsp;</small></button>`;
+  $('tpls').querySelectorAll('button').forEach((b) => (b.onclick = () => {
+    $('d-new').close();
+    const own = b.dataset.own && shows.find((s) => s.id === b.dataset.own);
+    editing = own ? { ...structuredClone(own), id: undefined, is_template: false, title: own.title } : { title: b.dataset.t === 'blank' ? '' : M.TEMPLATES[b.dataset.t][lang], artist: '', venue: '', starts_at: null, hue: 38, lang, program: b.dataset.t === 'blank' ? [] : M.fromTemplate(b.dataset.t, lang), is_template: false };
+    location.hash = 'edit=new'; draw();
+  }));
+  $('d-new').showModal();
+}
+
+// ---------------------------------------------------------------- one show: details, programme, nights
+const field = (lbl, html) => `<div class="field"><label>${lbl}</label>${html}</div>`;
+const inp = (k, v, type = 'text', extra = '') => `<input class="input" data-k="${k}" type="${type}" value="${esc(v ?? '')}" ${extra}>`;
+function momentFields(m, i) {
+  const K = t().k, p = (k) => `${i}.${k}`;
+  let h = `<div class="ed-grid">${field(K.title, inp(p('title'), m.title, 'text', 'maxlength="60"'))}`;
+  if (m.type === 'vote') h += field(K.q, inp(p('q'), m.q, 'text', 'maxlength="90"')) + field(K.dur, inp(p('dur'), m.dur, 'number', 'min="5" max="60"')) + `<label class="field" style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-k="${p('auto')}" ${m.auto ? 'checked' : ''}>${K.auto}</label>`;
+  if (m.type === 'lights') h += field(K.fx, `<select class="input" data-k="${p('fx')}">${M.FX.map((f) => `<option value="${f}"${m.fx === f ? ' selected' : ''}>${t().fx[f]}</option>`).join('')}</select>`) + field(K.hue, inp(p('hue'), m.hue, 'range', 'min="0" max="359"')) + field(K.dur, inp(p('dur'), m.dur, 'number', 'min="0" max="600"'));
+  if (m.type === 'pulse') h += field(K.bpm, inp(p('bpm'), m.bpm, 'number', 'min="60" max="180"')) + field(K.dur, inp(p('dur'), m.dur, 'number', 'min="8" max="90"')) + field(`${K.goal} (%)`, inp(p('goal'), m.goal, 'number', 'min="30" max="100"'));
+  if (m.type === 'battle') h += field(K.stake, inp(p('stake'), m.stake, 'text', 'maxlength="90"')) + field(K.dur, inp(p('dur'), m.dur, 'number', 'min="8" max="60"'));
+  if (m.type === 'challenge') h += field(K.goal, `<select class="input" data-k="${p('goal')}">${M.GOALS.map((g) => `<option value="${g}"${m.goal === g ? ' selected' : ''}>${t().goals[g]}</option>`).join('')}</select>`) + field(K.target, inp(p('target'), m.target, 'number', 'min="10" max="100"')) + field(K.dur, inp(p('dur'), m.dur, 'number', 'min="8" max="90"')) + field(K.reward, inp(p('reward'), m.reward, 'text', 'maxlength="90"'));
+  if (m.type === 'reveal') h += field(K.secret, inp(p('secret'), m.secret, 'text', 'maxlength="24"')) + field(K.taps, inp(p('taps'), m.taps, 'number', 'min="3" max="60"'));
+  if (m.type === 'draw') h += field(K.reason, inp(p('reason'), m.reason, 'text', 'maxlength="90"'));
+  if (m.type === 'words') h += field(K.q, inp(p('q'), m.q, 'text', 'maxlength="90"')) + `<label class="field" style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-k="${p('approve')}" ${m.approve ? 'checked' : ''}>${K.approve}</label>`;
+  if (m.type === 'finale') h += field(K.thanks, inp(p('thanks'), m.thanks, 'text', 'maxlength="120"'));
+  h += '</div>';
+  if (m.type === 'vote') h += `<div class="field"><label>${K.options}</label><div class="sub2">${m.options.map((o, j) => `<div class="line"><i class="swatch" style="background:hsl(${o.hue} 90% 60%)"></i>${inp(`${i}.options.${j}.label`, o.label, 'text', 'maxlength="28"')}<input class="input" style="max-width:140px" type="range" min="0" max="359" data-k="${i}.options.${j}.hue" value="${o.hue}"><div class="mini"><button type="button" data-optdel="${i}.${j}">×</button></div></div>`).join('')}${m.options.length < 4 ? `<div><button type="button" class="btn small" data-optadd="${i}">+</button></div>` : ''}</div></div>`;
+  if (m.type === 'chorus') h += `<div class="field"><label>${K.lines}</label><div class="sub2">${m.lines.map((l, j) => `<div class="line"><select class="input" style="max-width:150px" data-k="${i}.lines.${j}.who">${['all', 'g', 'c', 'd', 'L', 'R'].map((w) => `<option value="${w}"${l.who === w ? ' selected' : ''}>${t().who[w]}</option>`).join('')}</select>${inp(`${i}.lines.${j}.text`, l.text, 'text', 'maxlength="60"')}<div class="mini"><button type="button" data-lndel="${i}.${j}">×</button></div></div>`).join('')}<div><button type="button" class="btn small" data-lnadd="${i}">+</button></div></div></div>`;
+  return h;
+}
+function drawEditor() {
+  const L = t(), s = editing, evs = s.id ? events.filter((e) => e.show_id === s.id) : [];
+  const ico = (ty) => `<svg viewBox="0 0 24 24"><path d="${M.TYPE_INFO[ty].icon}"/></svg>`;
+  let h = `<div class="bar2"><a class="btn small" href="#">${L.back}</a>${s.id ? `<a class="btn small gold" href="costage/regie.html?s=${s.id}" target="_blank" rel="noopener">${L.regie}</a>` : ''}</div>
+  <div class="panel"><div class="ed-grid">
+    ${field(L.f.title, `<input class="input" data-s="title" maxlength="120" value="${esc(s.title)}">`)}
+    ${field(L.f.artist, `<input class="input" data-s="artist" maxlength="120" value="${esc(s.artist)}">`)}
+    ${field(L.f.venue, `<input class="input" data-s="venue" maxlength="120" value="${esc(s.venue)}">`)}
+    ${field(L.f.starts, `<input class="input" data-s="starts_at" type="date" value="${s.starts_at ? String(s.starts_at).slice(0, 10) : ''}">`)}
+    ${field(`${L.f.hue} <i class="swatch" id="hue-sw" style="background:hsl(${s.hue} 90% 60%)"></i>`, `<input class="input" data-s="hue" type="range" min="0" max="359" value="${s.hue}">`)}
+    ${field(L.f.lang, `<select class="input" data-s="lang"><option value="fr"${s.lang === 'fr' ? ' selected' : ''}>Français</option><option value="en"${s.lang === 'en' ? ' selected' : ''}>English</option></select>`)}
+  </div></div>
+  <div class="sec-h" style="margin-top:28px"><h2>${L.prog}</h2></div>
+  <div class="moments">${s.program.map((m, i) => `<div class="mrow${open.has(m.id) ? ' open' : ''}" data-i="${i}"><div class="h" data-tog="${m.id}"><span class="n">${String(i + 1).padStart(2, '0')}</span>${ico(m.type)}<span class="t">${esc(m.title)}</span><span class="ty">${esc(M.TYPE_INFO[m.type][lang])}</span><div class="mini"><button type="button" data-up="${i}">↑</button><button type="button" data-down="${i}">↓</button><button type="button" data-copy="${i}">⧉</button><button type="button" data-rm="${i}">×</button></div></div><div class="b">${momentFields(m, i)}</div></div>`).join('')}</div>
+  <div class="bar2"><button class="btn" id="b-add">${L.add}</button></div>
+  <div class="bar2"><button class="btn gold" id="b-save">${L.save}</button><button class="btn" id="b-tpl">${L.saveTpl}</button></div>`;
+  if (evs.length) h += `<div class="sec-h" style="margin-top:28px"><h2>${L.evs}</h2></div><div class="panel"><table class="evs"><tr><th>${L.ev.date}</th><th>${L.ev.ed}</th><th>${L.ev.peak}</th><th>${L.ev.joined}</th><th>${L.ev.part}</th><th></th></tr>${evs.map((e) => {
+    const r = e.summary?.res || [], part = r.length ? Math.round(r.reduce((a, x) => a + (x.part || 0), 0) / r.length) : 0;
+    return `<tr><td>${new Date(e.started_at).toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</td><td>${e.rehearsal ? L.ev.reh : `n° ${e.edition}`}${e.status === 'live' ? ` · ${L.ev.live}` : ''}</td><td>${e.summary?.peak ?? 0}</td><td>${e.summary?.joined ?? 0}</td><td>${part} %</td><td style="text-align:right">${e.status === 'ended' && !e.rehearsal ? `<a class="btn small" target="_blank" rel="noopener" href="costage/souvenir.html?e=${e.public_token}">${L.ev.page}</a> ` : ''}<button class="btn small danger" data-evdel="${e.id}">×</button></td></tr>`;
+  }).join('')}</table></div>`;
+  $('view').innerHTML = h; wireEditor();
+}
+function setPath(obj, path, v) { const k = path.split('.'); let o = obj; for (let i = 0; i < k.length - 1; i++) o = o[k[i]]; o[k[k.length - 1]] = v; }
+function wireEditor() {
+  const v = $('view'), s = editing;
+  v.querySelectorAll('[data-s]').forEach((el) => (el.oninput = () => { const k = el.dataset.s; s[k] = k === 'hue' ? +el.value : el.value || (k === 'starts_at' ? null : ''); if (k === 'hue') $('hue-sw').style.background = `hsl(${s.hue} 90% 60%)`; }));
+  v.querySelectorAll('[data-k]').forEach((el) => {
+    el.oninput = el.onchange = () => {
+      const val = el.type === 'checkbox' ? el.checked : el.type === 'number' || el.type === 'range' ? +el.value : el.value;
+      setPath(s.program, el.dataset.k, val);
+      if (/\.title$/.test(el.dataset.k)) el.closest('.mrow').querySelector('.h .t').textContent = val;
+      if (/options\.\d+\.hue$/.test(el.dataset.k)) el.parentElement.querySelector('.swatch').style.background = `hsl(${val} 90% 60%)`;
+    };
+  });
+  const redraw = () => drawEditor();
+  v.querySelectorAll('[data-tog]').forEach((el) => (el.onclick = (e) => { if (e.target.closest('.mini')) return; const id = el.dataset.tog; open.has(id) ? open.delete(id) : open.add(id); el.parentElement.classList.toggle('open'); }));
+  const mv = (i, d) => { const p = s.program, j = i + d; if (j < 0 || j >= p.length) return; [p[i], p[j]] = [p[j], p[i]]; redraw(); };
+  v.querySelectorAll('[data-up]').forEach((b) => (b.onclick = () => mv(+b.dataset.up, -1)));
+  v.querySelectorAll('[data-down]').forEach((b) => (b.onclick = () => mv(+b.dataset.down, 1)));
+  v.querySelectorAll('[data-copy]').forEach((b) => (b.onclick = () => { const m = structuredClone(s.program[+b.dataset.copy]); m.id = Math.random().toString(36).slice(2, 9); s.program.splice(+b.dataset.copy + 1, 0, m); redraw(); }));
+  v.querySelectorAll('[data-rm]').forEach((b) => (b.onclick = () => { s.program.splice(+b.dataset.rm, 1); redraw(); }));
+  v.querySelectorAll('[data-optadd]').forEach((b) => (b.onclick = () => { const m = s.program[+b.dataset.optadd]; m.options.push({ label: `${m.options.length + 1}`, hue: M.PAL[m.options.length % M.PAL.length] }); redraw(); }));
+  v.querySelectorAll('[data-optdel]').forEach((b) => (b.onclick = () => { const [i, j] = b.dataset.optdel.split('.').map(Number); if (s.program[i].options.length > 2) { s.program[i].options.splice(j, 1); redraw(); } }));
+  v.querySelectorAll('[data-lnadd]').forEach((b) => (b.onclick = () => { s.program[+b.dataset.lnadd].lines.push({ who: 'all', text: '' }); redraw(); }));
+  v.querySelectorAll('[data-lndel]').forEach((b) => (b.onclick = () => { const [i, j] = b.dataset.lndel.split('.').map(Number); if (s.program[i].lines.length > 1) { s.program[i].lines.splice(j, 1); redraw(); } }));
+  v.querySelectorAll('[data-evdel]').forEach((b) => (b.onclick = async () => { if (!confirm(t().delEv)) return; await D.deleteEvent(b.dataset.evdel); await reload(); redraw(); }));
+  $('b-add').onclick = () => {
+    $('add-h').textContent = t().addH; $('add-x').textContent = t().cancel;
+    $('types').innerHTML = M.TYPES.map((ty) => `<button type="button" data-ty="${ty}"><b>${esc(M.TYPE_INFO[ty][lang])}</b><span>${esc(M.TYPE_INFO[ty][lang === 'fr' ? 'sfr' : 'sen'])}</span></button>`).join('');
+    $('types').querySelectorAll('button').forEach((b) => (b.onclick = () => { $('d-add').close(); const m = M.newMoment(b.dataset.ty, s.lang); s.program.push(m); open.add(m.id); redraw(); }));
+    $('d-add').showModal();
+  };
+  $('b-save').onclick = () => save(false);
+  $('b-tpl').onclick = () => save(true);
+}
+async function save(asTpl) {
+  try {
+    const row = await D.saveShow(asTpl ? { ...editing, id: undefined, is_template: true } : editing);
+    await reload();
+    if (asTpl) { toast(t().tplSaved); return; }
+    editing = structuredClone(row); editing.program = M.cleanProgram(editing.program, editing.lang); toast(t().saved);
+    if (location.hash !== `#edit=${row.id}`) history.replaceState(null, '', `#edit=${row.id}`); drawEditor();
+  } catch (e) { toast(e.message); }
+}
+addEventListener('hashchange', () => draw());
+await reload();
+onLang(() => draw());
+window.costageOrg = { get editing() { return editing; }, get shows() { return shows; }, reload };
+</script>
+</body>
+</html>
