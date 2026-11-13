@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { Room, FLOOR } from './room.js';
 import { LivingPortal } from './portal.js';
+import { World, xrSupported } from './world.js';
 import { EPISODES, episode } from './episodes.js';
 import { BADGES, earn, count as badgeCount, has as hasBadge, finishEpisode, done as epDone, allDone, unlocked, unlockAll, badgeImg } from './badges.js';
 import { LINES } from './lines.js';
@@ -24,7 +25,7 @@ const CARDCOL = ['#2fa8e0', '#f2742b', '#f2bf1b', '#8d63e0', '#2fb86a', '#e8456f
 const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
 const S = { ep: 'e1', newBadges: [], quizN: 0, quizMiss: false, phase: 'home', players: [], spots: {}, mode: 'cam', next: 1, got: 0, order: [1, 2, 3, 4, 5, 6], plan: [], hides: [], stars: 0, hunting: false, seen: 0, music: true, want: 0 };
-let room, ac, master, musicGain, mind = null, wake = null;
+let room, world, ac, master, musicGain, mind = null, wake = null;
 const save = () => { try { sessionStorage.setItem(KEY, JSON.stringify({ ep: S.ep, quizN: S.quizN, quizMiss: S.quizMiss, players: S.players, spots: S.spots, mode: S.mode, next: S.next, got: S.got, order: S.order, plan: S.plan, hides: S.hides, stars: S.stars })); } catch {} };
 const forget = () => { try { sessionStorage.removeItem(KEY); } catch {} };
 
@@ -78,7 +79,7 @@ async function playVoice(id) {
   const v = voice = { src, pan, g }; src.start(); duck(true);
   return new Promise((res) => { src.onended = () => { if (voice === v) { voice = null; duck(false); } res(); }; });
 }
-const clip = (name) => Promise.race([room.pixo.play(name), wait(TEST ? 100 : 7000)]);
+const clip = (name) => (room.walking || room.jumping ? wait(400) : Promise.race([room.pixo.play(name), wait(TEST ? 100 : 7000)])); // not while he walks or jumps
 // Pixo says a line: the words on screen, the voice from where he stands, his body moving while he talks
 async function say(id, first = 'talk', prefix = '') {
   const my = ++sayTok; const el = $('#say'), txt = L[id] || ''; if (TEST) console.warn('say ' + id);
@@ -220,13 +221,16 @@ async function go(resume) {
     while (!ok) { const choice = await camFail(); if (choice === 'skip') break; ok = await startMind(); }
     await g; if (!ok) S.mode = 'nocam';
   }
+  // Android: the real room (Pixo walks on the real floor, climbs real chairs, hides behind real things)
+  S.xr = S.mode === 'cam' && !Q.has('noxr') && await xrSupported();
+  if (S.xr) S.plan = S.plan.map((g) => (g === 'color' ? 'stars' : g)); // the colour hunt reads the camera picture, which the real room keeps to itself
   if (S.mode === 'nocam') { room.drawRoom(); room.pitch = -0.42; if (!resume) S.plan = S.plan.map((g) => (g === 'color' ? 'stars' : g)); }
   if (!room.useGyro) $('#arrow em').innerHTML = tr('Par là !<br>Glissez ou ← →', 'This way!<br>Drag or ← →');
   (async () => { for (const id of Object.keys(L)) await load(vpath(id)); })(); // the voice, in the background
   if (S.players.length >= 4) badge('team');
   if (!resume && EP().film) await introFilm();
   startMusic();
-  if (resume) { await appear(ahead()); await say('resume', 'hello'); } else await intro();
+  if (resume) { await enterRoom(); await appear(await landing(S.next - 1)); await say('resume', 'hello'); } else await intro();
   for (let k = S.next; k <= 6; k++) await cardRound(k);
   await finale();
 }
@@ -275,20 +279,89 @@ async function startMind() {
     if (mind) { try { mind.stop(); } catch {} mind = null; $('#scanbox').innerHTML = ''; }
     const { MindARThree } = await import('mindar-image-three');
     const m = new MindARThree({ container: $('#scanbox'), imageTargetSrc: 'targets.mind', maxTrack: 1, uiLoading: 'no', uiScanning: 'no', uiError: 'no', filterMinCF: 0.0001, filterBeta: 0.001 });
-    const portals = [];
+    const portals = [], anchors = [];
     for (let i = 0; i < 6; i++) {
-      const a = m.addAnchor(i), p = new LivingPortal(i + 1, CARDCOL[i], room.pixo); a.group.add(p.group); portals.push(p);
+      const a = m.addAnchor(i), p = new LivingPortal(i + 1, CARDCOL[i], room.pixo); a.group.add(p.group); portals.push(p); anchors.push(a);
       a.onTargetFound = () => { if (TEST) console.warn('target seen', i + 1, 'want', S.want); onCard?.(i + 1, p); };
     }
     document.body.classList.add('cam');
     await m.start();
     if (!m.video || !m.video.srcObject) throw new Error('no camera picture');
-    m.renderer.setAnimationLoop((t) => { for (const p of portals) if (p.group.visible) p.update(t / 1000, m.camera); m.renderer.render(m.scene, m.camera); });
+    m.renderer.setAnimationLoop((t) => {
+      for (const p of portals) if (p.group.visible) p.update(t / 1000, m.camera);
+      const a = S.cardK && anchors[S.cardK - 1]; if (a && a.group.visible) cardSample(a.group); // measured while the portal opens
+      room.setFov(m.camera.fov); m.renderer.render(m.scene, m.camera);
+    });
     mind = m; mind.portals = portals; mindPause(); room.setFeed(m.video); return true;
   } catch (e) { console.warn('camera or card scanner unavailable', e); document.body.classList.remove('cam'); return false; }
 }
+// the card seen by the scanner, turned into the room's space: where it lies and which way is up from it.
+// MindAR gives its pose from the phone's lens (in units of its own size): with the card's printed width and the
+// gyroscope, that is where it is in the room, so Pixo can land beside it, on the surface it lies on.
+const CARD_W = 0.09; // metres
+function cardSample(g) {
+  if (!room.useGyro) return;
+  const M = g.matrix, sc = new THREE.Vector3().setFromMatrixColumn(M, 0).length(); if (!sc) return;
+  const q = room.cam.quaternion, p = new THREE.Vector3().setFromMatrixPosition(M).multiplyScalar(CARD_W / sc).applyQuaternion(q);
+  const n = new THREE.Vector3().setFromMatrixColumn(M, 2).normalize().applyQuaternion(q);
+  const c = S.cardAt ||= { p: new THREE.Vector3(), n: new THREE.Vector3(), k: 0 }; c.k++; const w = 1 / Math.min(c.k, 12);
+  c.p.lerp(p, w); c.n.lerp(n, w);
+}
+// where hidden cards usually lie above the floor (the parents chose the hiding places)
+const ELEV = { canape: 0.42, lit: 0.5, table: 0.74, coussin: 0.4 };
+// where Pixo lands after a card: beside the card on its own surface (cards on a sofa, a bed or a table: he lands
+// up there, and the floor is that much lower); in the real room, where the phone points; otherwise ahead
+async function landing(k) {
+  S.perch = null;
+  if (room.xr) return xrLanding();
+  const c = S.cardAt; S.cardAt = null; S.cardK = 0; room.floorY = -FLOOR;
+  if (TEST) console.warn('card pose', c ? `${c.k} samples, at ${c.p.toArray().map((x) => x.toFixed(2)).join(' ')}, up ${c.n.y.toFixed(2)}` : 'none', 'gyro', room.useGyro);
+  if (!c || c.k < 3 || c.n.y < 0.75 || (k === 1 && S.got < 6)) return ahead(); // card 1 starts in a parent's hand
+  const d = Math.hypot(c.p.x, c.p.z); if (d < 0.1 || d > 2.4 || c.p.y > -0.2 || c.p.y < -1.8) return ahead();
+  const e = ELEV[S.spots[k]] || 0; room.floorY = Math.max(-1.7, Math.min(-0.35, c.p.y - e));
+  if (e) S.perch = { y: c.p.y, t: performance.now() };
+  const back = new THREE.Vector3(-c.p.x, 0, -c.p.z).normalize().multiplyScalar(0.14);
+  if (TEST) console.warn('card at', c.p.toArray().map((x) => x.toFixed(2)).join(' '), 'floor', room.floorY.toFixed(2));
+  return new THREE.Vector3(c.p.x + back.x, c.p.y, c.p.z + back.z);
+}
+// ------------------------------------------------------------------ the real room (WebXR): opened by a tap after each card
+const mindStop = () => { if (!mind) return; try { mind.renderer.setAnimationLoop(null); mind.stop(); } catch {} mind = null; $('#scanbox').innerHTML = ''; document.body.classList.remove('cam'); room.setFeed(null); };
+async function enterRoom() {
+  if (TEST) console.warn('enter room', S.xr, room.xr);
+  if (!S.xr || room.xr) return;
+  screen('xrgo');
+  const ok = await new Promise((res) => {
+    $('#xrbtn').onclick = async () => { sfx('tap'); mindStop(); try { await world.start(document.body); res(true); } catch (e) { console.warn('real room unavailable', e); res(false); } };
+    $('#xrskip').onclick = () => res(false);
+  });
+  screen(null);
+  if (!ok) { S.xr = false; if (!mind) await startMind(); return; }
+  document.body.classList.add('xr'); document.documentElement.classList.add('xr');
+}
+async function leaveRoom() {
+  if (room.xr) { S.leaving = true; await world.end(); } // xrEnded() clears S.leaving (the end event may come late)
+  if (S.mode === 'cam' && !mind) await startMind();
+}
+function xrEnded() { // the real room closed (by us, or the phone's back button)
+  const planned = S.leaving; S.leaving = false; if (TEST) console.warn('room closed', planned ? 'by the game' : 'by the phone');
+  document.body.classList.remove('xr'); document.documentElement.classList.remove('xr'); room.floorY = -FLOOR; room.cam.position.set(0, 0, 0); room.resize(); room.cam.updateProjectionMatrix();
+  if (!planned && S.phase !== 'end' && S.mode === 'cam') { S.xr = false; startMind(); }
+}
+// he lands where the phone points: the real floor (or the surface there), once the phone has found it
+async function xrLanding() {
+  const h = $('#xrhint'); h.classList.add('on'); const t0 = performance.now();
+  while (performance.now() - t0 < (FAST ? 300 : 9000)) {
+    const c = world.center, m = room.me();
+    if (c?.flat) { const d = Math.hypot(c.p.x - m.x, c.p.z - m.z);
+      if (d > 0.35 && d < 4) { h.classList.remove('on'); if (d <= 2) return c.p.clone(); // farther: on the same floor, 2 m away in that direction
+        const k = 2 / d; return new THREE.Vector3(m.x + (c.p.x - m.x) * k, world.floorY ?? c.p.y, m.z + (c.p.z - m.z) * k); } }
+    await wait(100);
+  }
+  h.classList.remove('on'); return ahead();
+}
 async function scan(k) {
-  S.phase = `scan${k}`; S.want = k; const sc = $('#scan'), finale = k === 1 && S.got === 6;
+  await leaveRoom();
+  S.phase = `scan${k}`; S.want = k; S.cardAt = null; S.cardK = k; const sc = $('#scan'), finale = k === 1 && S.got === 6;
   sc.querySelector('.kick').textContent = finale ? tr('Le grand final', 'The grand finale') : tr(`Carte ${k} sur 6`, `Card ${k} of 6`);
   sc.querySelector('.t').textContent = finale ? tr('Posez la carte 1 et regardez-la', 'Put card 1 down and look at it') : tr(`Montrez la carte ${k} !`, `Show card ${k}!`);
   sc.querySelector('.nocam .face').src = `cards/c${k}.jpg`; sc.querySelector('.nocam .plate').src = `img/plates/p${k}.jpg`; sc.querySelector('.cardfx').className = 'cardfx'; $('#foundbtn').textContent = tr(`J’ai trouvé la carte ${k}`, `I found card ${k}`);
@@ -314,7 +387,7 @@ async function scan(k) {
     mindResume(); scanHum(true);
   }
   say(finale ? ln('e1') : 'scan', null);
-  await done; clearTimeout(late); onCard = null; S.want = 0;
+  await done; clearTimeout(late); onCard = null; S.want = 0; S.cardK = 0; // the scanner stops: its last pose would go stale
   if (mind) { mindPause(); try { mind.controller.interestedTargetIndex = -1; } catch {} for (const p of mind.portals) p.reset(); }
   sc.classList.remove('opening'); scanHum(false);
   flash(); screen(null);
@@ -341,7 +414,7 @@ function stickPart(id) { const s = room.sprites.get(id); if (s) { s.userData.bas
 async function cardRound(k) {
   await scan(k);
   S.phase = `card${k}`; const part = S.order[k - 1], id = `p${part}`; S.partId = id;
-  const at = ahead(); await appear(at);
+  await enterRoom(); const at = await landing(k); await appear(at);
   room.addSprite(id, item(part), partPos(at), S.ep === 'e1' ? 0.3 : 0.22); room.sparks(partPos(at), 34, [0xffd46a, 0xffffff], 1.0, 0.05); sfx('part');
   await say(ln(`f${part}`), 'hello');
   if (S.hides.includes(k)) await hideAndSeek(k, id);
@@ -360,8 +433,13 @@ async function hideAndSeek(k, id) {
   const v = say(pick(['hide', 'hide2']), 'happy');
   await wait(T(1500));
   const side = Math.random() < 0.5 ? -1 : 1, a = room.lookYaw() + side * (2.0 + Math.random() * 0.7), r = S.mode === 'nocam' ? 1.8 + Math.random() * 0.3 : 1.1 + Math.random() * 0.4;
-  const to = new THREE.Vector3(Math.sin(a) * r, -FLOOR, -Math.cos(a) * r);
-  sfx('poof'); const s = room.sprites.get(id); if (s) s.visible = false;
+  let to = room.around(a, r);
+  if (room.xr) { // a real perch behind the players (the sofa, a chair, the bed): he hides up there
+    const look = room.lookYaw(), m = room.me();
+    const far = world.perches.filter((p) => { const d = Math.atan2(Math.sin(room.bearingOf(p) - look), Math.cos(room.bearingOf(p) - look)); return Math.abs(d) > 1.3 && Math.hypot(p.x - m.x, p.z - m.z) < 4; });
+    if (far.length) { const p = pick(far); to = new THREE.Vector3(p.x, p.y, p.z); }
+  }
+  sfx('poof'); S.perch = null; const s = room.sprites.get(id); if (s) s.visible = false;
   await room.teleport(to, FAST ? 30 : 450); stickPart(id); if (s) s.visible = true;
   setTimeout(() => sfx('giggle', 0.7), 300);
   await v;
@@ -370,6 +448,7 @@ async function hideAndSeek(k, id) {
   S.hunting = false; $('#arrow').classList.remove('on'); sfx('found'); room.sparks(room.pixo.g.position.clone().add(new THREE.Vector3(0, 0.3, 0)), 36, [0xff9ad0, 0xffe08a, 0x9ff3e0], 1.3, 0.06);
   addStars(S.players[(k - 1) % S.players.length], 1); if (performance.now() - S.huntT < 4000) badge('lynx');
   await say(pick(['gotme', 'gotme2', 'gotme3']), 'happy');
+  if (onPerch()) await comeDown(); // found up on the sofa: he jumps down to the players
 }
 
 // --- quiz: one question per player, in the sheet at the bottom
@@ -414,7 +493,7 @@ async function starsGame(k) {
       const a = room.lookYaw() + (Math.random() - 0.5) * (little ? 2.2 : 4.4), r = S.mode === 'nocam' ? 1.6 + Math.random() * 0.8 : 1.0 + Math.random() * 0.9, h = little ? 0.24 : 0.17;
       const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false })); s.scale.set(h, h, 1);
       const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: room.glow, color: 0xffe08a, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false })); halo.scale.set(h * 2.6, h * 2.6, 1); s.add(halo); halo.position.z = -0.01;
-      s.position.set(Math.sin(a) * r, -0.55 + Math.random() * 1.0, -Math.cos(a) * r); s.userData = { a, r, y: s.position.y, w: (Math.random() - 0.5) * 0.25, t0: performance.now() / 1000 };
+      const m = room.me(); s.position.set(m.x + Math.sin(a) * r, m.y - 0.55 + Math.random() * 1.0, m.z - Math.cos(a) * r); s.userData = { a, r, m, y: s.position.y, w: (Math.random() - 0.5) * 0.25, t0: performance.now() / 1000 };
       room.scene.add(s); starSet.add(s);
     };
     for (let i = 0; i < (little ? 4 : 6); i++) spawn();
@@ -434,7 +513,7 @@ async function starsGame(k) {
 }
 function starsFrame(t) { // the stars drift slowly around the players
   if (!starSet) return;
-  for (const s of starSet) { const u = s.userData, a = u.a + (t - u.t0) * u.w; s.position.set(Math.sin(a) * u.r, u.y + Math.sin(t * 1.7 + u.a * 3) * 0.08, -Math.cos(a) * u.r); s.material.rotation = Math.sin(t * 2 + u.a) * 0.3; }
+  for (const s of starSet) { const u = s.userData, a = u.a + (t - u.t0) * u.w; s.position.set(u.m.x + Math.sin(a) * u.r, u.y + Math.sin(t * 1.7 + u.a * 3) * 0.08, u.m.z - Math.cos(a) * u.r); s.material.rotation = Math.sin(t * 2 + u.a) * 0.3; }
 }
 
 // --- Simon: Pixo's antenna flashes a sequence of colours; repeat it; it grows each time
@@ -550,8 +629,8 @@ async function clue(k) {
 // ------------------------------------------------------------------ the finale: the ship rebuilds and takes off
 async function finale() {
   await scan(1);
-  S.phase = 'finale';
-  const at = ahead(), a = Math.atan2(at.x, -at.z);
+  S.phase = 'finale'; await enterRoom(); const at = await landing(1); S.perch = null;
+  const a = room.bearingOf(at);
   const pixoAt = at.clone().add(new THREE.Vector3(Math.cos(a) * 0.32 - Math.sin(a) * 0.25, 0, Math.sin(a) * 0.32 + Math.cos(a) * 0.25)); // beside the ship, a step closer
   await appear(pixoAt);
   const H = 0.8, shipPos = at.clone().add(new THREE.Vector3(0, H / 2, 0));
@@ -569,7 +648,7 @@ async function finale() {
   await voice;
   const P = room.pixo.g.position, from = P.clone(), t0 = performance.now();
   sfx('hop');
-  await new Promise((r) => { const st = () => { const u = Math.min(1, (performance.now() - t0) / (FAST ? 40 : 1000)); P.lerpVectors(from, at, u); P.y = -FLOOR + Math.sin(u * Math.PI) * 0.4; room.pixo.uni.fade.value = 1 - u; u < 1 ? requestAnimationFrame(st) : r(); }; st(); });
+  await new Promise((r) => { const st = () => { const u = Math.min(1, (performance.now() - t0) / (FAST ? 40 : 1000)); P.lerpVectors(from, at, u); P.y = from.y + (at.y - from.y) * u + Math.sin(u * Math.PI) * 0.4; room.pixo.uni.fade.value = 1 - u; u < 1 ? requestAnimationFrame(st) : r(); }; st(); });
   room.pixo.g.visible = false; room.pixo.uni.fade.value = 1; sfx('appear'); room.sparks(shipPos, 30, 0x9ff3e0, 1, 0.05);
   await say(ln('e3'), null);
   sfx(EP().flame ? 'engine' : 'appear'); const b0 = shipPos.clone(), t1 = performance.now();
@@ -590,6 +669,7 @@ async function finale() {
   await drawDiploma(rec);
   document.body.classList.remove('playing'); screen('end');
   (async () => { if (S.record && rec) await say('record', null); if (S.newBadges.length) await say('badge', null); if (nx) say('next_ep', null); })();
+  if (room.xr) { S.leaving = true; await world.end(); }
   if (mind) { try { mind.stop(); } catch {} } room.stopCamera(); document.body.classList.remove('cam');
 }
 
@@ -636,7 +716,7 @@ function downloadDiploma() {
 
 // ------------------------------------------------------------------ every frame: the voice follows Pixo, the arrow points to him (or to the stars)
 function pointAt(target) { // returns true when the target is on screen
-  const v = target.clone().project(room.cam), f = room.forward(), d0 = Math.atan2(target.x, -target.z) - Math.atan2(f.x, -f.z), d = Math.atan2(Math.sin(d0), Math.cos(d0));
+  const v = target.clone().project(room.cam), f = room.forward(), d0 = room.bearingOf(target) - Math.atan2(f.x, -f.z), d = Math.atan2(Math.sin(d0), Math.cos(d0));
   const on = v.z < 1 && Math.abs(v.x) < 0.85 && Math.abs(v.y) < 0.9; const ar = $('#arrow'), sv = ar.querySelector('svg');
   if (on) { ar.style.opacity = 0; return true; }
   ar.style.opacity = 1;
@@ -645,16 +725,36 @@ function pointAt(target) { // returns true when the target is on screen
   return false;
 }
 // ------------------------------------------------------------------ Pixo alive
-const life = { off: 0, spin: 0, lastFollow: -1e9, lastDizzy: -1e9, taps: [], lastTickle: -1e9, moving: false, lastT: 0, follows: 0 };
+const life = { lastClimb: -1e9, climbs: 0, off: 0, spin: 0, lastFollow: -1e9, lastDizzy: -1e9, taps: [], lastTickle: -1e9, moving: false, lastT: 0, follows: 0 };
 const calm = () => { const p = S.phase; return room.pixo.g.visible && !voice && !S.hunting && !starSet && !life.moving && !/^(hide|stars|scan|clue|finale|end|film|start)/.test(p); };
+// is he up on something? (the real room knows the floor; otherwise, he is on the card's perch)
+const onPerch = () => (room.xr ? world.onPerch(room.pixo.g.position) : !!S.perch && room.pixo.g.position.y > room.floorY + 0.15);
+async function climb(pc) { // walk to the foot of it, look up, and jump on top
+  life.moving = true; life.lastClimb = performance.now(); life.climbs++;
+  say(pick(['climb', 'climb2']), null);
+  await room.walk(pc.base, FAST ? 20 : 0.26); await room.jumpTo(pc.top, 0.16); sfx('hop', 0.7, 1.1);
+  life.moving = false;
+}
+async function comeDown(to) { // from the perch to the floor, towards the players
+  const was = life.moving; life.moving = true; const P = room.pixo.g.position, m = room.me();
+  if (!to) { const v = new THREE.Vector3(m.x - P.x, 0, m.z - P.z); const d = v.length() || 1; v.multiplyScalar(Math.min(0.35, d * 0.4) / d); to = new THREE.Vector3(P.x + v.x, room.floorY, P.z + v.z); }
+  to = to.clone(); to.y = room.floorY;
+  // a short leap down (40 cm at most), then he walks the rest of the way
+  const v = new THREE.Vector3(to.x - P.x, 0, to.z - P.z), d = v.length(), hop = d > 0.4 ? new THREE.Vector3(P.x + v.x * 0.4 / d, to.y, P.z + v.z * 0.4 / d) : to;
+  say('down', null); S.perch = null; await room.jumpTo(hop, 0.1); sfx('hop', 0.7, 0.9);
+  if (hop !== to) await room.walk(to, FAST ? 20 : 0.26);
+  life.moving = was;
+}
 async function follow() { // he hops back into view, beside where the phone is looking
   life.moving = true; life.lastFollow = performance.now(); life.follows++;
   // beside the middle of the screen, inside the picture whatever the phone's shape (half the half-width of the view)
-  const half = Math.atan(Math.tan(THREE.MathUtils.degToRad(room.cam.fov / 2)) * room.cam.aspect), side = Math.random() < 0.5 ? -1 : 1, base = ahead(), a = Math.atan2(base.x, -base.z) + side * half * 0.45, r = Math.hypot(base.x, base.z);
-  const to = new THREE.Vector3(Math.sin(a) * r, -FLOOR, -Math.cos(a) * r), far = Math.abs(room.pixoBearing().d) > 1.4;
-  const s = S.partId && room.sprites.get(S.partId); if (s) s.visible = false;
-  if (far) { sfx('poof', 0.6); await room.teleport(to, FAST ? 30 : 300); } else { sfx('hop', 0.7); await room.hop(to, 0.4, FAST ? 60 : 700); }
-  if (s) { stickPart(S.partId); s.visible = true; }
+  const half = room.halfH(), side = Math.random() < 0.5 ? -1 : 1, base = ahead(), m = room.me(), a = room.bearingOf(base) + side * half * 0.45, r = Math.hypot(base.x - m.x, base.z - m.z);
+  const to = room.around(a, r), far = Math.abs(room.pixoBearing().d) > 1.4, P = room.pixo.g.position, dist = Math.hypot(to.x - P.x, to.z - P.z);
+  const s = S.partId && room.sprites.get(S.partId);
+  if (far) { if (s) s.visible = false; sfx('poof', 0.6); S.perch = null; await room.teleport(to, FAST ? 30 : 300); if (s) { stickPart(S.partId); s.visible = true; } }
+  else if (onPerch()) await comeDown(to);
+  else if (dist < 1.1) await room.walk(to, FAST ? 20 : 0.26); // a few steps; farther, he hops (walking would take too long)
+  else { sfx('hop', 0.7); await room.hop(to, 0.4, FAST ? 60 : 700); }
   life.moving = false; say(life.follows % 2 ? 'here' : 'here2', 'hello');
 }
 function alive(t) {
@@ -664,6 +764,12 @@ function alive(t) {
   life.off = room.pixoBearing().on ? 0 : life.off + dt;
   if (life.off > 6 && now - life.lastFollow > 12000) { life.off = 0; follow(); return; }
   // the room spins: turning the phone (or dragging the room) very fast makes him dizzy
+  // a perch in sight (the real room): he walks to it and climbs up, now and then
+  if (room.xr && now - life.lastClimb > (TEST ? 3000 : 25000) && life.climbs < 3 && !onPerch()) {
+    const pc = world.perchNear(room.pixo.g.position, 2.2); if (pc) { const v = pc.top.clone().project(room.cam); if (v.z < 1 && Math.abs(v.x) < 0.8 && Math.abs(v.y) < 0.85) { climb(pc); return; } }
+  }
+  // he landed up on the sofa with the card: after a while he hops down to the floor
+  if (S.perch && !room.xr && now - S.perch.t > (TEST ? 1500 : 9000)) { comeDown(); return; }
   life.spin = Math.abs(room.spin) > 4.5 ? life.spin + dt : Math.max(0, life.spin - dt);
   if (life.spin > 0.35 && now - life.lastDizzy > 25000) { life.spin = 0; life.lastDizzy = now; say('dizzy', 'amazed'); badge('dizzy'); }
 }
@@ -675,6 +781,7 @@ function tickle() { // several taps on him in a row: it tickles
 
 function onFrame(t) {
   starsFrame(t); alive(t);
+  if (S.partId && (room.walking || room.jumping)) { const s = room.sprites.get(S.partId); if (s && s.userData.float !== false && s.visible) stickPart(S.partId); }
   if (starSet) { // during the star hunt, point to the nearest star when none is on screen
     const f = room.forward(); let best = null, bd = 9; for (const s of starSet) { const v = s.position.clone().project(room.cam); if (v.z < 1 && Math.abs(v.x) < 0.9 && Math.abs(v.y) < 0.9) { best = null; bd = -1; break; } const d = Math.abs(Math.atan2(Math.sin(s.userData.a - Math.atan2(f.x, -f.z)), Math.cos(s.userData.a - Math.atan2(f.x, -f.z)))); if (d < bd) { bd = d; best = s; } }
     const ar = $('#arrow'); if (best) { ar.classList.add('on'); $('#arrow em').firstChild.textContent = tr('Des étoiles par là !', 'Stars this way!'); pointAt(best.position); } else ar.classList.remove('on');
@@ -690,7 +797,7 @@ function onFrame(t) {
 translatePage();
 for (const b of document.querySelectorAll('.langsw button')) { b.classList.toggle('on', b.dataset.l === LANG); b.onclick = () => { if (b.dataset.l !== LANG) switchLang(b.dataset.l); }; }
 room = new Room($('#room'));
-room.onFrame = onFrame;
+room.onFrame = onFrame; world = room.world = new World(room); world.onEnd = xrEnded;
 room.onPixo = () => { if (S.hunting) { S.hunting = false; S.foundPixo?.(); } else if (tickle()) { sfx('giggle', 0.9); room.pixo.squash = 0.12; } else if (room.pixo.clip === 'idle' && !voice) { room.pixo.squash = 0.1; sfx('giggle', 0.8); room.sparks(room.pixo.g.position.clone().add(new THREE.Vector3(0, 0.3, 0)), 14, 0xff9ad0, 0.8, 0.05); clip('happy'); } };
-window.__chasse = { S, room, life, calm: () => calm(), get mind() { return mind; } };
+window.__chasse = { S, room, life, calm: () => calm(), get mind() { return mind; }, get world() { return world; }, landing, climb, comeDown, onPerch: () => onPerch() };
 setup();

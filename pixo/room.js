@@ -7,7 +7,12 @@
 import * as THREE from 'three';
 
 const FLOOR = 1.05; // metres from the eye to the floor
-const CLIPS = ['idle', 'hello', 'happy', 'talk', 'sad', 'amazed'];
+const CLIPS = ['idle', 'hello', 'happy', 'talk', 'sad', 'amazed', 'walk', 'walkout', 'climb'];
+const LOOP = { idle: true, walk: true };
+// the climb clip: he crouches, is in the air from AIR[0] to AIR[1] seconds, then lands and stands proud
+const AIR = [1.5, 2.36];
+// the walk clip: one stride every STEP seconds; a step carries him STRIDE metres (so his feet do not slide)
+const STEP = 0.39, STRIDE = 0.085;
 
 // soft round glow and a four-point twinkle, drawn once
 function glowTex(kind) {
@@ -26,12 +31,12 @@ function glowTex(kind) {
 
 // the filmed actor's look: top half of the clip is the picture, bottom half its transparency
 export function pixoMaterial(tex) {
-  const uni = { map: { value: tex }, tint: { value: new THREE.Color(1, 1, 1) }, fade: { value: 1 }, glow: { value: 0 } };
+  const uni = { map: { value: tex }, tint: { value: new THREE.Color(1, 1, 1) }, fade: { value: 1 }, glow: { value: 0 }, flip: { value: 0 }, occ: { value: null }, useOcc: { value: 0 } };
   const mat = new THREE.ShaderMaterial({ uniforms: uni, transparent: true, depthWrite: false,
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-    fragmentShader: `uniform sampler2D map; uniform vec3 tint; uniform float fade; uniform float glow; varying vec2 vUv;
-      void main(){ vec3 c = texture2D(map, vec2(vUv.x, 0.5 + vUv.y * 0.5)).rgb; float a = texture2D(map, vec2(vUv.x, vUv.y * 0.5)).r;
-        a = smoothstep(0.08, 0.92, a) * fade; if (a < 0.01) discard; c = c * tint + glow * vec3(0.55, 1.0, 0.9); gl_FragColor = vec4(c, a); }` });
+    fragmentShader: `uniform sampler2D map; uniform vec3 tint; uniform float fade; uniform float glow; uniform float flip; uniform sampler2D occ; uniform float useOcc; varying vec2 vUv;
+      void main(){ float x = flip > 0.5 ? 1.0 - vUv.x : vUv.x; vec3 c = texture2D(map, vec2(x, 0.5 + vUv.y * 0.5)).rgb; float a = texture2D(map, vec2(x, vUv.y * 0.5)).r;
+        a = smoothstep(0.08, 0.92, a) * fade; if (useOcc > 0.5) a *= smoothstep(0.25, 0.75, texture2D(occ, vUv).r); if (a < 0.01) discard; c = c * tint + glow * vec3(0.55, 1.0, 0.9); gl_FragColor = vec4(c, a); }` });
   mat.toneMapped = false; return { mat, uni };
 }
 
@@ -41,7 +46,7 @@ export function pixoMaterial(tex) {
 function makePixo(base) {
   const vids = {}, texs = {};
   for (const n of CLIPS) {
-    const v = document.createElement('video'); v.src = `${base}pixo/${n}.mp4`; v.muted = true; v.playsInline = true; v.preload = 'auto'; v.crossOrigin = 'anonymous'; v.loop = n === 'idle';
+    const v = document.createElement('video'); v.src = `${base}pixo/${n}.mp4`; v.muted = true; v.playsInline = true; v.preload = 'auto'; v.crossOrigin = 'anonymous'; v.loop = !!LOOP[n];
     v.setAttribute('playsinline', ''); vids[n] = v;
     const t = new THREE.VideoTexture(v); t.encoding = THREE.sRGBEncoding; texs[n] = t;
   }
@@ -59,11 +64,12 @@ function makePixo(base) {
   const api = {
     g, body, card, uni, vids, texs, shadow, hop: 0, squash: 0, lean: 0,
     // play a clip once (or 'idle' forever); resolves when it ends. Every clip starts and ends on the same pose.
-    play(name) {
+    play(name, rate = 1) {
       const v = vids[name]; if (!v) return Promise.resolve(); const my = ++token;
       if (cur !== name) vids[cur].pause();
-      cur = name; uni.map.value = texs[name]; v.currentTime = 0; v.play().catch(() => {});
-      if (name === 'idle') return Promise.resolve();
+      if (name !== 'walk' && name !== 'walkout') uni.flip.value = 0; // only the walk is seen from the side
+      cur = name; uni.map.value = texs[name]; v.currentTime = 0; v.playbackRate = rate; v.play().catch(() => {});
+      if (LOOP[name]) return Promise.resolve();
       return new Promise((res) => { v.onended = () => { if (my !== token) return; res(); api.play('idle'); }; });
     },
     unlock() { for (const v of Object.values(vids)) v.play().then(() => { if (v !== vids[cur]) v.pause(); }).catch(() => {}); },
@@ -84,10 +90,23 @@ export class Room {
     this.yaw = 0; this.pitch = -0.25; this.pitchMin = -1.3; this.pitchMax = 0.6; this.useGyro = false; this.gq = null; this.yawOffset = null;
     this.light = new THREE.Color(1, 1, 1); this.sample = document.createElement('canvas'); this.sample.width = this.sample.height = 16; this.sk = this.sample.getContext('2d', { willReadFrequently: true });
     this.feed = null; this.drawnRoom = null; this.last = 0; this.spin = 0; this._fwd = new THREE.Vector3(0, 0, -1);
-    this.input(); addEventListener('resize', () => this.resize()); this.resize();
-    const loop = (t) => { this.frame(t / 1000); requestAnimationFrame(loop); }; requestAnimationFrame(loop);
+    this.floorY = -FLOOR;  // where the floor is (metres, from the eye): measured from the card, or by the real room
+    this.world = null;     // the real room (WebXR), when the phone can
+    this.fovMatch = null;  // the camera picture's own field of view (from the card scanner), so Pixo has his real size
+    this.walking = null; this.input(); addEventListener('resize', () => this.resize()); this.resize();
+    this.renderer.setAnimationLoop((t, xf) => this.frame(t / 1000, xf));
   }
-  resize() { const w = this.el.clientWidth, h = this.el.clientHeight; this.renderer.setSize(w, h, false); this.cam.aspect = w / h; this.cam.fov = w < h ? 62 : 46; this.cam.updateProjectionMatrix(); }
+  get xr() { return !!this.world?.active; }
+  resize() { if (this.xr) return; const w = this.el.clientWidth, h = this.el.clientHeight; this.renderer.setSize(w, h, false); this.cam.aspect = w / h; this.cam.fov = this.fovMatch || (w < h ? 62 : 46); this.cam.updateProjectionMatrix(); }
+  setFov(f) { if (f && Math.abs(f - (this.fovMatch || 0)) > 0.3) { this.fovMatch = f; this.resize(); } }
+  // half the horizontal field of view (radians), whatever drives the camera
+  halfH() { const e = this.cam.projectionMatrix.elements; return Math.atan(1 / e[0]); }
+  // where the player is: the phone (it moves in the real room; otherwise it stays at the middle)
+  me() { return this.xr ? new THREE.Vector3(this.cam.position.x, this.cam.position.y, this.cam.position.z) : new THREE.Vector3(); }
+  // a point on the floor around the player: angle a (0 = straight ahead at the start, clockwise), r metres away
+  around(a, r, y = this.floorY) { const m = this.me(); return new THREE.Vector3(m.x + Math.sin(a) * r, y, m.z - Math.cos(a) * r); }
+  // the bearing (radians) of a point as seen from the player
+  bearingOf(p) { const m = this.me(); return Math.atan2(p.x - m.x, -(p.z - m.z)); }
   // ------------------------------------------------------------ camera and gyroscope
   async startCamera() {
     try {
@@ -118,10 +137,12 @@ export class Room {
     this.canvas.addEventListener('pointerdown', (e) => { p = { x: e.clientX, y: e.clientY, yaw: this.yaw, pitch: this.pitch, moved: 0 }; });
     addEventListener('pointermove', (e) => { if (!p || this.useGyro) return; const dx = e.clientX - p.x, dy = e.clientY - p.y; p.moved = Math.max(p.moved, Math.hypot(dx, dy)); this.yaw = p.yaw + dx * 0.006; this.pitch = Math.max(this.pitchMin, Math.min(this.pitchMax, p.pitch + dy * 0.004)); });
     addEventListener('pointerup', (e) => { if (p && p.moved < 8) this.tap(e); p = null; });
+    // in the real room the 3D picture is drawn by the phone under the page: taps on nothing are taps in the room
+    addEventListener('pointerup', (e) => { if (this.xr && (e.target === document.body || e.target === document.documentElement || e.target?.closest?.('#room, #xrhint'))) this.tap(e, true); });
     addEventListener('keydown', (e) => { if (this.useGyro || e.target?.tagName === 'INPUT') return; const k = { ArrowLeft: [0.12, 0], ArrowRight: [-0.12, 0], ArrowUp: [0, 0.08], ArrowDown: [0, -0.08] }[e.key]; if (k) { e.preventDefault(); this.yaw += k[0]; this.pitch = Math.max(this.pitchMin, Math.min(this.pitchMax, this.pitch + k[1])); } });
   }
-  tap(e) {
-    const r = this.canvas.getBoundingClientRect(), v = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  tap(e, full) {
+    const r = full ? { left: 0, top: 0, width: innerWidth, height: innerHeight } : this.canvas.getBoundingClientRect(), v = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     const ray = new THREE.Raycaster(); ray.setFromCamera(v, this.cam);
     if (this.onTap && this.onTap(ray)) return; // a mini-game took the tap
     if (this.onPixo && this.pixo.g.visible && ray.intersectObject(this.pixo.card).length) this.onPixo();
@@ -144,15 +165,15 @@ export class Room {
   forward() { return new THREE.Vector3(0, 0, -1).applyQuaternion(this.cam.quaternion); }
   // the floor point the phone is looking at (where the card lies), at a sensible distance
   floorAhead(min = 0.7, max = 1.8) {
-    const f = this.forward(); const flat = new THREE.Vector3(f.x, 0, f.z).normalize(); let d = 1.3;
-    if (f.y < -0.05) d = FLOOR / -f.y * Math.hypot(f.x, f.z); d = Math.max(min, Math.min(max, d));
-    return new THREE.Vector3(flat.x * d, -FLOOR, flat.z * d);
+    const f = this.forward(), m = this.me(); const flat = new THREE.Vector3(f.x, 0, f.z).normalize(); let d = 1.3;
+    const h = m.y - this.floorY; if (f.y < -0.05) d = h / -f.y * Math.hypot(f.x, f.z); d = Math.max(min, Math.min(max, d));
+    return new THREE.Vector3(m.x + flat.x * d, this.floorY, m.z + flat.z * d);
   }
   placePixo(pos) { this.pixo.g.position.copy(pos); this.pixo.g.visible = true; }
   // the angle between where the phone looks and where Pixo is (radians, signed), and whether he is on screen
   pixoBearing() {
     const p = this.pixo.g.position, f = this.forward();
-    const a = Math.atan2(p.x, -p.z), b = Math.atan2(f.x, -f.z); let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+    const a = this.bearingOf(p), b = Math.atan2(f.x, -f.z); let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
     const v = p.clone().add(new THREE.Vector3(0, 0.25, 0)).project(this.cam); const on = v.z < 1 && Math.abs(v.x) < 0.8 && Math.abs(v.y) < 0.9;
     return { d, on, sx: v.x, sy: v.y };
   }
@@ -224,16 +245,51 @@ export class Room {
     return new Promise((res) => { const s = () => { const u = Math.min(1, (performance.now() - t0) / ms); X.hop = h * (1 - u * u);
       if (u < 1) return requestAnimationFrame(s); X.hop = 0; this.land(); res(); }; s(); });
   }
+  // he walks on the ground to `to`, facing where he goes (the walk clip looks to the right: mirrored to go left).
+  // The clip runs at the pace of his feet: one stride of STRIDE metres every STEP seconds.
+  walk(to, speed = 0.26) {
+    const X = this.pixo, from = X.g.position.clone(), d = Math.hypot(to.x - from.x, to.z - from.z);
+    if (d < 0.05) { X.g.position.copy(to); return Promise.resolve(); }
+    this.walking?.res(); X.uni.flip.value = this._side(from, to) < 0 ? 1 : 0;
+    X.play('walk', Math.max(0.7, Math.min(1.6, speed * STEP / STRIDE))); X.squash = 0.08;
+    return new Promise((res) => { this.walking = { from, to: to.clone(), t0: performance.now(), dur: (d / speed) * 1000, res }; });
+  }
+  _side(a, b) { const p = a.clone().project(this.cam), q = b.clone().project(this.cam); return q.x - p.x; }
+  // a jump onto a perch (or down from it): the climb clip; while his feet are off the ground in it, he flies from
+  // where he stands to `to`, over a little arc. Resolves when he has landed.
+  jumpTo(to, bump = 0.14) {
+    const X = this.pixo; this.walking?.res(); this.walking = null;
+    X.play('climb');
+    return new Promise((res) => { this.jumping = { from: X.g.position.clone(), to: to.clone(), bump, t0: performance.now(), res }; });
+  }
   land() { this.pixo.squash = 0.22; const p = this.pixo.g.position.clone().add(new THREE.Vector3(0, 0.02, 0)); this.sparks(p, 16, [0xe9e1d2, 0xfff4dd], 0.55, 0.05); }
   fade(a, b, ms, glow = false) {
     const t0 = performance.now(), U = this.pixo.uni;
     return new Promise((res) => { const s = () => { const u = Math.min(1, (performance.now() - t0) / ms); U.fade.value = a + (b - a) * u; U.glow.value = glow ? Math.sin(u * Math.PI) * 0.8 : 0; u < 1 ? requestAnimationFrame(s) : res(); }; s(); });
   }
   // ------------------------------------------------------------ every frame
-  frame(t) {
+  frame(t, xf) {
     const dt = Math.min(0.05, t - (this.last || t)); this.last = t;
-    if (this.useGyro && this.gq) this.cam.quaternion.slerp(this.gq, 0.5);
+    if (this.xr) { // the real room: the phone's own pose and lens, from ARCore
+      const c0 = this.renderer.xr.getCamera().cameras[0];
+      if (c0) { c0.matrix.decompose(this.cam.position, this.cam.quaternion, this.cam.scale); this.cam.projectionMatrix.copy(c0.projectionMatrix); this.cam.projectionMatrixInverse.copy(c0.projectionMatrix).invert(); this.cam.updateMatrixWorld(true); }
+      this.world.update(xf, performance.now()); if (this.world.floorY != null) this.floorY = this.world.floorY;
+      const U = this.pixo.uni, occ = this.world.depthOk && this.world.depthFlip != null; U.useOcc.value = occ ? 1 : 0; U.occ.value = occ ? this.world.maskTex : null;
+    } else if (this.useGyro && this.gq) this.cam.quaternion.slerp(this.gq, 0.5);
     else this.cam.quaternion.setFromEuler(new THREE.Euler(this.pitch, this.yaw, 0, 'YXZ'));
+    const now = performance.now();
+    if (this.walking) { // walking: along the ground, his feet at the pace of the clip; then he turns back to the players
+      const W = this.walking, u = Math.min(1, (now - W.t0) / W.dur), P = this.pixo;
+      P.g.position.lerpVectors(W.from, W.to, u);
+      const sd = this._side(P.g.position, W.to); if (Math.abs(sd) > 0.04) P.uni.flip.value = sd < 0 ? 1 : 0;
+      if (u >= 1) { this.walking = null; P.play('walkout'); W.res(); }
+    }
+    if (this.jumping) { // jumping: the clip's own crouch, then the flight while his feet are off the ground in it
+      const J = this.jumping, P = this.pixo, v = P.vids.climb, ct = !v.paused && v.currentTime > 0 ? v.currentTime : (now - J.t0) / 1000;
+      const u = Math.max(0, Math.min(1, (ct - AIR[0]) / (AIR[1] - AIR[0]))), e = u * u * (3 - 2 * u);
+      P.g.position.lerpVectors(J.from, J.to, e); P.g.position.y += Math.sin(u * Math.PI) * J.bump;
+      if (u >= 1 || (now - J.t0) / 1000 > AIR[1] + 1.5) { P.g.position.copy(J.to); this.jumping = null; this.land(); J.res(); }
+    }
     const P = this.pixo.g; P.rotation.y = Math.atan2(-P.position.x, -P.position.z);
     // how fast the phone turns (radians a second, smoothed), signed left/right
     const f = this.forward(), yawNow = Math.atan2(f.x, -f.z), yawWas = Math.atan2(this._fwd.x, -this._fwd.z); let dy = yawNow - yawWas; if (dy > Math.PI) dy -= 2 * Math.PI; if (dy < -Math.PI) dy += 2 * Math.PI;
@@ -243,7 +299,7 @@ export class Room {
     X.lean += (Math.max(-0.22, Math.min(0.22, -this.spin * 0.05)) - X.lean) * Math.min(1, dt * 5);
     B.position.y = X.hop; B.rotation.z = X.lean; X.squash *= Math.pow(0.02, dt);
     B.scale.set(1 - br * 0.5 + X.squash * 0.5, 1 + br - X.squash, 1);
-    const air = Math.min(1, X.hop / 0.5); X.shadow.scale.setScalar(1 - air * 0.45); X.shadow.material.opacity = (1 - air * 0.6) * X.uni.fade.value;
+    const air = Math.min(1, X.hop / 0.5); X.shadow.scale.setScalar(1 - air * 0.45); X.shadow.material.opacity = (1 - air * 0.6) * X.uni.fade.value * (X.uni.useOcc.value ? this.world.feetSeen : 1); // a shadow behind the sofa is hidden too
     // the room's light, from the camera picture, three times a second
     const fv = this.feed;
     if (fv && fv.readyState >= 2 && Math.floor(t * 3) !== this._ls) { this._ls = Math.floor(t * 3); try { this.sk.drawImage(fv, 0, 0, 16, 16); const d = this.sk.getImageData(0, 0, 16, 16).data; let r = 0, g = 0, b = 0; for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; } const n = d.length / 4; const L = (r + g + b) / (3 * n * 255);
