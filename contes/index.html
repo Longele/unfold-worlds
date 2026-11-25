@@ -73,6 +73,7 @@ body.app header .brand, body.app footer { visibility: hidden; }
 .dl .ring { width: 15px; height: 15px; border-radius: 50%; background: conic-gradient(var(--gold) calc(var(--p, 0) * 1turn), rgba(251, 241, 226, .2) 0); }
 body.offline .tale.net { pointer-events: none; }
 body.offline .tale.net .im { filter: saturate(.3) brightness(.45); }
+.priv { text-align: center; margin: 0 0 18px; font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; opacity: .45; }
 .sheet { position: fixed; inset: 0; z-index: 20; display: none; align-items: flex-end; justify-content: center; background: rgba(10, 5, 2, .6); }
 .sheet.on { display: flex; }
 .sheet .in { width: min(520px, 100%); padding: 26px 24px calc(26px + env(safe-area-inset-bottom)); border-radius: 26px 26px 0 0; background: #2a160b; border: 1px solid rgba(251, 241, 226, .15); text-align: center; }
@@ -95,16 +96,17 @@ body.offline .tale.net .im { filter: saturate(.3) brightness(.45); }
   </section>
   <div id="series"></div>
 </main>
+<p class="priv"><a href="confidentialite.html" data-t="priv"></a></p>
 <footer><a href="../" data-t="home"></a></footer>
 <div class="sheet" id="iosheet"><div class="in"><h3 data-t="install"></h3><ol><li data-h="ios1"></li><li data-h="ios2"></li><li data-h="ios3"></li></ol><button class="ok" id="iosok">OK</button></div></div>
 <script type="module">
 import { register, files, status, download, standalone, ios, canOffline } from './offline.js';
 const T = {
   fr: { kick: 'Unfold Worlds', title: 'Contes', sub: 'à écouter et à toucher', lead: 'Des histoires racontées à voix haute, que l’enfant fait avancer du bout du doigt. Quelques minutes chacune, en français et en anglais.', home: 'Retour à l’accueil', min: 'min', soon: 'Bientôt', play: 'Écouter',
-    install: 'Installer l’appli', dl: 'Télécharger', ready: 'Sur le téléphone', net: 'Réseau requis', mb: 'Mo', all: 'Tout télécharger', of: 'sur', offline: 'hors ligne', allok: 'Tout est sur le téléphone',
+    priv: 'Confidentialité', install: 'Installer l’appli', dl: 'Télécharger', ready: 'Sur le téléphone', net: 'Réseau requis', mb: 'Mo', all: 'Tout télécharger', of: 'sur', offline: 'hors ligne', allok: 'Tout est sur le téléphone',
     ios1: 'Touche <b>Partager</b> en bas de Safari', ios2: 'Choisis <b>Sur l’écran d’accueil</b>', ios3: 'L’icône <b>Contes</b> s’ouvre en plein écran' },
   en: { kick: 'Unfold Worlds', title: 'Stories', sub: 'to listen to and to touch', lead: 'Tales read aloud, that the child moves along with a fingertip. A few minutes each, in French and in English.', home: 'Back to home', min: 'min', soon: 'Coming soon', play: 'Listen',
-    install: 'Install the app', dl: 'Download', ready: 'On this phone', net: 'Needs a network', mb: 'MB', all: 'Download all', of: 'of', offline: 'offline', allok: 'Everything is on this phone',
+    priv: 'Privacy', install: 'Install the app', dl: 'Download', ready: 'On this phone', net: 'Needs a network', mb: 'MB', all: 'Download all', of: 'of', offline: 'offline', allok: 'Everything is on this phone',
     ios1: 'Tap <b>Share</b> at the bottom of Safari', ios2: 'Choose <b>Add to Home Screen</b>', ios3: 'The <b>Contes</b> icon opens in full screen' },
 };
 // the series and their tales; a tale without "url" shows as coming soon

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Contes · Confidentialité</title>
+<meta name="theme-color" content="#140a05">
+<style>
+@font-face { font-family: 'Cormorant Garamond'; font-weight: 400; src: url(../fonts/cormorant-garamond-latin-400-normal.woff2) format('woff2'); font-display: swap; }
+body { margin: 0; background: #140a05; color: #fbf1e2; font: 19px/1.55 'Cormorant Garamond', Georgia, serif; }
+main { max-width: 680px; margin: 0 auto; padding: max(28px, env(safe-area-inset-top)) 22px 60px; }
+h1 { font-weight: 400; font-size: 40px; margin: 10px 0 6px; } h2 { font-weight: 400; font-style: italic; font-size: 26px; margin: 34px 0 6px; color: #ffd9a0; }
+a { color: #f2c27a; } .langs a { margin-right: 14px; font-family: ui-monospace, monospace; font-size: 12px; letter-spacing: .2em; }
+section[lang="en"] { display: none; } body.en section[lang="fr"] { display: none; } body.en section[lang="en"] { display: block; }
+</style>
+</head>
+<body>
+<main>
+<p class="langs"><a href="#" data-l="fr">FR</a><a href="#" data-l="en">EN</a></p>
+<section lang="fr">
+<h1>Confidentialité</h1>
+<p>Application « Contes » d’Unfold Worlds, histoires illustrées pour enfants. Mise à jour du 25 novembre 2026.</p>
+<h2>Ce que l’application ne fait pas</h2>
+<p>Elle ne demande aucun compte, aucun nom, aucune adresse e-mail. Elle ne contient aucune publicité, aucun outil de mesure d’audience, aucun traceur, aucun achat intégré. Elle n’utilise ni la caméra, ni le micro, ni la localisation, ni les contacts. Aucune information sur l’enfant ou la famille n’est envoyée ni enregistrée sur nos serveurs.</p>
+<h2>Ce qui reste sur le téléphone</h2>
+<p>Uniquement sur l’appareil, jamais transmis : la langue choisie (français ou anglais), les histoires téléchargées pour être lues sans internet, et le fait qu’une astuce a déjà été montrée. Désinstaller l’application, ou effacer ses données, supprime tout.</p>
+<h2>Réseau</h2>
+<p>Les histoires sont chargées depuis unfoldworlds.com, comme n’importe quelle page web. L’hébergeur du site peut conserver des journaux techniques habituels (adresse IP, heure de la demande) pour faire fonctionner le service ; nous ne les utilisons pas pour identifier qui que ce soit.</p>
+<h2>Enfants</h2>
+<p>L’application est conçue pour les enfants de 4 à 8 ans, accompagnés d’un adulte. Elle ne propose aucun lien vers des réseaux sociaux ni aucune communication avec des inconnus.</p>
+<h2>Contact</h2>
+<p>Pour toute question, utilisez l’adresse de contact du développeur indiquée sur la fiche Google Play de l’application.</p>
+</section>
+<section lang="en">
+<h1>Privacy</h1>
+<p>“Contes” by Unfold Worlds, illustrated stories for children. Updated November 25, 2026.</p>
+<h2>What the app does not do</h2>
+<p>It asks for no account, no name, no email address. It has no ads, no analytics, no trackers, no in-app purchases. It does not use the camera, the microphone, location or contacts. No information about the child or the family is sent to or stored on our servers.</p>
+<h2>What stays on the phone</h2>
+<p>Only on the device, never sent: the chosen language (French or English), the stories downloaded to read offline, and whether a tip was already shown. Uninstalling the app, or clearing its data, removes everything.</p>
+<h2>Network</h2>
+<p>Stories load from unfoldworlds.com, like any web page. The site’s host may keep the usual technical logs (IP address, time of the request) to run the service; we do not use them to identify anyone.</p>
+<h2>Children</h2>
+<p>The app is made for children aged 4 to 8, with an adult. It has no links to social networks and no communication with strangers.</p>
+<h2>Contact</h2>
+<p>For any question, use the developer contact address shown on the app’s Google Play page.</p>
+</section>
+</main>
+<script>
+const set = (l) => { document.body.classList.toggle('en', l === 'en'); document.documentElement.lang = l; };
+set(new URLSearchParams(location.search).get('lang') || (localStorage.getItem('contes-lang') || (navigator.language.startsWith('fr') ? 'fr' : 'en')));
+for (const a of document.querySelectorAll('[data-l]')) a.onclick = (e) => { e.preventDefault(); set(a.dataset.l); };
+</script>
+</body>
+</html>

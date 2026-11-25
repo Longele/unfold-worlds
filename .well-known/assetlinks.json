@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.unfoldworlds.contes",
+    "sha256_cert_fingerprints": ["B9:57:F3:59:64:41:87:56:8F:21:D7:9B:21:22:34:CE:04:B2:3A:84:2D:9F:24:80:10:A0:4C:B5:E2:D3:EA:F5"]
+  }
+}]
