@@ -7,6 +7,7 @@
 import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610271800';
 
 import { goFull, keepFull, iosTip } from '../fs.js?v=202611250700';
+import { feel, picked } from '../feel.js?v=202611251';
 const $ = (id) => document.getElementById(id);
 // the language: from the stories page (?lang=), else the last one chosen, else the phone's
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
@@ -42,7 +43,7 @@ async function initAudio() {
 // the mix: the storyteller always on top. Effects sit about 12 dB under the voice and dip further while
 // someone speaks; the theme and the ambience duck under every line and come back between lines.
 const SFX_GAIN = 0.3; let speaking = false;
-function sfx(n, vol = 1) { const b = sfxBuf[n]; if (!ctx || !b) return; const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; g.gain.value = vol * SFX_GAIN * (speaking ? 0.55 : 1); s.connect(g).connect(ctx.destination); s.start(); return s; }
+function sfx(n, vol = 1) { feel.sfx(n); const b = sfxBuf[n]; if (!ctx || !b) return; const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; g.gain.value = vol * SFX_GAIN * (speaking ? 0.55 : 1); s.connect(g).connect(ctx.destination); s.start(); return s; }
 const music = new Audio('sfx/theme.mp3'); music.loop = true; music.volume = 0.22;
 const amb = new Audio(); amb.loop = true; amb.volume = 0.35;
 const AMB = { 'amb-village': 0.35, 'amb-port': 0.4, 'amb-sea': 0.4, 'amb-storm': 0.45, 'amb-ark': 0.4, 'amb-under': 0.45, 'amb-belly': 0.45, 'amb-beach': 0.4, 'amb-desert': 0.4, 'amb-city': 0.35, 'amb-palace': 0.4, 'amb-night': 0.4, 'amb-sunset': 0.4 }; let ambLevel = 0.35;
@@ -240,7 +241,7 @@ function lensTool(kind, a) {
         L.lineWidth = 2; L.strokeStyle = 'rgba(255,240,200,0.6)'; L.beginPath(); L.arc(x, y, R() - 5, 3.6, 4.6); L.stroke();
         const ang = 0.75; L.lineCap = 'round'; L.lineWidth = 16; L.strokeStyle = '#5a3a1c'; L.beginPath(); L.moveTo(x + Math.cos(ang) * (R() + 6), y + Math.sin(ang) * (R() + 6)); L.lineTo(x + Math.cos(ang) * (R() + 70), y + Math.sin(ang) * (R() + 70)); L.stroke();
       }
-      held = near(pos, a.at, a.r) ? held + dt : 0;
+      held = near(pos, a.at, Math.max(a.r, 0.08)) ? held + dt : 0; // small fingers: at least 8% of the picture
       if (now - t0 > 9000 && Math.random() < 0.06) burst(a.at[0], a.at[1], 2, 50); // a little help after a while
       if (held > 380) {
         done = true; stop(); keyAct = null; L.clearRect(0, 0, FW, FH); sfx('found'); burst(a.at[0], a.at[1], 46); ring(a.at); hint('');
@@ -616,7 +617,7 @@ const hist = []; // the pages already read, for the back arrow
 async function show(i, back = false) {
   if (busy) return; busy = true; if (!back && idx >= 0 && idx !== i) hist.push(idx); hint(''); $('next').classList.remove('on'); keyAct = null; meter(null);
   for (const b of document.querySelectorAll('.alt')) b.remove();
-  const p = PANELS[i]; idx = i; const my = ++gen; const gone = () => gen !== my; $('prev').classList.toggle('on', hist.length > 0);
+  const p = PANELS[i]; idx = i; feel.page(i, PANELS.length); const my = ++gen; const gone = () => gen !== my; $('prev').classList.toggle('on', hist.length > 0);
   sfx('page', 0.7);
   const page = $('page'); page.classList.remove('turn-in'); page.classList.add('turn-out'); await sleep(320);
   clearLayer(); last = null; sparks.length = 0; $('panel').onpointerdown = $('panel').onpointermove = $('panel').onpointerup = $('panel').onpointercancel = null; L.clearRect(0, 0, FW, FH);
@@ -645,7 +646,7 @@ function next() {
   else if (p.branch) n = PANELS.findIndex((x) => x.id === AFTER_BRANCH);
   show(n);
 }
-function end() { $('endcard').classList.add('on'); music.volume = 0.35; }
+function end() { $('endcard').classList.add('on'); feel.end(lang); music.volume = 0.35; }
 // no long-press menu or text selection anywhere in the book (Android Chrome opens one on a held image)
 addEventListener('contextmenu', (e) => e.preventDefault());
 document.addEventListener('touchmove', (e) => { if (e.target.closest('#panel')) e.preventDefault(); }, { passive: false });

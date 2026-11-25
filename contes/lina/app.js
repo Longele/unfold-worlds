@@ -5,14 +5,15 @@
 import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610270300';
 
 import { goFull, keepFull, iosTip } from '../fs.js?v=202611250700';
+import { feel, picked } from '../feel.js?v=202611251';
 const $ = (id) => document.getElementById(id);
 // the language: from the stories page (?lang=), else the last one chosen, else the phone's
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
 let lang = new URLSearchParams(location.search).get('lang') || store.get('contes-lang') || ((navigator.language || '').startsWith('fr') ? 'fr' : 'en');
 if (!['fr', 'en'].includes(lang)) lang = 'fr';
 const TT = {
-  fr: { readMe: 'Lis-moi l’histoire', readSelf: 'Je lis tout seul', again: 'Relire l’histoire', more: 'D’autres contes', end: 'Fin', kick: 'Une BD à explorer', back: '← Les contes', loupe: 'Glisse la loupe pour chercher', binocs: 'Glisse les jumelles pour chercher', still: 'Doigt posé sur Pic, sans bouger', greet: 'Touche les petits hérissons', choice: 'Choisis un chemin' },
-  en: { readMe: 'Read it to me', readSelf: 'I’ll read it myself', again: 'Read it again', more: 'More stories', end: 'The End', kick: 'A comic to explore', back: '← Stories', loupe: 'Slide the magnifying glass to search', binocs: 'Slide the binoculars to search', still: 'Finger on Pic, don’t move', greet: 'Touch the little hedgehogs', choice: 'Choose a path' },
+  fr: { readMe: 'Lis-moi l’histoire', readSelf: 'Je lis tout seul', again: 'Relire l’histoire', more: 'D’autres contes', end: 'Fin', kick: 'Une BD à explorer', back: '← Les contes', loupe: 'Glisse la loupe pour chercher', binocs: 'Glisse les jumelles pour chercher', still: 'Pose ton doigt sur Pic et compte jusqu’à 3', greet: 'Touche les petits hérissons', choice: 'Choisis un chemin' },
+  en: { readMe: 'Read it to me', readSelf: 'I’ll read it myself', again: 'Read it again', more: 'More stories', end: 'The End', kick: 'A comic to explore', back: '← Stories', loupe: 'Slide the magnifying glass to search', binocs: 'Slide the binoculars to search', still: 'Put your finger on Pic and count to 3', greet: 'Touch the little hedgehogs', choice: 'Choose a path' },
 };
 let T = TT[lang];
 function applyLang() {
@@ -39,7 +40,7 @@ async function initAudio() {
 // the mix: the storyteller always on top. Effects sit about 12 dB under the voice and dip further while
 // someone speaks; the theme and the ambience duck under every line and come back between lines.
 const SFX_GAIN = 0.3; let speaking = false;
-function sfx(n, vol = 1) { const b = sfxBuf[n]; if (!ctx || !b) return; const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; g.gain.value = vol * SFX_GAIN * (speaking ? 0.55 : 1); s.connect(g).connect(ctx.destination); s.start(); }
+function sfx(n, vol = 1) { feel.sfx(n); const b = sfxBuf[n]; if (!ctx || !b) return; const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; g.gain.value = vol * SFX_GAIN * (speaking ? 0.55 : 1); s.connect(g).connect(ctx.destination); s.start(); }
 const music = new Audio('sfx/theme.mp3'); music.loop = true; music.volume = 0.28;
 const amb = new Audio(); amb.loop = true; amb.volume = 0.35;
 const AMB = { 'amb-forest': 0.3, 'amb-stream': 0.4, 'amb-meadow': 0.5, 'amb-evening': 0.5 }; let ambLevel = 0.35;
@@ -192,7 +193,7 @@ function lensTool(kind, a) {
       if (kind === 'loupe') { const [x, y] = centres()[0], ang = 0.75; L.lineCap = 'round'; L.lineWidth = 16; L.strokeStyle = '#5a3a1c'; L.beginPath(); L.moveTo(x + Math.cos(ang) * (R() + 6), y + Math.sin(ang) * (R() + 6)); L.lineTo(x + Math.cos(ang) * (R() + 70), y + Math.sin(ang) * (R() + 70)); L.stroke(); }
       // found: the clue stays under the glass for a moment
       const d = Math.hypot((pos[0] - a.at[0]) * FW, (pos[1] - a.at[1]) * FH);
-      held = d < a.r * FW ? held + dt : 0;
+      held = d < Math.max(a.r, 0.08) * FW ? held + dt : 0; // small fingers: at least 8% of the picture
       if (now - t0 > 9000 && Math.random() < 0.06) burst(a.at[0], a.at[1], 2, 50); // a little help after a while
       if (held > 380) { done = true; L.clearRect(0, 0, FW, FH); sfx('found'); burst(a.at[0], a.at[1], 46); ring(a.at); $('panel').onpointerdown = $('panel').onpointermove = null; hint(''); res(); }
     };
@@ -211,16 +212,16 @@ const acts = {
   binocs: (a) => lensTool('binocs', a),
   choice: (a) => new Promise((res) => {
     hint(T.choice);
-    for (const o of a.opts) { const b = document.createElement('button'); b.className = 'choice'; b.textContent = o[lang]; b.style.left = o.at[0] * 100 + '%'; b.style.top = o.at[1] * 100 + '%'; $('spots').append(b); b.onpointerdown = (e) => { e.stopPropagation(); sfx('found'); branch = o.go; hint(''); res(); }; }
+    for (const o of a.opts) { const b = document.createElement('button'); b.className = 'choice'; b.textContent = o[lang]; b.style.left = o.at[0] * 100 + '%'; b.style.top = o.at[1] * 100 + '%'; $('spots').append(b); b.onpointerdown = async (e) => { e.stopPropagation(); if (b.parentNode.querySelector('.picked')) return; sfx('found'); branch = o.go; hint(''); await picked(b); res(); }; }
   }),
   // keep still: a frightened hedgehog only uncurls for a finger that does not move
   still: (a) => new Promise((res) => {
-    hint(T.still); const s = spot(a.at, a.r, 'soft'); let down = null, t = 0, warned = 0, sniffed = false;
-    const onDown = (e) => { e.preventDefault(); down = toPanel(e); t = performance.now(); sniffed = false; };
-    const onMove = (e) => { if (!down) return; const p = toPanel(e); if (Math.hypot((p[0] - down[0]) * FW, (p[1] - down[1]) * FH) > 14) { down = null; s.classList.remove('calm'); if (performance.now() - warned > 3500) { warned = performance.now(); sfx('hush'); whisper(a.warn); } } };
+    hint(T.still); const s = spot(a.at, a.r, 'soft'); let down = null, t = 0, warned = 0, sniffed = false, counted = 0;
+    const onDown = (e) => { e.preventDefault(); down = toPanel(e); t = performance.now(); sniffed = false; counted = 0; };
+    const onMove = (e) => { if (!down) return; const p = toPanel(e); if (Math.hypot((p[0] - down[0]) * FW, (p[1] - down[1]) * FH) > Math.max(36, FW * 0.11)) { down = null; s.classList.remove('calm'); if (performance.now() - warned > 3500) { warned = performance.now(); sfx('hush'); whisper(a.warn); } } };
     const g0 = gen; const tick = () => {
       if (gen !== g0) return;
-      if (down) { const k = (performance.now() - t) / a.ms; s.classList.add('calm'); s.style.setProperty('--k', Math.min(1, k)); if (k > 0.45 && !sniffed) { sniffed = true; sfx('sniff'); } if (k >= 1) { s.remove(); $('panel').onpointerdown = $('panel').onpointermove = null; sfx('uncurl'); swapArt(cur().calm); burst(a.at[0], a.at[1], 30, 30); hint(''); res(); return; } }
+      if (down) { const k = (performance.now() - t) / a.ms; s.classList.add('calm'); s.style.setProperty('--k', Math.min(1, k)); while (counted < 3 && k >= (counted + 1) / 3.2) { counted++; sfx('tap', 0.8); word(String(counted), [a.at[0], a.at[1] - 0.17]); } if (k > 0.45 && !sniffed) { sniffed = true; sfx('sniff'); } if (k >= 1) { s.remove(); $('panel').onpointerdown = $('panel').onpointermove = null; sfx('uncurl'); swapArt(cur().calm); burst(a.at[0], a.at[1], 30, 30); hint(''); res(); return; } }
       else s.style.setProperty('--k', 0);
       requestAnimationFrame(tick);
     };
@@ -230,7 +231,7 @@ const acts = {
   }),
   greet: (a) => new Promise((res) => {
     hint(T.greet); let n = 0;
-    for (const p of a.spots) { const s = spot(p.at, 0.085, 'soft'); s.onpointerdown = (e) => { e.stopPropagation(); sfx('squeak'); word(p.word[lang], [p.at[0], p.at[1] - 0.07]); burst(p.at[0], p.at[1], 14, 340); if (!s.done) { s.done = true; s.classList.add('done'); if (++n === a.spots.length) { hint(''); setTimeout(res, 600); } } }; }
+    for (const p of a.spots) { const s = spot(p.at, 0.1, 'soft'); s.onpointerdown = (e) => { e.stopPropagation(); sfx('squeak'); word(p.word[lang], [p.at[0], p.at[1] - 0.07]); burst(p.at[0], p.at[1], 14, 340); if (!s.done) { s.done = true; s.classList.add('done'); if (++n === a.spots.length) { hint(''); setTimeout(res, 600); } } }; }
   }),
 };
 const cur = () => PANELS[idx];
@@ -246,7 +247,7 @@ function film(name, loop) {
 const hist = []; // the pages already read, for the back arrow
 async function show(i, back = false) {
   if (busy) return; busy = true; if (!back && idx >= 0 && idx !== i) hist.push(idx); hint(''); $('next').classList.remove('on');
-  const p = PANELS[i]; idx = i; const my = ++gen; const gone = () => gen !== my; $('prev').classList.toggle('on', hist.length > 0);
+  const p = PANELS[i]; idx = i; feel.page(i, PANELS.length); const my = ++gen; const gone = () => gen !== my; $('prev').classList.toggle('on', hist.length > 0);
   sfx('page', 0.7);
   const page = $('page'); page.classList.remove('turn-in'); page.classList.add('turn-out'); await sleep(320);
   clearLayer(); last = null; sparks.length = 0; $('panel').onpointerdown = $('panel').onpointermove = null; L.clearRect(0, 0, FW, FH);
@@ -273,7 +274,7 @@ function next() {
   else if (p.branch) n = PANELS.findIndex((x) => x.id === AFTER_BRANCH);
   show(n);
 }
-function end() { $('endcard').classList.add('on'); music.volume = 0.4; }
+function end() { $('endcard').classList.add('on'); feel.end(lang); music.volume = 0.4; }
 // no long-press menu or text selection anywhere in the book (Android Chrome opens one on a held image)
 addEventListener('contextmenu', (e) => e.preventDefault());
 document.addEventListener('touchmove', (e) => { if (e.target.closest('#panel')) e.preventDefault(); }, { passive: false });

@@ -4,7 +4,7 @@
  "short_name": "Contes",
  "description": "Des BD racontées à voix haute, que l’enfant fait avancer du bout du doigt. En français et en anglais, même sans internet.",
  "lang": "fr",
- "start_url": "./?app=1",
+ "start_url": "app.html?app=1",
  "scope": "./",
  "display": "fullscreen",
  "display_override": ["fullscreen", "standalone"],

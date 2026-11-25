@@ -18,7 +18,7 @@ export const PANELS = [
   { id: 'l6', img: 'l6', video: 'l6', amb: 'amb-meadow', sfx: 'binocs', lines: [{ id: 'l6a', cap: 1 }],
     act: { kind: 'binocs', at: [0.81, 0.67], r: 0.08, start: [0.45, 0.5], then: [{ id: 'l6b', b: [0.48, 0.5], t: [0.27, 0.64] }] } },
   { id: 'l7', img: 'l7', calm: 'l7b', amb: 'amb-forest', lines: [{ id: 'l7a', cap: 1 }],
-    act: { kind: 'still', at: [0.84, 0.84], r: 0.13, ms: 2600, warn: 'l7w', then: [{ id: 'l7b', b: [0.64, 0.56], t: [0.82, 0.76] }] } },
+    act: { kind: 'still', at: [0.84, 0.84], r: 0.13, ms: 2400, warn: 'l7w', then: [{ id: 'l7b', b: [0.64, 0.56], t: [0.82, 0.76] }] } },
   { id: 'l8', img: 'l8', amb: 'amb-forest', lines: [{ id: 'l8a', b: [0.34, 0.15], t: [0.45, 0.38] }, { id: 'l8b', b: [0.7, 0.3], t: [0.66, 0.5] }, { id: 'l8c', b: [0.34, 0.15], t: [0.45, 0.38] }] },
   { id: 'l9', img: 'l9', amb: 'amb-forest', lines: [{ id: 'l9a', cap: 1 }] },
   { id: 'l10', img: 'l10', amb: 'amb-forest', sfx: 'hug', lines: [{ id: 'l10a', b: [0.32, 0.2], t: [0.3, 0.6] }, { id: 'l10b', cap: 1 }],

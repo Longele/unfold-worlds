@@ -6,6 +6,7 @@
 import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610270300';
 
 import { goFull, keepFull, iosTip } from '../fs.js?v=202611250700';
+import { feel, picked } from '../feel.js?v=202611251';
 const $ = (id) => document.getElementById(id);
 // the language: from the stories page (?lang=), else the last one chosen, else the phone's
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
@@ -41,7 +42,7 @@ async function initAudio() {
 // the mix: the storyteller always on top. Effects sit about 12 dB under the voice and dip further while
 // someone speaks; the theme and the ambience duck under every line and come back between lines.
 const SFX_GAIN = 0.3; let speaking = false;
-function sfx(n, vol = 1) { const b = sfxBuf[n]; if (!ctx || !b) return; const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; g.gain.value = vol * SFX_GAIN * (speaking ? 0.55 : 1); s.connect(g).connect(ctx.destination); s.start(); }
+function sfx(n, vol = 1) { feel.sfx(n); const b = sfxBuf[n]; if (!ctx || !b) return; const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; g.gain.value = vol * SFX_GAIN * (speaking ? 0.55 : 1); s.connect(g).connect(ctx.destination); s.start(); }
 const music = new Audio('sfx/theme.mp3'); music.loop = true; music.volume = 0.22;
 const amb = new Audio(); amb.loop = true; amb.volume = 0.35;
 const AMB = { 'amb-garden': 0.35, 'amb-meadow': 0.4, 'amb-evening': 0.45 }; let ambLevel = 0.35;
@@ -205,7 +206,7 @@ function lensTool(kind, a) {
       for (const [cx, cy] of centres()) { L.lineWidth = kind === 'loupe' ? 9 : 7; L.strokeStyle = kind === 'loupe' ? '#b5862f' : '#1c1c1c'; L.beginPath(); L.arc(cx, cy, R(), 0, 7); L.stroke(); L.lineWidth = 2; L.strokeStyle = 'rgba(255,240,200,0.6)'; L.beginPath(); L.arc(cx, cy, R() - 5, 3.6, 4.6); L.stroke(); }
       if (kind === 'loupe') { const [x, y] = centres()[0], ang = 0.75; L.lineCap = 'round'; L.lineWidth = 16; L.strokeStyle = '#5a3a1c'; L.beginPath(); L.moveTo(x + Math.cos(ang) * (R() + 6), y + Math.sin(ang) * (R() + 6)); L.lineTo(x + Math.cos(ang) * (R() + 70), y + Math.sin(ang) * (R() + 70)); L.stroke(); }
       // found: what was hidden stays under the glass for a moment
-      held = near(pos, a.at, a.r) ? held + dt : 0;
+      held = near(pos, a.at, Math.max(a.r, 0.08)) ? held + dt : 0; // small fingers: at least 8% of the picture
       if (now - t0 > 9000 && Math.random() < 0.06) burst(a.at[0], a.at[1], 2, 50); // a little help after a while
       if (held > 380) { done = true; stop(); keyAct = null; L.clearRect(0, 0, FW, FH); $('layer').classList.remove('dim'); sfx('found'); burst(a.at[0], a.at[1], 46); ring(a.at); hint(''); res(); }
     };
@@ -295,7 +296,7 @@ const acts = {
     hint(T.quiet); const g0 = gen; const mic = await micOn(); const s = spot(a.at, a.r, 'soft');
     let k = 0, down = null, warned = 0, last = performance.now(), done = false;
     const onDown = (e) => { e.preventDefault(); down = toPanel(e); };
-    const onMove = (e) => { if (!down) return; const p = toPanel(e); if (Math.hypot((p[0] - down[0]) * FW, (p[1] - down[1]) * FH) > 14) { down = null; hush(); } };
+    const onMove = (e) => { if (!down) return; const p = toPanel(e); if (Math.hypot((p[0] - down[0]) * FW, (p[1] - down[1]) * FH) > Math.max(36, FW * 0.11)) { down = null; hush(); } };
     const hush = () => { k = Math.max(0, k - 0.35); if (performance.now() - warned > 3500) { warned = performance.now(); sfx('hush'); whisper(a.warn); } };
     $('panel').onpointerdown = onDown; s.onpointerdown = onDown; $('panel').onpointermove = onMove;
     const up = () => (down = null); addEventListener('pointerup', up); addEventListener('pointercancel', up);
@@ -415,7 +416,7 @@ const acts = {
   }),
   choice: (a) => new Promise((res) => {
     hint(T.choice);
-    for (const o of a.opts) { const b = document.createElement('button'); b.className = 'choice'; b.textContent = o[lang]; b.style.left = o.at[0] * 100 + '%'; b.style.top = o.at[1] * 100 + '%'; $('spots').append(b); b.onpointerdown = (e) => { e.stopPropagation(); sfx('found'); branch = o.go; hint(''); res(); }; }
+    for (const o of a.opts) { const b = document.createElement('button'); b.className = 'choice'; b.textContent = o[lang]; b.style.left = o.at[0] * 100 + '%'; b.style.top = o.at[1] * 100 + '%'; $('spots').append(b); b.onpointerdown = async (e) => { e.stopPropagation(); if (b.parentNode.querySelector('.picked')) return; sfx('found'); branch = o.go; hint(''); await picked(b); res(); }; }
   }),
 };
 function swapArt(name) { if (!name) return; const im = new Image(); im.src = `art/${name}.jpg`; im.className = 'art over'; $('panel').insertBefore(im, $('fx')); requestAnimationFrame(() => im.classList.add('in')); }
@@ -433,7 +434,7 @@ const hist = []; // the pages already read, for the back arrow
 async function show(i, back = false) {
   if (busy) return; busy = true; if (!back && idx >= 0 && idx !== i) hist.push(idx); hint(''); $('next').classList.remove('on'); keyAct = null; meter(null);
   for (const b of document.querySelectorAll('.alt')) b.remove();
-  const p = PANELS[i]; idx = i; const my = ++gen; const gone = () => gen !== my; $('prev').classList.toggle('on', hist.length > 0);
+  const p = PANELS[i]; idx = i; feel.page(i, PANELS.length); const my = ++gen; const gone = () => gen !== my; $('prev').classList.toggle('on', hist.length > 0);
   sfx('page', 0.7);
   const page = $('page'); page.classList.remove('turn-in'); page.classList.add('turn-out'); await sleep(320);
   clearLayer(); last = null; sparks.length = 0; $('panel').onpointerdown = $('panel').onpointermove = $('panel').onpointerup = $('panel').onpointercancel = null; L.clearRect(0, 0, FW, FH);
@@ -461,7 +462,7 @@ function next() {
   else if (p.branch) n = PANELS.findIndex((x) => x.id === AFTER_BRANCH);
   show(n);
 }
-function end() { $('endcard').classList.add('on'); music.volume = 0.35; }
+function end() { $('endcard').classList.add('on'); feel.end(lang); music.volume = 0.35; }
 // no long-press menu or text selection anywhere in the book (Android Chrome opens one on a held image)
 addEventListener('contextmenu', (e) => e.preventDefault());
 document.addEventListener('touchmove', (e) => { if (e.target.closest('#panel')) e.preventDefault(); }, { passive: false });
