@@ -155,7 +155,7 @@ function bar() {
   const ts = F?.tales || [], n = ts.filter((t) => state[t.id] === 'ready').length, left = ts.filter((t) => state[t.id] !== 'ready');
   document.getElementById('offbar').classList.toggle('on', canOffline && ts.length > 0);
   document.getElementById('offtxt').textContent = left.length ? `${n} ${T[lang].of} ${ts.length} ${T[lang].offline}` : T[lang].allok;
-  const b = document.getElementById('dlall'); b.hidden = !left.length || left.some((t) => typeof state[t.id] === 'number'); b.textContent = `${T[lang].all} · ${mb(left.reduce((s, t) => s + t.size, 0))}`;
+  const b = document.getElementById('dlall'); b.hidden = !left.length || !navigator.onLine || left.some((t) => typeof state[t.id] === 'number'); b.textContent = `${T[lang].all} · ${mb(left.reduce((s, t) => s + t.size, 0))}`;
 }
 const paint = () => { for (const t of F?.tales || []) chip(t); bar(); };
 async function get(t) {
@@ -169,7 +169,7 @@ document.getElementById('series').addEventListener('click', (e) => {
   const t = F.tales.find((x) => x.id === b.closest('.tale').dataset.id); if (t) get(t);
 }, true);
 document.getElementById('dlall').onclick = async () => { for (const t of F.tales) if (state[t.id] !== 'ready') await get(t); };
-const net = () => document.body.classList.toggle('offline', !navigator.onLine);
+const net = () => { document.body.classList.toggle('offline', !navigator.onLine); if (F) bar(); };
 addEventListener('online', net); addEventListener('offline', net); net();
 const _render = render; render = function () { _render(); paint(); };
 (async () => {
