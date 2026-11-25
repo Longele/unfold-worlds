@@ -2,10 +2,10 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Contes · Unfold Worlds</title>
-<meta name="description" content="Des BD à écouter et à toucher, pour les enfants : Lina et le papillon secret, Nala et la fusée en carton, Noé et l’arche, Lina et les petites traces.">
-<meta name="theme-color" content="#140a05">
+<meta name="description" content="Des BD à écouter et à toucher, pour les enfants : Lina et le papillon secret, Nala et la fusée en carton, Noé et l’arche, Jonas et le grand poisson.">
+<meta name="theme-color" content="#1c0f08">
 <link rel="manifest" href="app.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,178 +15,367 @@
 <meta property="og:title" content="Contes pour enfants · Unfold Worlds">
 <meta property="og:description" content="Des histoires à écouter et à toucher, pour les enfants.">
 <meta property="og:image" content="https://unfoldworlds.com/covers/contes.jpg">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%227%22 fill=%22%23f2b36b%22/%3E%3C/svg%3E">
+<link rel="icon" href="icon-192.png">
 <style>
-@font-face { font-family: 'Cormorant Garamond'; font-weight: 300; src: url(../fonts/cormorant-garamond-latin-300-normal.woff2) format('woff2'); font-display: swap; }
-@font-face { font-family: 'Cormorant Garamond'; font-weight: 400; font-style: italic; src: url(../fonts/cormorant-garamond-latin-400-italic.woff2) format('woff2'); font-display: swap; }
-@font-face { font-family: 'Cormorant Garamond'; font-weight: 400; src: url(../fonts/cormorant-garamond-latin-400-normal.woff2) format('woff2'); font-display: swap; }
-@font-face { font-family: 'JetBrains Mono'; font-weight: 400; src: url(../fonts/jetbrains-mono-latin-400-normal.woff2) format('woff2'); font-display: swap; }
-:root { --paper: #fbf1e2; --glow: #ffd9a0; --gold: #f2c27a; --bg: #140a05; --serif: 'Cormorant Garamond', Georgia, serif; --mono: 'JetBrains Mono', ui-monospace, monospace; --ease: cubic-bezier(.2, .8, .2, 1); }
+@font-face { font-family: 'Bangers'; src: url(fonts/bangers.woff2) format('woff2'); font-display: swap; }
+@font-face { font-family: 'Comic Neue'; font-weight: 400; src: url(fonts/comicneue-400.woff2) format('woff2'); font-display: swap; }
+@font-face { font-family: 'Comic Neue'; font-weight: 700; src: url(fonts/comicneue-700.woff2) format('woff2'); font-display: swap; }
+:root {
+  --bg: #1c0f08; --bg2: #2a170c; --card: #34200f; --line: rgba(255, 236, 210, .12); --ink: #fff4e4; --dim: rgba(255, 244, 228, .62);
+  --sun: #ffc44d; --sun2: #ff9f2e; --mint: #8fe3b0; --sky: #7cc7ff;
+  --title: 'Bangers', 'Comic Neue', system-ui, sans-serif; --ui: 'Comic Neue', system-ui, sans-serif;
+  --ease: cubic-bezier(.2, .8, .2, 1); --spring: cubic-bezier(.34, 1.56, .64, 1);
+  --st: env(safe-area-inset-top); --sb: env(safe-area-inset-bottom);
+}
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html { background: var(--bg); }
-body { margin: 0; min-height: 100vh; color: var(--paper); font-family: var(--serif);
-  background: radial-gradient(ellipse 90% 60% at 50% 0%, #4a2412 0%, rgba(74, 36, 18, 0) 70%), var(--bg); }
+body { margin: 0; min-height: 100vh; min-height: 100dvh; color: var(--ink); font-family: var(--ui); font-weight: 700; overscroll-behavior-y: none;
+  background: radial-gradient(120% 50% at 50% -10%, #5a2d12 0%, rgba(90, 45, 18, 0) 70%), var(--bg); -webkit-user-select: none; user-select: none; }
 a { color: inherit; text-decoration: none; }
-button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
-header { display: flex; justify-content: space-between; align-items: center; padding: max(18px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 0 max(20px, env(safe-area-inset-left)); }
-.brand { font-family: var(--mono); font-size: 10px; letter-spacing: .4em; color: rgba(251, 241, 226, .6); }
-.langs { display: flex; gap: 4px; font-family: var(--mono); font-size: 11px; letter-spacing: .2em; }
-.langs button { padding: 7px 10px; border-radius: 999px; background: rgba(251, 241, 226, .06); }
-.langs button.on { background: var(--paper); color: #2a140a; }
-main { max-width: 1180px; margin: 0 auto; padding: 0 20px 80px; }
-.hero { text-align: center; padding: clamp(40px, 9vh, 96px) 0 clamp(30px, 6vh, 64px); }
-.kick { margin: 0 0 14px; font-family: var(--mono); font-size: 11px; letter-spacing: .4em; text-transform: uppercase; color: var(--glow); }
-h1 { margin: 0; font-weight: 300; font-size: clamp(54px, 9vw, 120px); line-height: .95; letter-spacing: .02em; }
-h1 em { display: block; font-style: italic; font-weight: 400; font-size: .42em; color: var(--glow); margin-top: 14px; }
-.lead { max-width: 560px; margin: 22px auto 0; font-size: clamp(19px, 2vw, 23px); line-height: 1.45; opacity: .8; }
-.series { margin-top: clamp(36px, 7vh, 70px); }
-.series h2 { display: flex; align-items: baseline; gap: 14px; margin: 0 0 6px; font-weight: 400; font-style: italic; font-size: clamp(30px, 3.6vw, 44px); }
-.series h2::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(242, 194, 122, .5), transparent); transform: translateY(-8px); }
-.series p.sd { margin: 0 0 22px; font-size: 18px; opacity: .65; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(440px, 100%), 1fr)); gap: 22px; }
-.tale { position: relative; display: block; border-radius: 18px; overflow: hidden; background: #2a160b; box-shadow: 0 24px 60px rgba(0, 0, 0, .45); transform: translateZ(0); transition: transform .5s var(--ease), box-shadow .5s var(--ease); }
-.tale .im { aspect-ratio: 16 / 10; background-size: cover; background-position: 50% 50%; transition: transform 1.2s var(--ease); }
-.tale::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20, 10, 5, 0) 35%, rgba(20, 10, 5, .92) 100%); pointer-events: none; }
-.tale .tx { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 20px 22px; }
-.tale h3 { margin: 0; font-weight: 400; font-size: 30px; line-height: 1.05; }
-.tale h3 em { display: block; font-size: .62em; color: var(--glow); margin-top: 4px; }
-.tale .meta { margin-top: 10px; font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; opacity: .7; }
-.tale.soon { pointer-events: none; }
-.tale.soon .im { filter: saturate(.5) brightness(.55); }
-.tale .badge { position: absolute; top: 14px; left: 14px; z-index: 1; padding: 6px 11px; border-radius: 999px; font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; background: rgba(20, 10, 5, .7); border: 1px solid rgba(251, 241, 226, .2); }
-@media (hover: hover) { .tale:hover { transform: translateY(-6px); box-shadow: 0 34px 80px rgba(0, 0, 0, .55); } .tale:hover .im { transform: scale(1.04); } }
-footer { text-align: center; padding: 0 20px 40px; font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; opacity: .45; }
-footer a { border-bottom: 1px solid rgba(251, 241, 226, .3); }
-/* the app: install it, and keep stories on the phone */
-.inst { display: none; padding: 8px 14px; border-radius: 999px; font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; background: var(--gold); color: #2a140a; }
-.inst.on { display: inline-block; }
-.right { display: flex; align-items: center; gap: 10px; }
-body.app header .brand, body.app footer { visibility: hidden; }
-.offbar { display: none; max-width: 560px; margin: 26px auto 0; padding: 12px 16px; border-radius: 16px; background: rgba(251, 241, 226, .06); border: 1px solid rgba(251, 241, 226, .12); font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; align-items: center; justify-content: space-between; gap: 12px; }
-.offbar.on { display: flex; }
-.offbar button { padding: 8px 12px; border-radius: 999px; background: var(--paper); color: #2a140a; font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; white-space: nowrap; }
-.offbar button[hidden] { display: none; }
-.dl { position: absolute; top: 12px; right: 12px; z-index: 2; display: flex; align-items: center; gap: 7px; padding: 7px 11px 7px 9px; border-radius: 999px; font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; background: rgba(20, 10, 5, .72); border: 1px solid rgba(251, 241, 226, .22); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
-.dl svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.dl.ready { color: #9fe3b0; border-color: rgba(159, 227, 176, .4); pointer-events: none; }
-.dl.busy { pointer-events: none; }
-.dl .ring { width: 15px; height: 15px; border-radius: 50%; background: conic-gradient(var(--gold) calc(var(--p, 0) * 1turn), rgba(251, 241, 226, .2) 0); }
-body.offline .tale.net { pointer-events: none; }
-body.offline .tale.net .im { filter: saturate(.3) brightness(.45); }
-.priv { text-align: center; margin: 0 0 18px; font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; opacity: .45; }
-.sheet { position: fixed; inset: 0; z-index: 20; display: none; align-items: flex-end; justify-content: center; background: rgba(10, 5, 2, .6); }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
+.press { transition: transform .18s var(--ease); } .press:active { transform: scale(.96); }
+svg.i { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* ---------------------------------------------------------------- app frame */
+#app { max-width: 620px; margin: 0 auto; min-height: 100vh; min-height: 100dvh; padding-bottom: calc(88px + var(--sb)); }
+.top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 12px; padding: calc(14px + var(--st)) 18px 12px; background: linear-gradient(180deg, var(--bg) 70%, rgba(28, 15, 8, 0)); }
+.top .logo { width: 42px; height: 42px; border-radius: 13px; background: url(icon-192.png) center/cover; box-shadow: 0 6px 16px rgba(0, 0, 0, .4), 0 0 0 2px rgba(255, 196, 77, .5); }
+.top .hi { flex: 1; min-width: 0; }
+.top .hi small { display: block; font-size: 14px; color: var(--dim); font-weight: 400; }
+.top .hi b { display: block; font-family: var(--title); font-weight: 400; font-size: 27px; letter-spacing: .04em; line-height: 1; }
+.seg { display: flex; padding: 3px; border-radius: 999px; background: rgba(255, 244, 228, .08); border: 1px solid var(--line); }
+.seg button { padding: 7px 12px; border-radius: 999px; font-size: 14px; color: var(--dim); }
+.seg button.on { background: var(--ink); color: #2a140a; }
+.view { display: none; padding: 0 0 20px; animation: in .35s var(--ease); }
+.view.on { display: block; }
+@keyframes in { from { opacity: 0; transform: translateY(10px); } }
+.offline-note { display: none; margin: 0 18px 14px; padding: 10px 14px; border-radius: 14px; background: rgba(124, 199, 255, .12); border: 1px solid rgba(124, 199, 255, .3); font-size: 15px; align-items: center; gap: 10px; }
+body.offline .offline-note { display: flex; }
+
+/* ---------------------------------------------------------------- stories tab */
+.hero { position: relative; display: block; margin: 4px 18px 8px; border-radius: 26px; overflow: hidden; aspect-ratio: 4 / 3.4; background: var(--card) center 30%/cover; box-shadow: 0 22px 50px rgba(0, 0, 0, .5); }
+.hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(28, 15, 8, 0) 35%, rgba(28, 15, 8, .95) 100%); }
+.hero .tx { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 18px 20px 20px; }
+.hero .kick { display: inline-block; padding: 5px 11px; border-radius: 999px; background: var(--sun); color: #2a140a; font-size: 13px; margin-bottom: 10px; }
+.hero h2 { margin: 0; font-family: var(--title); font-weight: 400; font-size: 40px; letter-spacing: .03em; line-height: .95; }
+.hero h2 em { display: block; font-style: normal; font-family: var(--ui); font-size: 18px; letter-spacing: 0; color: var(--sun); margin-top: 6px; }
+.hero .play { position: absolute; right: 18px; bottom: 20px; z-index: 2; width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; background: var(--sun); color: #2a140a; box-shadow: 0 10px 26px rgba(255, 159, 46, .45); }
+.hero .play svg { width: 28px; height: 28px; fill: currentColor; stroke: none; margin-left: 4px; }
+.rail { margin-top: 26px; }
+.rail-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 18px; }
+.rail-h h3 { margin: 0; font-family: var(--title); font-weight: 400; font-size: 28px; letter-spacing: .04em; }
+.rail-h span { font-size: 14px; color: var(--dim); font-weight: 400; }
+.rail p { margin: 4px 18px 12px; font-size: 15px; color: var(--dim); font-weight: 400; line-height: 1.35; }
+.row { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 18px 14px; scrollbar-width: none; }
+.row::-webkit-scrollbar { display: none; }
+.card { position: relative; flex: 0 0 min(46%, 210px); scroll-snap-align: start; border-radius: 22px; overflow: hidden; aspect-ratio: 3 / 4.4; background: var(--card) center/cover; box-shadow: 0 16px 34px rgba(0, 0, 0, .45); }
+.card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(28, 15, 8, 0) 45%, rgba(28, 15, 8, .96) 100%); }
+.card .tx { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 12px 13px 13px; }
+.card h4 { margin: 0; font-family: var(--title); font-weight: 400; font-size: 25px; letter-spacing: .04em; line-height: 1; }
+.card h4 em { display: block; font-style: normal; font-family: var(--ui); font-size: 14px; letter-spacing: 0; color: var(--sun); margin-top: 4px; line-height: 1.15; }
+.card .meta { display: flex; gap: 6px; margin-top: 9px; font-size: 12px; }
+.chip { padding: 4px 8px; border-radius: 999px; background: rgba(255, 244, 228, .14); white-space: nowrap; }
+.card .ep { position: absolute; top: 10px; left: 10px; z-index: 1; }
+.card .st { position: absolute; top: 10px; right: 10px; z-index: 1; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: rgba(28, 15, 8, .7); border: 1px solid var(--line); }
+.card .st svg { width: 17px; height: 17px; }
+.card .st.ready { color: var(--mint); border-color: rgba(143, 227, 176, .5); }
+.card .st .ring { width: 18px; height: 18px; border-radius: 50%; background: conic-gradient(var(--sun) calc(var(--p, 0) * 1turn), rgba(255, 244, 228, .2) 0); }
+body.offline .card.net, body.offline .hero.net { filter: grayscale(.85) brightness(.55); }
+
+/* ---------------------------------------------------------------- offline tab */
+.ttl { margin: 6px 18px 4px; font-family: var(--title); font-weight: 400; font-size: 34px; letter-spacing: .04em; }
+.sub { margin: 0 18px 16px; color: var(--dim); font-weight: 400; font-size: 16px; line-height: 1.4; }
+.meter { margin: 0 18px 18px; padding: 16px; border-radius: 20px; background: var(--bg2); border: 1px solid var(--line); }
+.meter .bar { height: 10px; border-radius: 999px; background: rgba(255, 244, 228, .1); overflow: hidden; margin: 10px 0 12px; }
+.meter .bar i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--sun2), var(--sun)); transition: width .5s var(--ease); }
+.meter .line { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 15px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 18px; border-radius: 16px; background: var(--sun); color: #2a140a; font-size: 17px; box-shadow: 0 10px 24px rgba(255, 159, 46, .25); }
+.btn.ghost { background: rgba(255, 244, 228, .08); color: var(--ink); box-shadow: none; border: 1px solid var(--line); }
+.btn[disabled] { opacity: .45; pointer-events: none; }
+.btn.full { width: 100%; }
+.list { margin: 0 18px; display: grid; gap: 10px; }
+.item { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 18px; background: var(--bg2); border: 1px solid var(--line); }
+.item .th { width: 58px; height: 74px; border-radius: 12px; background: var(--card) center/cover; flex: none; }
+.item .tx { flex: 1; min-width: 0; }
+.item .tx b { display: block; font-size: 17px; line-height: 1.15; }
+.item .tx small { display: block; margin-top: 3px; font-size: 13px; color: var(--dim); font-weight: 400; }
+.item .act { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: rgba(255, 244, 228, .08); flex: none; }
+.item .act.ready { color: var(--mint); }
+.item .act.del { color: #ffb3a1; }
+.item .act .ring { width: 22px; height: 22px; border-radius: 50%; background: conic-gradient(var(--sun) calc(var(--p, 0) * 1turn), rgba(255, 244, 228, .2) 0); }
+
+/* ---------------------------------------------------------------- parents tab */
+.box { margin: 0 18px 14px; padding: 16px; border-radius: 20px; background: var(--bg2); border: 1px solid var(--line); }
+.box h4 { margin: 0 0 6px; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+.box p { margin: 0 0 12px; color: var(--dim); font-weight: 400; font-size: 15px; line-height: 1.45; }
+.box p:last-child { margin-bottom: 0; }
+.box ol { margin: 0; padding-left: 20px; font-weight: 400; font-size: 15px; line-height: 1.6; }
+.box .seg { display: inline-flex; }
+.promise { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+.promise span { display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: 14px; background: rgba(255, 244, 228, .06); font-size: 14px; }
+.promise svg { width: 18px; height: 18px; color: var(--mint); }
+.foot { text-align: center; color: var(--dim); font-weight: 400; font-size: 13px; padding: 10px 18px 0; }
+.foot a { text-decoration: underline; }
+
+/* ---------------------------------------------------------------- tab bar */
+.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; justify-content: center; padding: 8px 12px calc(8px + var(--sb)); background: rgba(28, 15, 8, .86); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border-top: 1px solid var(--line); }
+.tabs .in { display: flex; width: min(100%, 520px); justify-content: space-around; }
+.tabs button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 16px; border-radius: 16px; font-size: 13px; color: var(--dim); min-width: 84px; }
+.tabs button svg { width: 26px; height: 26px; }
+.tabs button.on { color: var(--sun); background: rgba(255, 196, 77, .12); }
+.tabs .badge { position: absolute; }
+
+/* ---------------------------------------------------------------- intro (first launch) */
+#intro { position: fixed; inset: 0; z-index: 30; background: #000; display: none; overflow: hidden; touch-action: pan-y; }
+#intro.on { display: block; }
+#intro .slides { display: flex; height: 100%; transition: transform .5s var(--ease); }
+#intro .slide { position: relative; flex: 0 0 100%; height: 100%; background: center 22%/cover; }
+#intro .slide::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, .15) 0%, rgba(28, 15, 8, 0) 30%, rgba(28, 15, 8, .85) 62%, var(--bg) 82%); }
+#intro .slide .tx { position: absolute; left: 0; right: 0; bottom: calc(150px + var(--sb)); z-index: 1; padding: 0 28px; max-width: 560px; margin: 0 auto; }
+#intro h2 { margin: 0 0 10px; font-family: var(--title); font-weight: 400; font-size: clamp(42px, 11vw, 58px); letter-spacing: .03em; line-height: .95; text-shadow: 0 4px 0 rgba(0, 0, 0, .35); }
+#intro h2 em { color: var(--sun); font-style: normal; }
+#intro p { margin: 0; font-size: 19px; line-height: 1.4; color: rgba(255, 244, 228, .85); font-weight: 400; }
+#intro .seg { display: inline-flex; margin-top: 16px; }
+#intro .seg button { font-size: 16px; padding: 9px 16px; }
+#intro .ctl { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 0 24px calc(26px + var(--sb)); max-width: 560px; margin: 0 auto; }
+#intro .dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 18px; }
+#intro .dots i { width: 9px; height: 9px; border-radius: 99px; background: rgba(255, 244, 228, .3); transition: width .3s var(--ease), background .3s; }
+#intro .dots i.on { width: 28px; background: var(--sun); }
+#intro .skip { position: absolute; top: calc(16px + var(--st)); right: 18px; z-index: 3; padding: 8px 14px; border-radius: 999px; background: rgba(0, 0, 0, .35); font-size: 15px; }
+#intro .logo { position: absolute; top: calc(16px + var(--st)); left: 18px; z-index: 3; display: flex; align-items: center; gap: 10px; font-family: var(--title); font-weight: 400; font-size: 26px; letter-spacing: .05em; text-shadow: 0 2px 8px rgba(0, 0, 0, .5); }
+#intro .logo i { width: 38px; height: 38px; border-radius: 11px; background: url(icon-192.png) center/cover; box-shadow: 0 0 0 2px rgba(255, 196, 77, .6); }
+
+/* ---------------------------------------------------------------- opening a story: the card grows to the full screen */
+.zoom { position: fixed; z-index: 40; background: center/cover; border-radius: 22px; transition: all .45s var(--ease); pointer-events: none; }
+.sheet { position: fixed; inset: 0; z-index: 25; display: none; align-items: flex-end; justify-content: center; background: rgba(0, 0, 0, .55); }
 .sheet.on { display: flex; }
-.sheet .in { width: min(520px, 100%); padding: 26px 24px calc(26px + env(safe-area-inset-bottom)); border-radius: 26px 26px 0 0; background: #2a160b; border: 1px solid rgba(251, 241, 226, .15); text-align: center; }
-.sheet h3 { margin: 0 0 14px; font-weight: 400; font-style: italic; font-size: 30px; }
-.sheet ol { text-align: left; margin: 0 auto 20px; padding-left: 22px; max-width: 360px; font-size: 20px; line-height: 1.5; }
-.sheet .ok { padding: 12px 26px; border-radius: 999px; background: var(--gold); color: #2a140a; font-size: 18px; }
+.sheet .in { width: min(560px, 100%); padding: 24px 22px calc(24px + var(--sb)); border-radius: 26px 26px 0 0; background: var(--bg2); border: 1px solid var(--line); animation: up .35s var(--ease); }
+@keyframes up { from { transform: translateY(40px); opacity: 0; } }
+@media (min-width: 700px) { .card { flex-basis: 210px; } .hero { aspect-ratio: 16 / 9; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
-<header>
-  <a class="brand" href="../">UNFOLD WORLDS</a>
-  <div class="right"><button class="inst" id="inst" data-t="install"></button><div class="langs"><button data-lang="fr">FR</button><button data-lang="en">EN</button></div></div>
-</header>
-<main>
-  <section class="hero">
-    <p class="kick" data-t="kick"></p>
-    <h1><span data-t="title"></span><em data-t="sub"></em></h1>
-    <p class="lead" data-t="lead"></p>
-    <div class="offbar" id="offbar"><span id="offtxt"></span><button id="dlall"></button></div>
-  </section>
-  <div id="series"></div>
-</main>
-<p class="priv"><a href="confidentialite.html" data-t="priv"></a></p>
-<footer><a href="../" data-t="home"></a></footer>
-<div class="sheet" id="iosheet"><div class="in"><h3 data-t="install"></h3><ol><li data-h="ios1"></li><li data-h="ios2"></li><li data-h="ios3"></li></ol><button class="ok" id="iosok">OK</button></div></div>
-<script type="module">
-import { register, files, status, download, standalone, ios, canOffline } from './offline.js';
-const T = {
-  fr: { kick: 'Unfold Worlds', title: 'Contes', sub: 'à écouter et à toucher', lead: 'Des histoires racontées à voix haute, que l’enfant fait avancer du bout du doigt. Quelques minutes chacune, en français et en anglais.', home: 'Retour à l’accueil', min: 'min', soon: 'Bientôt', play: 'Écouter',
-    priv: 'Confidentialité', install: 'Installer l’appli', dl: 'Télécharger', ready: 'Sur le téléphone', net: 'Réseau requis', mb: 'Mo', all: 'Tout télécharger', of: 'sur', offline: 'hors ligne', allok: 'Tout est sur le téléphone',
-    ios1: 'Touche <b>Partager</b> en bas de Safari', ios2: 'Choisis <b>Sur l’écran d’accueil</b>', ios3: 'L’icône <b>Contes</b> s’ouvre en plein écran' },
-  en: { kick: 'Unfold Worlds', title: 'Stories', sub: 'to listen to and to touch', lead: 'Tales read aloud, that the child moves along with a fingertip. A few minutes each, in French and in English.', home: 'Back to home', min: 'min', soon: 'Coming soon', play: 'Listen',
-    priv: 'Privacy', install: 'Install the app', dl: 'Download', ready: 'On this phone', net: 'Needs a network', mb: 'MB', all: 'Download all', of: 'of', offline: 'offline', allok: 'Everything is on this phone',
-    ios1: 'Tap <b>Share</b> at the bottom of Safari', ios2: 'Choose <b>Add to Home Screen</b>', ios3: 'The <b>Contes</b> icon opens in full screen' },
-};
-// the series and their tales; a tale without "url" shows as coming soon
-const SERIES = [
-  // one series per hero, the episodes in order
-  { id: 'lina', fr: { name: 'Lina', d: 'Une petite exploratrice, sa loupe et ses jumelles : chaque histoire est une enquête dans la nature.' }, en: { name: 'Lina', d: 'A little explorer with her magnifying glass and binoculars: every story is an investigation in nature.' },
-    tales: [{ url: 'lina/', img: 'lina/art/l10.jpg', min: 5, fr: { t: 'Lina', s: 'et les petites traces', m: 'Épisode 1 · BD à toucher · 4 à 8 ans' }, en: { t: 'Lina', s: 'and the tiny tracks', m: 'Episode 1 · Interactive comic · ages 4 to 8' } },
-      { url: 'lina2/', img: 'lina2/art/b5b.jpg', min: 6, fr: { t: 'Lina', s: 'et le papillon secret', m: 'Épisode 2 · BD à vivre · 4 à 8 ans' }, en: { t: 'Lina', s: 'and the secret butterfly', m: 'Episode 2 · Interactive comic · ages 4 to 8' } }] },
-  { id: 'nala', fr: { name: 'Nala', d: 'Une petite astronaute et Bip, son robot en carton, partent explorer l’espace.' }, en: { name: 'Nala', d: 'A little astronaut and Bip, her cardboard robot, set off to explore space.' },
-    tales: [{ url: 'nala/', img: 'nala/art/k3.jpg', min: 6, fr: { t: 'Nala', s: 'et la fusée en carton', m: 'Épisode 1 · BD à vivre · 4 à 8 ans' }, en: { t: 'Nala', s: 'and the cardboard rocket', m: 'Episode 1 · Interactive comic · ages 4 to 8' } },
-      { url: 'nala2/', img: 'nala2/art/m6.jpg?v=2', min: 7, fr: { t: 'Nala', s: 'et la planète rouge', m: 'Épisode 2 · BD à vivre · 4 à 8 ans' }, en: { t: 'Nala', s: 'and the red planet', m: 'Episode 2 · Interactive comic · ages 4 to 8' } }] },
-  { id: 'bible', fr: { name: 'Histoires de la Bible', d: 'Les grands récits de la Bible, à vivre en BD, avec un peu de science en chemin.' }, en: { name: 'Bible stories', d: 'The great stories of the Bible as comics, with a little science along the way.' },
-    tales: [{ url: 'noe/', img: 'noe/art/n5.jpg', min: 4, fr: { t: 'Noé', s: 'et l’arche', m: 'BD à toucher · Genèse 6 à 9' }, en: { t: 'Noah', s: 'and the ark', m: 'Interactive comic · Genesis 6 to 9' } },
-      { url: 'jonas/', img: 'jonas/art/j13.jpg', min: 9, fr: { t: 'Jonas', s: 'et le grand poisson', m: 'BD à vivre · livre de Jonas' }, en: { t: 'Jonah', s: 'and the great fish', m: 'Interactive comic · book of Jonah' } }] },
-  // kept aside for now (not listed): mila/ "Mila et la luciole perdue" and kalulu/ "Kalulu et le grand tir à la corde"
-];
-const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
-let lang = new URLSearchParams(location.search).get('lang') || store.get('contes-lang') || ((navigator.language || '').startsWith('fr') ? 'fr' : 'en');
-function render() {
-  document.documentElement.lang = lang;
-  for (const el of document.querySelectorAll('[data-t]')) el.textContent = T[lang][el.dataset.t];
-  for (const el of document.querySelectorAll('[data-h]')) el.innerHTML = T[lang][el.dataset.h];
-  for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
-  document.getElementById('series').innerHTML = SERIES.map((s) => `
-    <section class="series"><h2>${s[lang].name}</h2><p class="sd">${s[lang].d}</p><div class="grid">
-      ${s.tales.map((x) => `<a class="tale${x.url ? '' : ' soon'}" data-id="${(x.url || '').replace('/', '')}" ${x.url ? `href="${x.url}?lang=${lang}"` : 'aria-disabled="true"'}>${x.url ? '<button class="dl" hidden></button>' : ''}
-        <div class="im" style="background-image:url(${x.img})"></div>${x.url ? '' : `<span class="badge">${T[lang].soon}</span>`}
-        <div class="tx"><h3>${x[lang].t}<em>${x[lang].s}</em></h3><div class="meta">${x[lang].m} · ${x.min} ${T[lang].min}</div></div></a>`).join('')}
-    </div></section>`).join('');
-}
-for (const b of document.querySelectorAll('[data-lang]')) b.onclick = () => { lang = b.dataset.lang; store.set('contes-lang', lang); render(); };
-render();
+<div id="app">
+  <header class="top">
+    <i class="logo"></i>
+    <div class="hi"><small id="greet"></small><b data-t="app"></b></div>
+    <div class="seg" id="langtop"><button data-lang="fr">FR</button><button data-lang="en">EN</button></div>
+  </header>
+  <div class="offline-note"><svg class="i" viewBox="0 0 24 24"><path d="M2 8.5a15 15 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 15.5a5 5 0 0 1 6 0M12 19h.01M3 3l18 18"/></svg><span data-t="offnote"></span></div>
 
-// ------------------------------------------------------------------ the app: installed on the phone, stories kept offline
-if (standalone) document.body.classList.add('app');
-const ICON = { dl: '<svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>', ok: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg>' };
+  <section class="view on" id="v-home">
+    <a class="hero press" id="hero"></a>
+    <div id="rails"></div>
+  </section>
+
+  <section class="view" id="v-off">
+    <h2 class="ttl" data-t="offT"></h2>
+    <p class="sub" data-t="offS"></p>
+    <div class="meter"><div class="line"><span id="m-n"></span><span id="m-mb"></span></div><div class="bar"><i id="m-bar"></i></div><button class="btn full press" id="dlall"></button></div>
+    <div class="list" id="offlist"></div>
+  </section>
+
+  <section class="view" id="v-par">
+    <h2 class="ttl" data-t="parT"></h2>
+    <p class="sub" data-t="parS"></p>
+    <div class="box"><h4 data-t="langT"></h4><p data-t="langS"></p><div class="seg" id="langpar"><button data-lang="fr">Français</button><button data-lang="en">English</button></div></div>
+    <div class="box" id="b-android"><h4><svg class="i" viewBox="0 0 24 24"><path d="M7.5 9.5h9v7.5a1.5 1.5 0 0 1-1.5 1.5h-6A1.5 1.5 0 0 1 7.5 17zM7.5 8.5a4.5 4.5 0 0 1 9 0zM9.5 5L8.5 3.5M14.5 5l1-1.5M5.5 10v5M18.5 10v5M10 18.5V21M14 18.5V21"/></svg><span data-t="apk"></span></h4><p data-t="apkS"></p><a class="btn press" id="apk" href="android/Contes.apk" download="Contes.apk"><svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span data-t="apkB"></span></a></div>
+    <div class="box" id="b-ios"><h4 data-t="iosT"></h4><ol><li data-h="ios1"></li><li data-h="ios2"></li><li data-h="ios3"></li></ol></div>
+    <div class="box" id="b-pwa"><h4 data-t="install"></h4><p data-t="pwaS"></p><button class="btn press" id="inst" data-t="install"></button></div>
+    <div class="box"><h4 data-t="aboutT"></h4><p data-t="aboutS"></p>
+      <div class="promise"><span><svg viewBox="0 0 24 24" class="i"><path d="M5 12.5l4.5 4.5L19 7"/></svg><b data-t="p1"></b></span><span><svg viewBox="0 0 24 24" class="i"><path d="M5 12.5l4.5 4.5L19 7"/></svg><b data-t="p2"></b></span><span><svg viewBox="0 0 24 24" class="i"><path d="M5 12.5l4.5 4.5L19 7"/></svg><b data-t="p3"></b></span><span><svg viewBox="0 0 24 24" class="i"><path d="M5 12.5l4.5 4.5L19 7"/></svg><b data-t="p4"></b></span></div></div>
+    <div class="box"><button class="btn ghost press" id="replayintro" data-t="intro"></button></div>
+    <p class="foot"><a href="confidentialite.html" data-t="priv"></a> · <span id="ver"></span><span class="web"> · <a href="../" data-t="home"></a></span></p>
+  </section>
+</div>
+
+<nav class="tabs"><div class="in">
+  <button class="on" data-v="home"><svg class="i" viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4zM20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z"/></svg><span data-t="tHome"></span></button>
+  <button data-v="off"><svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span data-t="tOff"></span></button>
+  <button data-v="par"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg><span data-t="tPar"></span></button>
+</div></nav>
+
+<div id="intro" role="dialog" aria-modal="true">
+  <div class="logo"><i></i><span data-t="app"></span></div>
+  <button class="skip" id="skip" data-t="skip"></button>
+  <div class="slides" id="slides"></div>
+  <div class="ctl"><div class="dots" id="idots"></div><button class="btn full press" id="inext"></button></div>
+</div>
+
+<script type="module">
+import { register, files, status, download, remove, standalone, ios, canOffline } from './offline.js';
+const VERSION = '1.0';
+const T = {
+  fr: { app: 'Contes', morning: 'Bonjour !', after: 'Bon après-midi !', evening: 'Bonsoir !', night: 'Une histoire avant de dormir ?',
+    offnote: 'Pas de réseau : les histoires téléchargées s’ouvrent quand même.', cont: 'Continuer', feat: 'À découvrir', listen: 'Écouter', min: 'min', ep: 'Épisode', stories: 'histoires', story: 'histoire',
+    tHome: 'Histoires', tOff: 'Hors ligne', tPar: 'Parents',
+    offT: 'Hors ligne', offS: 'Téléchargez les histoires pour la voiture, l’avion ou le lit : elles s’ouvrent ensuite sans internet.', of: 'sur', onphone: 'sur le téléphone', all: 'Tout télécharger', allok: 'Tout est sur le téléphone', mb: 'Mo', ready: 'Sur le téléphone', dl: 'Télécharger', del: 'Supprimer', delq: 'Supprimer cette histoire du téléphone ? Elle restera disponible avec internet.', need: 'Réseau requis',
+    parT: 'Espace parents', parS: 'Réglages, installation, et ce que fait l’application.', langT: 'Langue des histoires', langS: 'Les voix, les textes et l’appli changent de langue ensemble.',
+    apk: 'Application Android', apkS: 'Installez l’appli sur un téléphone Android : une icône, le plein écran, les histoires hors ligne.', apkB: 'Télécharger (5 Mo)',
+    iosT: 'Sur iPhone et iPad', ios1: 'Dans Safari, touchez <b>Partager</b>', ios2: 'Choisissez <b>Sur l’écran d’accueil</b>', ios3: 'L’icône <b>Contes</b> s’ouvre en plein écran',
+    install: 'Installer l’appli', pwaS: 'Ajoutez Contes à cet appareil, comme une application.',
+    aboutT: 'Pour les 4 à 8 ans', aboutS: 'Des BD racontées à voix haute, que l’enfant fait avancer du bout du doigt. Quelques minutes chacune.', p1: 'Sans publicité', p2: 'Sans compte', p3: 'Sans achat', p4: 'Aucune donnée collectée',
+    intro: 'Revoir la présentation', priv: 'Confidentialité', home: 'Unfold Worlds', skip: 'Passer', next: 'Suivant', go: 'C’est parti !',
+    s1t: 'Des histoires <em>à écouter</em>', s1p: 'Une voix raconte, les mots s’allument, et l’enfant suit l’histoire en images.',
+    s2t: 'Et à toucher <em>du bout du doigt</em>', s2p: 'Chercher à la loupe, coller une fusée, faire voler une colombe : c’est l’enfant qui fait avancer l’histoire.',
+    s3t: 'Partout, <em>même sans internet</em>', s3p: 'Téléchargez les histoires une fois, et lisez-les en voiture, en avion ou au lit.' },
+  en: { app: 'Contes', morning: 'Good morning!', after: 'Good afternoon!', evening: 'Good evening!', night: 'A story before bed?',
+    offnote: 'No network: downloaded stories still open.', cont: 'Continue', feat: 'Discover', listen: 'Listen', min: 'min', ep: 'Episode', stories: 'stories', story: 'story',
+    tHome: 'Stories', tOff: 'Offline', tPar: 'Parents',
+    offT: 'Offline', offS: 'Download the stories for the car, the plane or bedtime: they then open with no internet.', of: 'of', onphone: 'on this phone', all: 'Download all', allok: 'Everything is on this phone', mb: 'MB', ready: 'On this phone', dl: 'Download', del: 'Remove', delq: 'Remove this story from the phone? It stays available online.', need: 'Needs a network',
+    parT: 'For parents', parS: 'Settings, installing, and what the app does.', langT: 'Story language', langS: 'Voices, texts and the app switch language together.',
+    apk: 'Android app', apkS: 'Install the app on an Android phone: an icon, full screen, stories offline.', apkB: 'Download (5 MB)',
+    iosT: 'On iPhone and iPad', ios1: 'In Safari, tap <b>Share</b>', ios2: 'Choose <b>Add to Home Screen</b>', ios3: 'The <b>Contes</b> icon opens in full screen',
+    install: 'Install the app', pwaS: 'Add Contes to this device, like an app.',
+    aboutT: 'For ages 4 to 8', aboutS: 'Picture-book comics read aloud, that the child moves along with a fingertip. A few minutes each.', p1: 'No ads', p2: 'No account', p3: 'No purchases', p4: 'No data collected',
+    intro: 'See the welcome again', priv: 'Privacy', home: 'Unfold Worlds', skip: 'Skip', next: 'Next', go: 'Let’s go!',
+    s1t: 'Stories <em>to listen to</em>', s1p: 'A voice tells the story, the words light up, and the child follows in pictures.',
+    s2t: 'And to touch <em>with a fingertip</em>', s2p: 'Search with a magnifying glass, build a rocket, help a dove fly: the child moves the story along.',
+    s3t: 'Anywhere, <em>even offline</em>', s3p: 'Download the stories once, and read them in the car, on a plane or in bed.' },
+};
+// the series and their stories (id = folder)
+const SERIES = [
+  { id: 'lina', fr: { name: 'Lina', d: 'Une petite exploratrice, sa loupe et ses jumelles : chaque histoire est une enquête dans la nature.' }, en: { name: 'Lina', d: 'A little explorer with her magnifying glass and binoculars: every story is an investigation in nature.' },
+    tales: [{ id: 'lina', img: 'lina/art/l10.jpg', min: 5, ep: 1, fr: { t: 'Lina', s: 'et les petites traces' }, en: { t: 'Lina', s: 'and the tiny tracks' } },
+      { id: 'lina2', img: 'lina2/art/b5b.jpg', min: 6, ep: 2, fr: { t: 'Lina', s: 'et le papillon secret' }, en: { t: 'Lina', s: 'and the secret butterfly' } }] },
+  { id: 'nala', fr: { name: 'Nala', d: 'Une petite astronaute et Bip, son robot en carton, partent explorer l’espace.' }, en: { name: 'Nala', d: 'A little astronaut and Bip, her cardboard robot, set off to explore space.' },
+    tales: [{ id: 'nala', img: 'nala/art/k3.jpg', min: 6, ep: 1, fr: { t: 'Nala', s: 'et la fusée en carton' }, en: { t: 'Nala', s: 'and the cardboard rocket' } },
+      { id: 'nala2', img: 'nala2/art/m6.jpg?v=2', min: 7, ep: 2, fr: { t: 'Nala', s: 'et la planète rouge' }, en: { t: 'Nala', s: 'and the red planet' } }] },
+  { id: 'bible', fr: { name: 'La Bible en BD', d: 'Les grands récits de la Bible, à vivre en BD, avec un peu de science en chemin.' }, en: { name: 'Bible stories', d: 'The great stories of the Bible as comics, with a little science along the way.' },
+    tales: [{ id: 'noe', img: 'noe/art/n5.jpg', min: 4, fr: { t: 'Noé', s: 'et l’arche' }, en: { t: 'Noah', s: 'and the ark' } },
+      { id: 'jonas', img: 'jonas/art/j13.jpg', min: 9, fr: { t: 'Jonas', s: 'et le grand poisson' }, en: { t: 'Jonah', s: 'and the great fish' } }] },
+];
+const ALL = SERIES.flatMap((s) => s.tales.map((t) => ({ ...t, series: s })));
+const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
+const Q = new URLSearchParams(location.search);
+let lang = Q.get('lang') || store.get('contes-lang') || ((navigator.language || '').startsWith('fr') ? 'fr' : 'en');
+const inApp = standalone || /android-app:\/\//.test(document.referrer) || Q.has('app');
+const android = /Android/.test(navigator.userAgent);
+const $ = (s) => document.querySelector(s);
+const buzz = () => { try { navigator.vibrate?.(8); } catch {} };
+const ICON = {
+  dl: '<svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+  ok: '<svg class="i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+  del: '<svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+  play: '<svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg>',
+};
+
+// ------------------------------------------------------------------ offline state
+let F = null; const state = {}; const byId = (id) => F?.tales?.find((x) => x.id === id);
 const mb = (b) => `${Math.max(1, Math.round(b / 1e6))} ${T[lang].mb}`;
-let F = null; const state = {};
-function chip(t) {
-  const el = document.querySelector(`.tale[data-id="${t.id}"] .dl`); if (!el) return;
-  const st = state[t.id]; el.hidden = !canOffline; el.className = 'dl' + (st === 'ready' ? ' ready' : typeof st === 'number' ? ' busy' : '');
-  el.innerHTML = st === 'ready' ? `${ICON.ok}${T[lang].ready}` : typeof st === 'number' ? `<i class="ring" style="--p:${st}"></i>${Math.round(st * 100)} %` : `${ICON.dl}${mb(t.size)}`;
-  el.closest('.tale').classList.toggle('net', st !== 'ready');
-}
-function bar() {
-  const ts = F?.tales || [], n = ts.filter((t) => state[t.id] === 'ready').length, left = ts.filter((t) => state[t.id] !== 'ready');
-  document.getElementById('offbar').classList.toggle('on', canOffline && ts.length > 0);
-  document.getElementById('offtxt').textContent = left.length ? `${n} ${T[lang].of} ${ts.length} ${T[lang].offline}` : T[lang].allok;
-  const b = document.getElementById('dlall'); b.hidden = !left.length || !navigator.onLine || left.some((t) => typeof state[t.id] === 'number'); b.textContent = `${T[lang].all} · ${mb(left.reduce((s, t) => s + t.size, 0))}`;
-}
-const paint = () => { for (const t of F?.tales || []) chip(t); bar(); };
-async function get(t) {
-  if (typeof state[t.id] === 'number' || !navigator.onLine) return;
-  state[t.id] = 0; paint();
-  try { await download(t, (p) => { state[t.id] = p; chip(t); }); state[t.id] = 'ready'; } catch (e) { console.warn(e); state[t.id] = 'none'; }
+async function get(id) {
+  const t = byId(id); if (!t || typeof state[id] === 'number' || !navigator.onLine) return;
+  state[id] = 0; paint();
+  try { await download(t, (p) => { state[id] = p; paint(); }); state[id] = 'ready'; buzz(); } catch (e) { console.warn(e); state[id] = 'none'; }
   paint();
 }
-document.getElementById('series').addEventListener('click', (e) => {
-  const b = e.target.closest('.dl'); if (!b) return; e.preventDefault(); e.stopPropagation();
-  const t = F.tales.find((x) => x.id === b.closest('.tale').dataset.id); if (t) get(t);
-}, true);
-document.getElementById('dlall').onclick = async () => { for (const t of F.tales) if (state[t.id] !== 'ready') await get(t); };
-const net = () => { document.body.classList.toggle('offline', !navigator.onLine); if (F) bar(); };
-addEventListener('online', net); addEventListener('offline', net); net();
-const _render = render; render = function () { _render(); paint(); };
+async function drop(id) { const t = byId(id); if (!t || !confirm(T[lang].delq)) return; await remove(t); state[id] = 'none'; paint(); }
+
+// ------------------------------------------------------------------ drawing
+function greet() { const h = new Date().getHours(); return h < 5 || h >= 20 ? T[lang].night : h < 12 ? T[lang].morning : h < 18 ? T[lang].after : T[lang].evening; }
+const stIcon = (id) => { const s = state[id]; return s === 'ready' ? `<span class="st ready">${ICON.ok}</span>` : typeof s === 'number' ? `<span class="st"><i class="ring" style="--p:${s}"></i></span>` : ''; };
+function home() {
+  const last = ALL.find((t) => t.id === store.get('contes-last')), h = last || ALL[1], L = T[lang];
+  const hero = $('#hero'); hero.dataset.id = h.id; hero.href = `${h.id}/?lang=${lang}`; hero.style.backgroundImage = `url(${h.img})`;
+  hero.className = 'hero press' + (state[h.id] === 'ready' ? '' : ' net');
+  hero.innerHTML = `<div class="tx"><span class="kick">${last ? L.cont : L.feat}</span><h2>${h[lang].t}<em>${h[lang].s}</em></h2></div><span class="play" aria-label="${L.listen}">${ICON.play}</span>`;
+  $('#rails').innerHTML = SERIES.map((s) => `<section class="rail"><div class="rail-h"><h3>${s[lang].name}</h3><span>${s.tales.length} ${s.tales.length > 1 ? L.stories : L.story}</span></div><p>${s[lang].d}</p>
+    <div class="row">${s.tales.map((t) => `<a class="card press${state[t.id] === 'ready' ? '' : ' net'}" data-id="${t.id}" href="${t.id}/?lang=${lang}" style="background-image:url(${t.img})">
+      ${t.ep ? `<span class="chip ep">${L.ep} ${t.ep}</span>` : ''}${stIcon(t.id)}
+      <div class="tx"><h4>${t[lang].t}<em>${t[lang].s}</em></h4><div class="meta"><span class="chip">${t.min} ${L.min}</span></div></div></a>`).join('')}</div></section>`).join('');
+}
+function offline() {
+  const L = T[lang], ts = F?.tales || [], ready = ts.filter((t) => state[t.id] === 'ready'), left = ts.filter((t) => state[t.id] !== 'ready');
+  $('#m-n').textContent = `${ready.length} ${L.of} ${ts.length} ${L.onphone}`; $('#m-mb').textContent = mb(ready.reduce((s, t) => s + t.size, 0));
+  $('#m-bar').style.width = ts.length ? `${(ready.length / ts.length) * 100}%` : '0';
+  const b = $('#dlall'); b.disabled = !left.length || !navigator.onLine || ts.some((t) => typeof state[t.id] === 'number');
+  b.innerHTML = left.length ? `${ICON.dl}${L.all} · ${mb(left.reduce((s, t) => s + t.size, 0))}` : `${ICON.ok}${L.allok}`;
+  $('#offlist').innerHTML = ALL.map((x) => { const t = byId(x.id); if (!t) return ''; const s = state[x.id];
+    const act = s === 'ready' ? `<button class="act del press" data-del="${x.id}" aria-label="${L.del}">${ICON.del}</button>` : typeof s === 'number' ? `<span class="act"><i class="ring" style="--p:${s}"></i></span>` : `<button class="act press" data-get="${x.id}" aria-label="${L.dl}">${ICON.dl}</button>`;
+    return `<div class="item"><i class="th" style="background-image:url(${x.img})"></i><div class="tx"><b>${x[lang].t} ${x[lang].s}</b><small>${s === 'ready' ? L.ready : typeof s === 'number' ? Math.round(s * 100) + ' %' : mb(t.size)} · ${x.min} ${L.min}</small></div>${act}</div>`; }).join('');
+}
+function paint() { if (F) { home(); offline(); } }
+function render() {
+  document.documentElement.lang = lang; const L = T[lang];
+  for (const el of document.querySelectorAll('[data-t]')) el.textContent = L[el.dataset.t];
+  for (const el of document.querySelectorAll('[data-h]')) el.innerHTML = L[el.dataset.h];
+  for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
+  $('#greet').textContent = greet(); $('#ver').textContent = `${L.app} ${VERSION}`;
+  home(); offline(); intro.draw();
+}
+function setLang(l) { lang = l; store.set('contes-lang', l); buzz(); render(); }
+document.addEventListener('click', (e) => { const b = e.target.closest('[data-lang]'); if (b) setLang(b.dataset.lang); });
+
+// ------------------------------------------------------------------ tabs
+function tab(v) {
+  for (const b of document.querySelectorAll('.tabs button')) b.classList.toggle('on', b.dataset.v === v);
+  for (const s of document.querySelectorAll('.view')) s.classList.toggle('on', s.id === 'v-' + v);
+  scrollTo({ top: 0 }); history.replaceState(null, '', v === 'home' ? location.pathname + location.search : '#' + v);
+}
+for (const b of document.querySelectorAll('.tabs button')) b.onclick = () => { buzz(); tab(b.dataset.v); };
+const fromHash = () => tab(['off', 'par'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'home');
+if (location.hash) fromHash();
+addEventListener('hashchange', fromHash);
+
+// ------------------------------------------------------------------ opening a story: remember it, and grow its picture to the screen
+document.addEventListener('click', (e) => {
+  const g = e.target.closest('[data-get]'), d = e.target.closest('[data-del]');
+  if (g) { e.preventDefault(); get(g.dataset.get); return; } if (d) { e.preventDefault(); drop(d.dataset.del); return; }
+  const a = e.target.closest('a.card, a.hero'); if (!a || e.ctrlKey || e.metaKey) return;
+  if (!navigator.onLine && state[a.dataset.id] !== 'ready') { e.preventDefault(); a.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-8px)' }, { transform: 'translateX(8px)' }, { transform: 'translateX(0)' }], { duration: 300 }); return; }
+  e.preventDefault(); buzz(); store.set('contes-last', a.dataset.id);
+  const r = a.getBoundingClientRect(), z = document.createElement('div'); z.className = 'zoom';
+  z.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;background-image:${getComputedStyle(a).backgroundImage}`;
+  document.body.append(z); requestAnimationFrame(() => requestAnimationFrame(() => { z.style.left = '0px'; z.style.top = '0px'; z.style.width = innerWidth + 'px'; z.style.height = innerHeight + 'px'; z.style.borderRadius = '0'; }));
+  setTimeout(() => { location.href = a.href; }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 420);
+  setTimeout(() => z.remove(), 3000);
+});
+addEventListener('pageshow', (e) => { if (e.persisted) document.querySelectorAll('.zoom').forEach((z) => z.remove()); });
+
+// ------------------------------------------------------------------ the welcome (first launch, or from the parents' tab)
+const intro = (() => {
+  const SL = [{ img: 'lina/art/l10.jpg', pos: '72% 62%', t: 's1t', p: 's1p', lang: true }, { img: 'nala/art/k3.jpg', pos: '50% 30%', t: 's2t', p: 's2p' }, { img: 'noe/art/n5.jpg', pos: '50% 25%', t: 's3t', p: 's3p' }];
+  let i = 0, x0 = null; const el = $('#intro'), sl = $('#slides');
+  const draw = () => {
+    const L = T[lang];
+    sl.innerHTML = SL.map((s) => `<div class="slide" style="background-image:url(${s.img});background-position:${s.pos}"><div class="tx"><h2>${L[s.t]}</h2><p>${L[s.p]}</p>${s.lang ? '<div class="seg"><button data-lang="fr" class="' + (lang === 'fr' ? 'on' : '') + '">Français</button><button data-lang="en" class="' + (lang === 'en' ? 'on' : '') + '">English</button></div>' : ''}</div></div>`).join('');
+    $('#idots').innerHTML = SL.map((_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('');
+    sl.style.transform = `translateX(${-i * 100}%)`; $('#inext').textContent = i === SL.length - 1 ? L.go : L.next;
+  };
+  const go = (k) => { i = Math.max(0, Math.min(SL.length - 1, k)); draw(); };
+  const close = () => { el.classList.remove('on'); store.set('contes-intro', '1'); buzz(); };
+  $('#inext').onclick = () => { buzz(); i === SL.length - 1 ? close() : go(i + 1); };
+  $('#skip').onclick = close;
+  el.addEventListener('pointerdown', (e) => { x0 = e.clientX; });
+  el.addEventListener('pointerup', (e) => { if (x0 == null) return; const dx = e.clientX - x0; x0 = null; if (Math.abs(dx) > 50) go(i + (dx < 0 ? 1 : -1)); });
+  addEventListener('keydown', (e) => { if (!el.classList.contains('on')) return; if (e.key === 'ArrowRight') go(i + 1); if (e.key === 'ArrowLeft') go(i - 1); if (e.key === 'Escape') close(); });
+  return { draw, open: () => { i = 0; draw(); el.classList.add('on'); } };
+})();
+$('#replayintro').onclick = () => intro.open();
+if (!store.get('contes-intro') && !Q.has('nointro')) intro.open();
+
+// ------------------------------------------------------------------ installing: Android gets the app file, iPhone the steps, other browsers their own prompt
+if (inApp) document.body.classList.add('app');
+$('#b-android').hidden = inApp || ios; $('#b-ios').hidden = !ios || standalone;
+let deferred = null; $('#b-pwa').hidden = true;
+addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; if (!android && !inApp) $('#b-pwa').hidden = false; });
+$('#inst').onclick = async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice.catch(() => {}); deferred = null; $('#b-pwa').hidden = true; };
+for (const w of document.querySelectorAll('.web')) w.hidden = inApp;
+
+// ------------------------------------------------------------------ network
+const net = () => { document.body.classList.toggle('offline', !navigator.onLine); paint(); };
+addEventListener('online', net); addEventListener('offline', net);
+document.body.classList.toggle('offline', !navigator.onLine);
+render();
 (async () => {
   if (!canOffline) return;
   await register(); F = await files(); if (!F.tales) return;
   for (const t of F.tales) state[t.id] = await status(t);
   paint();
-  for (const t of F.tales) if (state[t.id] === 'old') get(t); // a story changed: the new version replaces the old one by itself
+  for (const t of F.tales) if (state[t.id] === 'old') get(t.id); // a story changed: the new version replaces the old one by itself
 })();
-// install: Android offers its own prompt; on the iPhone, the steps through Safari's Share menu
-let deferred = null; const inst = document.getElementById('inst');
-addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; inst.classList.add('on'); });
-addEventListener('appinstalled', () => inst.classList.remove('on'));
-if (ios && !standalone) inst.classList.add('on');
-inst.onclick = async () => { if (deferred) { deferred.prompt(); await deferred.userChoice.catch(() => {}); deferred = null; inst.classList.remove('on'); } else document.getElementById('iosheet').classList.add('on'); };
-document.getElementById('iosok').onclick = () => document.getElementById('iosheet').classList.remove('on');
-window.__contes = { state, get files() { return F; }, get };
+window.__contes = { state, get files() { return F; }, get, tab, intro };
 </script>
 </body>
 </html>
