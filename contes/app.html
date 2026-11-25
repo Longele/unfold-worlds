@@ -17,6 +17,8 @@
 <meta property="og:image" content="https://unfoldworlds.com/covers/contes.jpg">
 <link rel="icon" href="icon-192.png">
 <style>
+@font-face { font-family: 'Fredoka'; font-weight: 500 700; src: url(fonts/fredoka.woff2) format('woff2'); font-display: swap; }
+@font-face { font-family: 'Nunito'; font-weight: 600 900; src: url(fonts/nunito.woff2) format('woff2'); font-display: swap; }
 @font-face { font-family: 'Bangers'; src: url(fonts/bangers.woff2) format('woff2'); font-display: swap; }
 @font-face { font-family: 'Comic Neue'; font-weight: 400; src: url(fonts/comicneue-400.woff2) format('woff2'); font-display: swap; }
 @font-face { font-family: 'Comic Neue'; font-weight: 700; src: url(fonts/comicneue-700.woff2) format('woff2'); font-display: swap; }
@@ -53,7 +55,7 @@ svg.i { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-widt
 body.offline .offline-note { display: flex; }
 
 /* ---------------------------------------------------------------- stories tab */
-.hero { position: relative; display: block; margin: 4px 18px 8px; border-radius: 26px; overflow: hidden; aspect-ratio: 4 / 3.4; background: var(--card) center 30%/cover; box-shadow: 0 22px 50px rgba(0, 0, 0, .5); }
+.hero { position: relative; display: block; margin: 4px 18px 8px; border-radius: 26px; overflow: hidden; aspect-ratio: 4 / 3.4; background: var(--card); box-shadow: 0 22px 50px rgba(0, 0, 0, .5); }
 .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(28, 15, 8, 0) 35%, rgba(28, 15, 8, .95) 100%); }
 .hero .tx { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 18px 20px 20px; }
 .hero .kick { display: inline-block; padding: 5px 11px; border-radius: 999px; background: var(--sun); color: #2a140a; font-size: 13px; margin-bottom: 10px; }
@@ -68,7 +70,7 @@ body.offline .offline-note { display: flex; }
 .rail p { margin: 4px 18px 12px; font-size: 15px; color: var(--dim); font-weight: 400; line-height: 1.35; }
 .row { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 18px 14px; scrollbar-width: none; }
 .row::-webkit-scrollbar { display: none; }
-.card { position: relative; flex: 0 0 min(46%, 210px); scroll-snap-align: start; border-radius: 22px; overflow: hidden; aspect-ratio: 3 / 4.4; background: var(--card) center/cover; box-shadow: 0 16px 34px rgba(0, 0, 0, .45); }
+.card { position: relative; flex: 0 0 min(46%, 210px); scroll-snap-align: start; border-radius: 22px; overflow: hidden; aspect-ratio: 3 / 4.4; background: var(--card); box-shadow: 0 16px 34px rgba(0, 0, 0, .45); }
 .card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(28, 15, 8, 0) 45%, rgba(28, 15, 8, .96) 100%); }
 .card .tx { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 12px 13px 13px; }
 .card h4 { margin: 0; font-family: var(--title); font-weight: 400; font-size: 25px; letter-spacing: .04em; line-height: 1; }
@@ -167,6 +169,102 @@ body.offline .card.net, body.offline .hero.net { filter: grayscale(.85) brightne
 .sheet .in { width: min(560px, 100%); padding: 24px 22px calc(24px + var(--sb)); border-radius: 26px 26px 0 0; background: var(--bg2); border: 1px solid var(--line); animation: up .35s var(--ease); }
 @keyframes up { from { transform: translateY(40px); opacity: 0; } }
 @media (min-width: 700px) { .card { flex-basis: 210px; } .hero { aspect-ratio: 16 / 9; } }
+
+/* ================================================================ themes
+   classic: the site's warm night (the first version). paper: a storybook by day (cream paper, white sticker cards
+   with the title under the picture). night: a starry bedtime sky. pop: a comic-strip page (ink outlines, hard
+   shadows, halftone dots). "auto" picks paper by day and night after 7 pm. Each series has its own colour (--sc). */
+.card .im, .hero .im { position: absolute; inset: 0; background: var(--card) center/cover; }
+.hero .im { background-position: center 30%; }
+.s-lina { --sc: #2dbe7b; } .s-nala { --sc: #4c8dff; } .s-bible { --sc: #f2a33a; }
+
+:root[data-theme=paper] { --bg: #fff5e6; --bg2: #ffffff; --card: #f3e6d2; --line: rgba(45, 33, 80, .12); --ink: #2d2150; --dim: #6f668c; --sun: #ff7a45; --sun2: #ff5c8a; --mint: #2dbe7b; --sky: #4c8dff; --title: 'Fredoka', 'Nunito', system-ui, sans-serif; --ui: 'Nunito', system-ui, sans-serif; }
+[data-theme=paper] body { font-weight: 800; background: radial-gradient(rgba(45, 33, 80, .07) 1.2px, transparent 1.7px) 0 0 / 18px 18px, radial-gradient(circle at 10% 4%, #ffd9b8 0, rgba(255, 217, 184, 0) 36%), radial-gradient(circle at 95% 22%, #d6efff 0, rgba(214, 239, 255, 0) 32%), var(--bg); }
+[data-theme=paper] .top { background: linear-gradient(180deg, var(--bg) 72%, rgba(255, 245, 230, 0)); }
+[data-theme=paper] .top .hi b, [data-theme=paper] .rail-h h3, [data-theme=paper] .ttl, [data-theme=paper] .album h3 { letter-spacing: 0; font-weight: 700; }
+[data-theme=paper] .top .hi b { font-size: 29px; }
+[data-theme=paper] .seg { background: #fff; box-shadow: 0 3px 10px rgba(45, 33, 80, .08); } [data-theme=paper] .seg button.on { background: var(--ink); color: #fff; }
+[data-theme=paper] .hero { border: 6px solid #fff; border-radius: 30px; box-shadow: 0 18px 40px rgba(255, 122, 69, .22), 0 3px 0 rgba(45, 33, 80, .06); }
+[data-theme=paper] .hero .kick { background: var(--sun); color: #fff; } [data-theme=paper] .hero h2 { letter-spacing: 0; font-weight: 700; font-size: 36px; } [data-theme=paper] .hero h2 em { color: #ffe08a; font-weight: 800; }
+[data-theme=paper] .hero .play { color: #fff; box-shadow: 0 6px 0 #d9572b, 0 12px 24px rgba(255, 122, 69, .35); }
+[data-theme=paper] .rail-h h3 { display: flex; align-items: center; gap: 10px; font-size: 27px; } [data-theme=paper] .rail-h h3::before { content: ''; width: 14px; height: 14px; border-radius: 50%; background: var(--sc); box-shadow: 0 0 0 4px color-mix(in srgb, var(--sc) 25%, transparent); }
+[data-theme=paper] .card { aspect-ratio: auto; background: #fff; padding: 7px 7px 2px; border-radius: 24px; box-shadow: 0 12px 26px rgba(45, 33, 80, .14); transform: rotate(-1.2deg); }
+[data-theme=paper] .card:nth-child(even) { transform: rotate(1.3deg); }
+[data-theme=paper] .card::after { display: none; }
+[data-theme=paper] .card .im { position: relative; display: block; inset: auto; aspect-ratio: 3 / 3.5; border-radius: 18px; }
+[data-theme=paper] .card .tx { position: static; padding: 10px 6px 12px; }
+[data-theme=paper] .card h4 { letter-spacing: 0; font-weight: 700; font-size: 23px; color: var(--ink); } [data-theme=paper] .card h4 em { color: var(--sc); font-weight: 800; font-family: var(--ui); }
+[data-theme=paper] .chip { background: rgba(45, 33, 80, .07); } [data-theme=paper] .chip.new { background: var(--sun2); color: #fff; } [data-theme=paper] .chip.done { background: var(--mint); color: #fff; }
+[data-theme=paper] .card .ep { top: 14px; left: 14px; background: #fff; color: var(--ink); } [data-theme=paper] .card .st { top: 14px; right: 14px; background: #fff; border: 0; }
+[data-theme=paper] .card .prog { position: static; margin: -4px 6px 12px; background: rgba(45, 33, 80, .1); }
+[data-theme=paper] .album, [data-theme=paper] .box, [data-theme=paper] .meter, [data-theme=paper] .item { background: #fff; box-shadow: 0 10px 24px rgba(45, 33, 80, .08); }
+[data-theme=paper] .album { border: 2px dashed rgba(45, 33, 80, .16); } [data-theme=paper] .album .h span { color: var(--sun); }
+[data-theme=paper] .stickers i { border-color: rgba(45, 33, 80, .2); color: rgba(45, 33, 80, .3); background-color: #fff8ee; }
+[data-theme=paper] .tabs { left: 14px; right: 14px; bottom: calc(10px + var(--sb)); padding: 6px; border-radius: 28px; background: rgba(255, 255, 255, .94); border: 1px solid var(--line); box-shadow: 0 14px 34px rgba(45, 33, 80, .18); }
+[data-theme=paper] .tabs button.on { background: var(--sun); color: #fff; }
+[data-theme=paper] .btn { color: #fff; box-shadow: 0 5px 0 #d9572b; } [data-theme=paper] .btn.ghost { background: #fff; color: var(--ink); box-shadow: 0 4px 0 rgba(45, 33, 80, .12); }
+[data-theme=paper] .offline-note { background: #e6f1ff; border-color: #bcd6ff; }
+[data-theme=paper] .meter .bar, [data-theme=paper] .item .act { background: rgba(45, 33, 80, .07); }
+[data-theme=paper] #intro .slide::after { background: linear-gradient(180deg, rgba(0, 0, 0, .1) 0%, rgba(255, 245, 230, 0) 32%, rgba(255, 245, 230, .9) 60%, var(--bg) 78%); }
+[data-theme=paper] #intro h2 { text-shadow: none; letter-spacing: 0; font-weight: 700; } [data-theme=paper] #intro p { color: var(--dim); } [data-theme=paper] #intro .dots i { background: rgba(45, 33, 80, .2); }
+[data-theme=paper] #intro .seg { background: #fff; }
+
+:root[data-theme=night] { --bg: #0f1238; --bg2: #1a1d52; --card: #232766; --line: rgba(200, 205, 255, .14); --ink: #f5f3ff; --dim: #a8a9d8; --sun: #ffd166; --sun2: #ff9ec4; --mint: #7ce0b0; --title: 'Fredoka', 'Nunito', system-ui, sans-serif; --ui: 'Nunito', system-ui, sans-serif; }
+[data-theme=night] body { font-weight: 800; background: radial-gradient(circle at 88% -6%, rgba(255, 209, 102, .32) 0, rgba(255, 209, 102, 0) 34%), linear-gradient(180deg, #1d1f63 0%, #0f1238 55%); background-attachment: fixed; }
+[data-theme=night] body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .8; animation: twinkle 4s ease-in-out infinite alternate;
+  background-image: radial-gradient(1.6px 1.6px at 12% 18%, #fff 50%, transparent 52%), radial-gradient(1.2px 1.2px at 32% 8%, #fff 50%, transparent 52%), radial-gradient(1.8px 1.8px at 58% 22%, #fff 50%, transparent 52%), radial-gradient(1.2px 1.2px at 76% 12%, #fff 50%, transparent 52%), radial-gradient(1.4px 1.4px at 90% 40%, #fff 50%, transparent 52%), radial-gradient(1.2px 1.2px at 6% 52%, #fff 50%, transparent 52%), radial-gradient(1.6px 1.6px at 44% 64%, #fff 50%, transparent 52%), radial-gradient(1.2px 1.2px at 70% 78%, #fff 50%, transparent 52%), radial-gradient(1.4px 1.4px at 22% 88%, #fff 50%, transparent 52%), radial-gradient(1.2px 1.2px at 94% 92%, #fff 50%, transparent 52%); }
+@keyframes twinkle { to { opacity: .35; } }
+[data-theme=night] .top { background: linear-gradient(180deg, #1d1f63 70%, rgba(29, 31, 99, 0)); }
+[data-theme=night] .top .hi b, [data-theme=night] .rail-h h3, [data-theme=night] .ttl, [data-theme=night] .album h3, [data-theme=night] .card h4, [data-theme=night] .hero h2 { letter-spacing: 0; font-weight: 700; }
+[data-theme=night] .top .logo { box-shadow: 0 0 0 2px var(--sun), 0 0 22px rgba(255, 209, 102, .5); }
+[data-theme=night] .hero { border-radius: 30px; box-shadow: 0 0 0 2px rgba(255, 209, 102, .35), 0 20px 50px rgba(0, 0, 0, .5), 0 0 60px rgba(124, 110, 255, .25); }
+[data-theme=night] .hero::after, [data-theme=night] .card::after { background: linear-gradient(180deg, rgba(15, 18, 56, 0) 40%, rgba(15, 18, 56, .95) 100%); }
+[data-theme=night] .hero .kick { color: #1a1d52; } [data-theme=night] .hero .play { color: #1a1d52; box-shadow: 0 0 30px rgba(255, 209, 102, .6); }
+[data-theme=night] .card { border-radius: 24px; box-shadow: 0 0 0 2px color-mix(in srgb, var(--sc) 55%, transparent), 0 16px 34px rgba(0, 0, 0, .45); }
+[data-theme=night] .card h4 em { font-family: var(--ui); font-weight: 800; color: var(--sun); }
+[data-theme=night] .rail-h h3 { display: flex; align-items: center; gap: 10px; } [data-theme=night] .rail-h h3::before { content: '✦'; color: var(--sc); font-size: 18px; }
+[data-theme=night] .chip.new { background: var(--sun2); color: #1a1d52; } [data-theme=night] .chip.done { color: #12301c; }
+[data-theme=night] .album, [data-theme=night] .box, [data-theme=night] .meter, [data-theme=night] .item { background: rgba(26, 29, 82, .85); }
+[data-theme=night] .tabs { left: 14px; right: 14px; bottom: calc(10px + var(--sb)); padding: 6px; border-radius: 28px; background: rgba(26, 29, 82, .9); border: 1px solid var(--line); box-shadow: 0 14px 34px rgba(0, 0, 0, .45); }
+[data-theme=night] .tabs button.on { background: var(--sun); color: #1a1d52; }
+[data-theme=night] .btn { color: #1a1d52; box-shadow: 0 5px 0 #d9a93e; } [data-theme=night] .seg button.on { background: var(--sun); color: #1a1d52; }
+[data-theme=night] #intro .slide::after { background: linear-gradient(180deg, rgba(0, 0, 0, .1) 0%, rgba(15, 18, 56, 0) 30%, rgba(15, 18, 56, .88) 62%, var(--bg) 80%); }
+[data-theme=night] #intro h2 { letter-spacing: 0; font-weight: 700; }
+
+:root[data-theme=pop] { --bg: #ffe45c; --bg2: #ffffff; --card: #ffffff; --ink: #1e1446; --dim: #4a4070; --line: #1e1446; --sun: #ff4f79; --sun2: #7b5cfa; --mint: #20c997; --title: 'Bangers', 'Nunito', system-ui, sans-serif; --ui: 'Nunito', system-ui, sans-serif; }
+[data-theme=pop] .s-lina { --sc: #20c997; } [data-theme=pop] .s-nala { --sc: #4d8bff; } [data-theme=pop] .s-bible { --sc: #ff9f1c; }
+[data-theme=pop] body { font-weight: 800; background: radial-gradient(rgba(30, 20, 70, .13) 1.3px, transparent 1.8px) 0 0 / 14px 14px, var(--bg); }
+[data-theme=pop] .top { background: var(--bg); border-bottom: 3px solid var(--ink); padding-bottom: 12px; margin-bottom: 14px; }
+[data-theme=pop] .top .logo { box-shadow: 0 0 0 3px var(--ink), 3px 3px 0 3px var(--ink); }
+[data-theme=pop] .seg { background: #fff; border: 2px solid var(--ink); } [data-theme=pop] .seg button { color: var(--ink); } [data-theme=pop] .seg button.on { background: var(--ink); color: #fff; }
+[data-theme=pop] .hero { border: 3px solid var(--ink); border-radius: 20px; box-shadow: 7px 7px 0 var(--ink); }
+[data-theme=pop] .hero .kick { background: #fff; color: var(--ink); border: 2px solid var(--ink); } [data-theme=pop] .hero .play { background: var(--sun); color: #fff; border: 3px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+[data-theme=pop] .hero h2 em { color: #ffe45c; }
+[data-theme=pop] .rail-h h3 { display: inline-block; padding: 4px 12px 2px; background: var(--sc); border: 3px solid var(--ink); border-radius: 12px; box-shadow: 3px 3px 0 var(--ink); transform: rotate(-2deg); color: #fff; text-shadow: 2px 2px 0 var(--ink); }
+[data-theme=pop] .rail-h span, [data-theme=pop] .rail p { color: var(--ink); }
+[data-theme=pop] .card { aspect-ratio: auto; background: #fff; border: 3px solid var(--ink); border-radius: 18px; box-shadow: 5px 5px 0 var(--ink); }
+[data-theme=pop] .card::after { display: none; }
+[data-theme=pop] .card .im { position: relative; display: block; inset: auto; aspect-ratio: 3 / 3.4; border-bottom: 3px solid var(--ink); }
+[data-theme=pop] .card .tx { position: static; padding: 9px 10px 11px; background: var(--sc); }
+[data-theme=pop] .card h4 { color: #fff; text-shadow: 2px 2px 0 var(--ink); } [data-theme=pop] .card h4 em { color: var(--ink); text-shadow: none; font-weight: 900; }
+[data-theme=pop] .chip { background: #fff; color: var(--ink); border: 2px solid var(--ink); } [data-theme=pop] .chip.new { background: var(--sun); color: #fff; } [data-theme=pop] .chip.done { background: var(--mint); color: var(--ink); }
+[data-theme=pop] .card .ep { top: 10px; left: 10px; } [data-theme=pop] .card .st { background: #fff; border: 2px solid var(--ink); color: var(--ink); }
+[data-theme=pop] .card .prog { position: static; height: 7px; margin: 0; border-radius: 0; background: rgba(30, 20, 70, .15); }
+[data-theme=pop] .album, [data-theme=pop] .box, [data-theme=pop] .meter, [data-theme=pop] .item { background: #fff; border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); }
+[data-theme=pop] .album h3, [data-theme=pop] .ttl { color: var(--ink); } [data-theme=pop] .album .h span { color: var(--sun); }
+[data-theme=pop] .stickers i { border-color: var(--ink); color: var(--ink); background-color: #fff4bd; }
+[data-theme=pop] .tabs { background: #fff; border-top: 3px solid var(--ink); }
+[data-theme=pop] .tabs button { color: var(--ink); } [data-theme=pop] .tabs button.on { background: var(--sun); color: #fff; border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+[data-theme=pop] .btn { color: #fff; border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); } [data-theme=pop] .btn.ghost { background: #fff; color: var(--ink); }
+[data-theme=pop] .sub, [data-theme=pop] .box p, [data-theme=pop] .item .tx small, [data-theme=pop] .top .hi small { color: var(--dim); }
+[data-theme=pop] #intro .slide::after { background: linear-gradient(180deg, rgba(0, 0, 0, .1) 0%, rgba(255, 228, 92, 0) 34%, rgba(255, 228, 92, .92) 62%, var(--bg) 78%); }
+[data-theme=pop] #intro h2 { color: #fff; text-shadow: 3px 3px 0 var(--ink); } [data-theme=pop] #intro h2 em { color: var(--sun); } [data-theme=pop] #intro p { color: var(--ink); } [data-theme=pop] #intro .seg { background: #fff; }
+[data-theme=pop] #intro .dots i { background: rgba(30, 20, 70, .25); }
+/* over a picture the words stay white, whatever the theme */
+.hero .tx { color: #fff; } #intro .logo { color: #fff; text-shadow: 0 2px 10px rgba(0, 0, 0, .55); }
+.chip.pg { background: var(--sun); color: #fff; }
+[data-theme=paper] .card .prog, [data-theme=pop] .card .prog { display: none; }
+[data-theme=night] .chip.pg { color: #1a1d52; } [data-theme=pop] .chip.pg { border-color: var(--ink); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
@@ -195,6 +293,7 @@ body.offline .card.net, body.offline .hero.net { filter: grayscale(.85) brightne
     <h2 class="ttl" data-t="parT"></h2>
     <p class="sub" data-t="parS"></p>
     <div class="box"><h4 data-t="nameT"></h4><p data-t="nameS"></p><input class="namein" id="kid" maxlength="16" autocomplete="off" enterkeyhint="done"></div>
+    <div class="box"><h4 data-t="themeT"></h4><p data-t="themeS"></p><div class="seg" id="themes"><button data-th="auto" data-t="thAuto"></button><button data-th="paper" data-t="thDay"></button><button data-th="night" data-t="thNight"></button></div></div>
     <div class="box"><h4 data-t="langT"></h4><p data-t="langS"></p><div class="seg" id="langpar"><button data-lang="fr">Français</button><button data-lang="en">English</button></div></div>
     <div class="box" id="b-android"><h4><svg class="i" viewBox="0 0 24 24"><path d="M7.5 9.5h9v7.5a1.5 1.5 0 0 1-1.5 1.5h-6A1.5 1.5 0 0 1 7.5 17zM7.5 8.5a4.5 4.5 0 0 1 9 0zM9.5 5L8.5 3.5M14.5 5l1-1.5M5.5 10v5M18.5 10v5M10 18.5V21M14 18.5V21"/></svg><span data-t="apk"></span></h4><p data-t="apkS"></p><a class="btn press" id="apk" href="android/Contes.apk" download="Contes.apk"><svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span data-t="apkB"></span></a></div>
     <div class="box" id="b-ios"><h4 data-t="iosT"></h4><ol><li data-h="ios1"></li><li data-h="ios2"></li><li data-h="ios3"></li></ol></div>
@@ -232,7 +331,7 @@ const T = {
     iosT: 'Sur iPhone et iPad', ios1: 'Dans Safari, touchez <b>Partager</b>', ios2: 'Choisissez <b>Sur l’écran d’accueil</b>', ios3: 'L’icône <b>Contes</b> s’ouvre en plein écran',
     install: 'Installer l’appli', pwaS: 'Ajoutez Contes à cet appareil, comme une application.',
     aboutT: 'Pour les 4 à 8 ans', aboutS: 'Des BD racontées à voix haute, que l’enfant fait avancer du bout du doigt. Quelques minutes chacune.', p1: 'Sans publicité', p2: 'Sans compte', p3: 'Sans achat', p4: 'Aucune donnée collectée',
-    nameT: 'Prénom de l’enfant', nameS: 'Pour lui dire bonjour. Il reste sur ce téléphone.', nameP: 'Prénom', newb: 'Nouveau', readb: 'Lu', page: 'page', albumT: 'Mes autocollants', albumS: 'Un autocollant pour chaque histoire terminée.', intro: 'Revoir la présentation', priv: 'Confidentialité', home: 'Unfold Worlds', skip: 'Passer', next: 'Suivant', go: 'C’est parti !',
+    themeT: 'Couleurs', themeS: 'Automatique : le livre d’images le jour, la nuit étoilée à partir de 19 h.', thAuto: 'Auto', thDay: 'Jour', thNight: 'Nuit', nameT: 'Prénom de l’enfant', nameS: 'Pour lui dire bonjour. Il reste sur ce téléphone.', nameP: 'Prénom', newb: 'Nouveau', readb: 'Lu', page: 'page', albumT: 'Mes autocollants', albumS: 'Un autocollant pour chaque histoire terminée.', intro: 'Revoir la présentation', priv: 'Confidentialité', home: 'Unfold Worlds', skip: 'Passer', next: 'Suivant', go: 'C’est parti !',
     s1t: 'Des histoires <em>à écouter</em>', s1p: 'Une voix raconte, les mots s’allument, et l’enfant suit l’histoire en images.',
     s2t: 'Et à toucher <em>du bout du doigt</em>', s2p: 'Chercher à la loupe, coller une fusée, faire voler une colombe : c’est l’enfant qui fait avancer l’histoire.',
     s3t: 'Partout, <em>même sans internet</em>', s3p: 'Téléchargez les histoires une fois, et lisez-les en voiture, en avion ou au lit.' },
@@ -245,7 +344,7 @@ const T = {
     iosT: 'On iPhone and iPad', ios1: 'In Safari, tap <b>Share</b>', ios2: 'Choose <b>Add to Home Screen</b>', ios3: 'The <b>Contes</b> icon opens in full screen',
     install: 'Install the app', pwaS: 'Add Contes to this device, like an app.',
     aboutT: 'For ages 4 to 8', aboutS: 'Picture-book comics read aloud, that the child moves along with a fingertip. A few minutes each.', p1: 'No ads', p2: 'No account', p3: 'No purchases', p4: 'No data collected',
-    nameT: 'Child’s first name', nameS: 'So we can say hello. It stays on this phone.', nameP: 'First name', newb: 'New', readb: 'Read', page: 'page', albumT: 'My stickers', albumS: 'One sticker for each story finished.', intro: 'See the welcome again', priv: 'Privacy', home: 'Unfold Worlds', skip: 'Skip', next: 'Next', go: 'Let’s go!',
+    themeT: 'Colours', themeS: 'Automatic: the picture book by day, the starry night from 7 pm.', thAuto: 'Auto', thDay: 'Day', thNight: 'Night', nameT: 'Child’s first name', nameS: 'So we can say hello. It stays on this phone.', nameP: 'First name', newb: 'New', readb: 'Read', page: 'page', albumT: 'My stickers', albumS: 'One sticker for each story finished.', intro: 'See the welcome again', priv: 'Privacy', home: 'Unfold Worlds', skip: 'Skip', next: 'Next', go: 'Let’s go!',
     s1t: 'Stories <em>to listen to</em>', s1p: 'A voice tells the story, the words light up, and the child follows in pictures.',
     s2t: 'And to touch <em>with a fingertip</em>', s2p: 'Search with a magnifying glass, build a rocket, help a dove fly: the child moves the story along.',
     s3t: 'Anywhere, <em>even offline</em>', s3p: 'Download the stories once, and read them in the car, on a plane or in bed.' },
@@ -265,6 +364,9 @@ const SERIES = [
 const ALL = SERIES.flatMap((s) => s.tales.map((t) => ({ ...t, series: s })));
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
 const Q = new URLSearchParams(location.search);
+const THEMES = ['auto', 'paper', 'night', 'pop', 'classic'];
+function theme() { let t = Q.get('theme') || (() => { try { return localStorage.getItem('contes-theme'); } catch { return null; } })() || 'auto'; if (t === 'auto') { const h = new Date().getHours(); t = h >= 19 || h < 7 ? 'night' : 'paper'; } document.documentElement.dataset.theme = t; document.querySelector('meta[name=theme-color]').content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#1c0f08'; }
+theme();
 let lang = Q.get('lang') || store.get('contes-lang') || ((navigator.language || '').startsWith('fr') ? 'fr' : 'en');
 const inApp = true; // this page is the installed app's home (the web library is index.html)
 try { sessionStorage.setItem('contes-inapp', '1'); } catch {}
@@ -298,13 +400,13 @@ function home() {
   const P = prog(), L = T[lang];
   const going = ALL.filter((t) => P[t.id]?.at > 0).sort((a, b) => P[b.id].t - P[a.id].t)[0]; // a story left in the middle
   const last = going || ALL.find((t) => t.id === store.get('contes-last')), h = last || ALL.find((t) => !P[t.id]) || ALL[0];
-  const hero = $('#hero'); hero.dataset.id = h.id; hero.href = `${h.id}/?lang=${lang}`; hero.style.backgroundImage = `url(${h.img})`;
+  const hero = $('#hero'); hero.dataset.id = h.id; hero.href = `${h.id}/?lang=${lang}`; hero.style.backgroundImage = 'none'; hero.dataset.img = h.img;
   hero.className = 'hero press' + (state[h.id] === 'ready' ? '' : ' net');
-  const hp = going && P[h.id]; hero.innerHTML = `<div class="tx"><span class="kick">${last ? L.cont : L.feat}${hp ? ` · ${L.page} ${hp.at + 1}/${hp.of}` : ''}</span><h2>${h[lang].t}<em>${h[lang].s}</em></h2>${hp ? `<div class="bar"><i style="width:${Math.round(((hp.at + 1) / hp.of) * 100)}%"></i></div>` : ''}</div><span class="play" aria-label="${L.listen}">${ICON.play}</span>`;
-  $('#rails').innerHTML = SERIES.map((s) => `<section class="rail"><div class="rail-h"><h3>${s[lang].name}</h3><span>${s.tales.length} ${s.tales.length > 1 ? L.stories : L.story}</span></div><p>${s[lang].d}</p>
-    <div class="row">${s.tales.map((t) => `<a class="card press${state[t.id] === 'ready' ? '' : ' net'}" data-id="${t.id}" href="${t.id}/?lang=${lang}" style="background-image:url(${t.img})">
+  const hp = going && P[h.id]; hero.innerHTML = `<i class="im" style="background-image:url(${h.img})"></i><div class="tx"><span class="kick">${last ? L.cont : L.feat}${hp ? ` · ${L.page} ${hp.at + 1}/${hp.of}` : ''}</span><h2>${h[lang].t}<em>${h[lang].s}</em></h2>${hp ? `<div class="bar"><i style="width:${Math.round(((hp.at + 1) / hp.of) * 100)}%"></i></div>` : ''}</div><span class="play" aria-label="${L.listen}">${ICON.play}</span>`;
+  $('#rails').innerHTML = SERIES.map((s) => `<section class="rail s-${s.id}"><div class="rail-h"><h3>${s[lang].name}</h3><span>${s.tales.length} ${s.tales.length > 1 ? L.stories : L.story}</span></div><p>${s[lang].d}</p>
+    <div class="row">${s.tales.map((t) => `<a class="card press s-${s.id}${state[t.id] === 'ready' ? '' : ' net'}" data-id="${t.id}" href="${t.id}/?lang=${lang}"><i class="im" style="background-image:url(${t.img})"></i>
       ${t.ep ? `<span class="chip ep">${L.ep} ${t.ep}</span>` : ''}${stIcon(t.id)}
-      <div class="tx"><h4>${t[lang].t}<em>${t[lang].s}</em></h4><div class="meta"><span class="chip">${t.min} ${L.min}</span>${P[t.id]?.done ? `<span class="chip done">✓ ${L.readb}</span>` : P[t.id] ? '' : `<span class="chip new">${L.newb}</span>`}</div></div>
+      <div class="tx"><h4>${t[lang].t}<em>${t[lang].s}</em></h4><div class="meta"><span class="chip">${t.min} ${L.min}</span>${P[t.id]?.at > 0 ? `<span class="chip pg">${P[t.id].at + 1}/${P[t.id].of}</span>` : P[t.id]?.done ? `<span class="chip done">✓ ${L.readb}</span>` : P[t.id] ? '' : `<span class="chip new">${L.newb}</span>`}</div></div>
       ${P[t.id]?.at > 0 ? `<span class="prog"><i style="width:${Math.round(((P[t.id].at + 1) / P[t.id].of) * 100)}%"></i></span>` : ''}</a>`).join('')}</div></section>`).join('')
     + `<section class="album"><div class="h"><h3>${L.albumT}</h3><span>${ALL.filter((t) => P[t.id]?.done).length} / ${ALL.length}</span></div><p>${L.albumS}</p>
       <div class="stickers">${ALL.map((t) => P[t.id]?.done ? `<i class="got" style="background-image:url(${t.img})" title="${t[lang].t} ${t[lang].s}"></i>` : '<i>?</i>').join('')}</div></section>`;
@@ -349,8 +451,8 @@ document.addEventListener('click', (e) => {
   const a = e.target.closest('a.card, a.hero'); if (!a || e.ctrlKey || e.metaKey) return;
   if (!navigator.onLine && state[a.dataset.id] !== 'ready') { e.preventDefault(); a.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-8px)' }, { transform: 'translateX(8px)' }, { transform: 'translateX(0)' }], { duration: 300 }); return; }
   e.preventDefault(); buzz(); store.set('contes-last', a.dataset.id);
-  const r = a.getBoundingClientRect(), z = document.createElement('div'); z.className = 'zoom';
-  z.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;background-image:${getComputedStyle(a).backgroundImage}`;
+  const src = a.querySelector('.im') || a, r = src.getBoundingClientRect(), z = document.createElement('div'); z.className = 'zoom';
+  z.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;background-image:${getComputedStyle(src).backgroundImage}`;
   document.body.append(z); requestAnimationFrame(() => requestAnimationFrame(() => { z.style.left = '0px'; z.style.top = '0px'; z.style.width = innerWidth + 'px'; z.style.height = innerHeight + 'px'; z.style.borderRadius = '0'; }));
   setTimeout(() => { location.href = a.href; }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 420);
   setTimeout(() => z.remove(), 3000);
@@ -377,6 +479,10 @@ const intro = (() => {
   return { draw, open: () => { i = 0; draw(); el.classList.add('on'); } };
 })();
 $('#replayintro').onclick = () => intro.open();
+const themeBtns = () => { let t = 'auto'; try { t = localStorage.getItem('contes-theme') || 'auto'; } catch {} for (const b of document.querySelectorAll('[data-th]')) b.classList.toggle('on', b.dataset.th === t); };
+for (const b of document.querySelectorAll('[data-th]')) b.onclick = () => { try { localStorage.setItem('contes-theme', b.dataset.th); } catch {} buzz(); theme(); themeBtns(); };
+themeBtns();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) theme(); }); // coming back at 7 pm: the night has come
 const kidIn = $('#kid'); kidIn.value = kid(); kidIn.oninput = () => { store.set('contes-kid', kidIn.value.replace(/[<>&"]/g, '')); $('#greet').textContent = greet(); };
 if (!store.get('contes-intro') && !Q.has('nointro')) intro.open();
 

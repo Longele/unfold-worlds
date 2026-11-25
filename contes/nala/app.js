@@ -6,7 +6,7 @@
 import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610270300';
 
 import { goFull, keepFull, iosTip } from '../fs.js?v=202611250700';
-import { feel, picked } from '../feel.js?v=202611251';
+import { feel, picked } from '../feel.js?v=202611252';
 const $ = (id) => document.getElementById(id);
 // the language: from the stories page (?lang=), else the last one chosen, else the phone's
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };

@@ -16,6 +16,8 @@ const HAPPY = /found|uncurl|chime|ding|yay|good|win|sparkle|magic|done|bell|tada
 const read = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } };
 const write = (all) => { try { localStorage.setItem(KEY, JSON.stringify(all)); } catch {} };
 
+// day or night, like the app (its setting, or the hour)
+{ let th = 'auto'; try { th = localStorage.getItem('contes-theme') || 'auto'; } catch {} const h = new Date().getHours(); const night = th === 'night' || (th === 'auto' && (h >= 19 || h < 7)); document.documentElement.style.setProperty('--feel', night ? '#e0a92c' : '#ff7a45'); }
 const css = document.createElement('style');
 css.textContent = `
 #spots .spot::before, #spots .choice::before { content: ''; position: absolute; inset: -24%; border-radius: inherit; }
@@ -25,7 +27,9 @@ css.textContent = `
 #spots .choice.unpicked { opacity: .25; filter: grayscale(1); transform: translate(-50%, -50%) scale(.9) !important; animation: none !important; }
 #spots .spot.nudge { animation: feelnudge 1.1s ease-in-out 2 !important; }
 @keyframes feelnudge { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 230, 140, 0); } 50% { box-shadow: 0 0 0 10px rgba(255, 230, 140, .55), 0 0 30px 12px rgba(255, 230, 140, .45); } }
-#endcard .feelnext { display: inline-flex; align-items: center; gap: 10px; margin-top: 12px; }
+#endcard .feelnext { display: inline-flex; align-items: center; gap: 10px; margin-top: 12px; background: var(--feel, #ff7a45) !important; color: #fff !important; font-family: 'Fredoka', 'Comic Neue', system-ui, sans-serif; box-shadow: 0 5px 0 rgba(0,0,0,.25) !important; }
+@font-face { font-family: 'Fredoka'; font-weight: 500 700; src: url(../fonts/fredoka.woff2) format('woff2'); font-display: swap; }
+.feelsticker { font-family: 'Fredoka', 'Comic Neue', system-ui, sans-serif !important; }
 .feelsticker { position: fixed; left: 50%; top: 22%; z-index: 99; transform: translate(-50%, -50%) scale(.2) rotate(-20deg); opacity: 0; transition: all .6s cubic-bezier(.34,1.56,.64,1); text-align: center; pointer-events: none; font: 700 20px 'Comic Neue', system-ui, sans-serif; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,.6); }
 .feelsticker i { display: block; width: 120px; height: 120px; margin: 0 auto 8px; border-radius: 50%; background: center/cover; border: 6px solid #fff; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
 .feelsticker.on { transform: translate(-50%, -50%) scale(1) rotate(-4deg); opacity: 1; }`;
