@@ -46,6 +46,15 @@ self.addEventListener('fetch', (e) => {
     })());
     return;
   }
+  // the code (scripts, styles, pages, data): always the latest when there is a network, the phone's copy without
+  // one; so a fix reaches every phone at once, even for a story downloaded earlier. Pictures and sounds: the phone first.
+  if (/\.(m?js|css|html|json|webmanifest)$/.test(url.pathname)) {
+    e.respondWith((async () => {
+      try { const r = await Promise.race([fetch(req, { cache: 'no-cache' }), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 4000))]); if (r.ok) return r; } catch {}
+      return (await inShell(req)) || (await caches.match(req, OPT)) || new Response('', { status: 504 });
+    })());
+    return;
+  }
   e.respondWith((async () => {
     const shell = await inShell(req);
     if (shell) { e.waitUntil(refresh(req)); return req.headers.has('range') ? ranged(req, shell) : shell; }
