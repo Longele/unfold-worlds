@@ -5,7 +5,7 @@
 // and looks into a raindrop with a magnifying glass.
 import { PANELS, TITLE, WHO } from './story.js?v=202610270300';
 
-import { goFull, keepFull, iosTip } from '../fs.js?v=202610270300';
+import { goFull, keepFull, iosTip } from '../fs.js?v=202611250700';
 const $ = (id) => document.getElementById(id);
 // the language: from the stories page (?lang=), else the last one chosen, else the phone's
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };

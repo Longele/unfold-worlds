@@ -32,3 +32,6 @@ export function iosTip(lang) {
   el.querySelector('button').onclick = () => { el.remove(); try { localStorage.setItem('contes-ios-tip', '1'); } catch {} };
   document.querySelector('.cover .ctx')?.append(el);
 }
+
+// the stories app's offline worker (sw.js): registered from any story too, so a story opened first is ready offline
+try { if ('serviceWorker' in navigator) navigator.serviceWorker.register(new URL('sw.js', import.meta.url), { scope: new URL('./', import.meta.url).pathname }).catch(() => {}); } catch {}
