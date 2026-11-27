@@ -25,7 +25,7 @@ function applyLang() {
   $('title').textContent = TITLE[lang]; document.querySelector('.kick').textContent = T.kick; document.querySelector('.back').textContent = T.back;
   for (const el of document.querySelectorAll('a[href^="../"]')) el.href = `../?lang=${lang}`;
   for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
-  fetch(`voice/${lang}/timings.json?v=202611280300`).then((r) => r.json()).then((j) => (timings = j));
+  fetch(`voice/${lang}/timings.json?v=202611281000`).then((r) => r.json()).then((j) => (timings = j));
 }
 for (const b of document.querySelectorAll('[data-lang]')) b.onclick = () => { lang = b.dataset.lang; store.set('contes-lang', lang); applyLang(); };
 
