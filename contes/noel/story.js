@@ -10,6 +10,9 @@ export const AFTER_BRANCH = null;
 const L = (id) => ({ id, cap: 1 });
 const B = (id, b, t) => ({ id, b, t });
 export const PANELS = [
+  // today: a child at the Christmas tree; the little nativity under it opens the way into the story
+  { id: 'n0', img: 'n0', amb: 'amb-home', loop: 'n0', early: 1, auto: 1, lines: [L('n0a'), L('n0b'), L('n0c')],
+    act: { kind: 'portal', at: [0.64, 0.72], r: 0.15, film: 'n0in' } },
   { id: 'n1', early: 1, img: 'n1', amb: 'amb-village', loop: 'n1', lines: [L('n1a'), L('n1b')],
     act: { kind: 'hello', at: [0.26, 0.76], r: 0.13, word: { fr: 'SHALOM !', en: 'SHALOM!' }, then: [B('m1c', [0.34, 0.5], [0.26, 0.68]), L('n1d')] } },
   { id: 'n2', img: 'n2a', amb: 'amb-room', lines: [L('n2a')],
@@ -59,6 +62,9 @@ export const PANELS = [
       { say: L('n13a') },
       { say: L('n13b') },
       { kind: 'heart', at: [0.5, 0.22] },
-    ], then: [L('n13c')] } },
+    ] } },
+  // back to today, by the same tree: why we celebrate Christmas, and the star that promises the next episode
+  { id: 'n14', img: 'n14', amb: 'amb-home', loop: 'n14', film: 'n0out', lines: [L('n14a'), L('n14b')],
+    act: { kind: 'sounds', hint: { fr: 'Touche l’étoile', en: 'Touch the star' }, r: 0.1, spots: [{ at: [0.65, 0.16], sfx: 'glow', word: { fr: 'Bientôt…', en: 'Soon…' } }], then: [L('n14c'), L('n14d')] } },
 ];
 export const WHO = { n: 'narr', m: 'mary', j: 'joseph', a: 'angel', b: 'shep', h: 'host', c: 'choir' };

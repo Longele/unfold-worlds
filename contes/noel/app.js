@@ -3,7 +3,7 @@
 // the lantern, swaddles the baby and lays him in the manger, rocks him (phone or finger), counts the sheep, comforts
 // the shepherds, sings Gloria (microphone or a button), runs with the lamb and checks the angel's sign.
 // Every phone gesture has a mouse or keyboard twin, and the microphone always has a button to fall back on.
-import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202611280100';
+import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202611280300';
 
 import { goFull, keepFull, iosTip } from '../fs.js?v=202611250700';
 import { feel, picked } from '../feel.js?v=202611253';
@@ -14,9 +14,9 @@ let lang = new URLSearchParams(location.search).get('lang') || store.get('contes
 if (!['fr', 'en'].includes(lang)) lang = 'fr';
 const TT = {
   fr: { readMe: 'Lis-moi l’histoire', readSelf: 'Je lis tout seul', again: 'Relire l’histoire', more: 'D’autres contes', end: 'Joyeux Noël !', kick: 'Une BD à vivre', back: '← Les contes', parents: 'Pour les parents : cette histoire peut utiliser le micro, pour chanter avec les anges, et le mouvement du téléphone, pour bercer le bébé. Rien n’est enregistré ni envoyé. Sans micro, un bouton fait la même chose ; sur ordinateur, les flèches et la barre d’espace.', keys: 'Espace ou → : suivant',
-    hello: 'Touche Marie', light: 'Frotte l’écran avec ton doigt', stamp: 'Pose ton doigt sur le parchemin', route: 'Trace le chemin avec ton doigt', walk: 'Un pied, puis l’autre', knock: 'Frappe à la porte', lamp: 'Promène la lanterne dans le noir', swaddle: 'Enroule la couverture : glisse ton doigt autour du bébé', lay: 'Glisse le bébé dans la crèche', rock: 'Berce doucement : balance le téléphone, ou glisse ton doigt lentement', rockBtn: 'Appuie longtemps ici pour bercer', fast: 'Doucement…', count: 'Touche chaque mouton', sounds: 'Touche', sing: 'Chante « Gloria ! »', singBtn: 'Appuie longtemps ici pour chanter', lamb: 'Guide l’agneau jusqu’à la lumière', heart: 'Garde ton doigt sur le cœur' },
+    hello: 'Touche Marie', portal: 'Touche la crèche', light: 'Frotte l’écran avec ton doigt', stamp: 'Pose ton doigt sur le parchemin', route: 'Trace le chemin avec ton doigt', walk: 'Un pied, puis l’autre', knock: 'Frappe à la porte', lamp: 'Promène la lanterne dans le noir', swaddle: 'Enroule la couverture : glisse ton doigt autour du bébé', lay: 'Glisse le bébé dans la crèche', rock: 'Berce doucement : balance le téléphone, ou glisse ton doigt lentement', rockBtn: 'Appuie longtemps ici pour bercer', fast: 'Doucement…', count: 'Touche chaque mouton', sounds: 'Touche', sing: 'Chante « Gloria ! »', singBtn: 'Appuie longtemps ici pour chanter', lamb: 'Guide l’agneau jusqu’à la lumière', heart: 'Garde ton doigt sur le cœur' },
   en: { readMe: 'Read it to me', readSelf: 'I’ll read it myself', again: 'Read it again', more: 'More stories', end: 'Merry Christmas!', kick: 'A comic to live', back: '← Stories', parents: 'For parents: this story can use the microphone, to sing with the angels, and the phone’s movement, to rock the baby. Nothing is recorded or sent. Without a microphone, a button does the same; on a computer, the arrow keys and the space bar.', keys: 'Space or →: next',
-    hello: 'Touch Mary', light: 'Rub the screen with your finger', stamp: 'Put your finger on the scroll', route: 'Trace the road with your finger', walk: 'One foot, then the other', knock: 'Knock on the door', lamp: 'Move the lantern through the dark', swaddle: 'Wrap the blanket: slide your finger around the baby', lay: 'Slide the baby into the manger', rock: 'Rock gently: sway the phone, or slide your finger slowly', rockBtn: 'Press and hold here to rock', fast: 'Gently…', count: 'Touch each sheep', sounds: 'Touch', sing: 'Sing “Gloria!”', singBtn: 'Press and hold here to sing', lamb: 'Guide the lamb to the light', heart: 'Keep your finger on the heart' },
+    hello: 'Touch Mary', portal: 'Touch the nativity scene', light: 'Rub the screen with your finger', stamp: 'Put your finger on the scroll', route: 'Trace the road with your finger', walk: 'One foot, then the other', knock: 'Knock on the door', lamp: 'Move the lantern through the dark', swaddle: 'Wrap the blanket: slide your finger around the baby', lay: 'Slide the baby into the manger', rock: 'Rock gently: sway the phone, or slide your finger slowly', rockBtn: 'Press and hold here to rock', fast: 'Gently…', count: 'Touch each sheep', sounds: 'Touch', sing: 'Sing “Gloria!”', singBtn: 'Press and hold here to sing', lamb: 'Guide the lamb to the light', heart: 'Keep your finger on the heart' },
 };
 let T = TT[lang];
 function applyLang() {
@@ -25,7 +25,7 @@ function applyLang() {
   $('title').textContent = TITLE[lang]; document.querySelector('.kick').textContent = T.kick; document.querySelector('.back').textContent = T.back;
   for (const el of document.querySelectorAll('a[href^="../"]')) el.href = `../?lang=${lang}`;
   for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
-  fetch(`voice/${lang}/timings.json?v=202611280100`).then((r) => r.json()).then((j) => (timings = j));
+  fetch(`voice/${lang}/timings.json?v=202611280300`).then((r) => r.json()).then((j) => (timings = j));
 }
 for (const b of document.querySelectorAll('[data-lang]')) b.onclick = () => { lang = b.dataset.lang; store.set('contes-lang', lang); applyLang(); };
 
@@ -45,7 +45,7 @@ const SFX_GAIN = 0.3; let speaking = false;
 function sfx(n, vol = 1) { feel.sfx(n); const b = sfxBuf[n]; if (!ctx || !b) return; const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; g.gain.value = vol * SFX_GAIN * (speaking ? 0.55 : 1); s.connect(g).connect(ctx.destination); s.start(); return s; }
 const music = new Audio('sfx/theme.mp3'); music.loop = true; music.volume = 0.22;
 const amb = new Audio(); amb.loop = true; amb.volume = 0.35;
-const AMB = { 'amb-village': 0.35, 'amb-room': 0.4, 'amb-city': 0.3, 'amb-desert': 0.35, 'amb-sunset': 0.4, 'amb-stable': 0.45, 'amb-hills': 0.42 }; let ambLevel = 0.35;
+const AMB = { 'amb-home': 0.4, 'amb-village': 0.35, 'amb-room': 0.4, 'amb-city': 0.3, 'amb-desert': 0.35, 'amb-sunset': 0.4, 'amb-stable': 0.45, 'amb-hills': 0.42 }; let ambLevel = 0.35;
 function ambience(n) { const src = `sfx/${n}.mp3`; ambLevel = AMB[n] ?? 0.35; if (!amb.src.endsWith(src)) { amb.src = src; amb.play().catch(() => {}); } fade(amb, ambLevel * (speaking ? 0.45 : 1)); }
 const fades = new Map();
 function fade(el, to, ms = 350) { clearInterval(fades.get(el)); const from = el.volume, t0 = performance.now(); fades.set(el, setInterval(() => { const k = Math.min(1, (performance.now() - t0) / ms); el.volume = Math.max(0, Math.min(1, from + (to - from) * k)); if (k >= 1) clearInterval(fades.get(el)); }, 30)); }
@@ -716,6 +716,20 @@ const acts = {
     keyAct = (e, down) => { if (e.key === ' ') { down ? on() : off(); return true; } };
   }),
 
+  // into the story: the child touches the little nativity under the tree; the camera dives into it, a golden light
+  // fills the page, and the next page (Nazareth) turns in
+  portal: (a) => new Promise((res) => {
+    hint(T.portal); const g0 = gen; const s = spot(a.at, a.r, 'soft'); let done = false;
+    const go = async () => {
+      if (done) return; done = true; s.remove(); keyAct = null; hint(''); sfx('hum'); sfx('sparkle', 0.6); buzz([45, 60, 70]); burst(a.at[0], a.at[1], 50, 45);
+      for (const v of document.querySelectorAll('#panel .loopv')) v.remove();
+      await film(a.film); if (gen !== g0) return;
+      const gold = document.createElement('div'); gold.className = 'goldout'; $('panel').append(gold); sfx('glow'); burst(0.5, 0.5, 80, 45);
+      setTimeout(() => { if (gen === g0) res(); }, 1100);
+    };
+    s.onpointerdown = (e) => { e.stopPropagation(); go(); };
+    keyAct = (e, down) => { if (down && e.key === ' ') { go(); return true; } };
+  }),
 };
 
 function swapArt(name) { if (!name) return; const im = new Image(); im.src = `art/${name}.jpg`; im.className = 'art over'; $('panel').insertBefore(im, $('fx')); requestAnimationFrame(() => im.classList.add('in')); }
@@ -744,18 +758,21 @@ async function show(i, back = false) {
   for (const el of document.querySelectorAll('#panel .art')) el.remove();
   const im = new Image(); im.className = 'art'; im.id = 'art'; im.src = `art/${p.img}.jpg`; await im.decode().catch(() => {});
   $('panel').style.aspectRatio = `${im.naturalWidth} / ${im.naturalHeight}`; $('panel').insertBefore(im, $('fx'));
+  for (const gd of document.querySelectorAll('#panel .goldout')) { gd.classList.add('fade'); setTimeout(() => gd.remove(), 1400); } // the golden light of the way in dissolves into the new page
   $('ambient').style.backgroundImage = `url(art/${p.img}.jpg)`; // the same picture, blurred, around the panel on wide screens
   page.classList.remove('turn-out'); page.classList.add('turn-in'); fitFx();
   $('dots').innerHTML = PANELS.filter((x) => !x.branch || x.id === branch).map((x) => `<i class="${x.id === p.id ? 'on' : ''}"></i>`).join('');
   ambience(p.amb); if (p.loop && p.early) loopVid(p.loop);
   for (const l of p.labels || []) { const el = document.createElement('div'); el.className = 'maplabel'; el.textContent = l[lang]; el.style.left = l.at[0] * 100 + '%'; el.style.top = l.at[1] * 100 + '%'; $('layer').append(el); }
   await sleep(450); if (gone()) return;
+  if (p.film) { await film(p.film); for (const v of document.querySelectorAll('#panel .vid:not(.loopv)')) { v.classList.remove('in'); setTimeout(() => v.remove(), 900); } if (gone()) return; } // a short film first (back from the nativity)
   if (p.sfx) { sfx(p.sfx); await sleep(1200); if (gone()) return; } // the panel's own sound first, then the story
   const early = p.act?.pre ? acts[p.act.kind](p.act) : null; // some scenes start moving while the narrator speaks
   for (const ln of p.lines) { await say(ln); if (gone()) return; }
   if (p.act) { clearTexts(); await (early || acts[p.act.kind](p.act)); if (gone()) return; for (const ln of p.act.then || []) { if (ln.sfx) { sfx(ln.sfx); await sleep(900); } await say(ln); if (gone()) return; } }
   if (p.loop && !p.early) loopVid(p.loop);
-  busy = false; $('next').classList.add('on');
+  busy = false; if (p.auto) return next();
+  $('next').classList.add('on');
   if (i === PANELS.length - 1) setTimeout(end, 1800);
 }
 function next() {
