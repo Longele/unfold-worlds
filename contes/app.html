@@ -57,7 +57,7 @@ body.offline .offline-note { display: flex; }
 /* ---------------------------------------------------------------- stories tab */
 .hero { position: relative; display: block; margin: 4px 18px 8px; border-radius: 26px; overflow: hidden; aspect-ratio: 4 / 3.4; background: var(--card); box-shadow: 0 22px 50px rgba(0, 0, 0, .5); }
 .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(28, 15, 8, 0) 35%, rgba(28, 15, 8, .95) 100%); }
-.hero .tx { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 18px 20px 20px; }
+.hero .tx { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 18px 96px 20px 20px; }
 .hero .kick { display: inline-block; padding: 5px 11px; border-radius: 999px; background: var(--sun); color: #2a140a; font-size: 13px; margin-bottom: 10px; }
 .hero h2 { margin: 0; font-family: var(--title); font-weight: 400; font-size: 40px; letter-spacing: .03em; line-height: .95; }
 .hero h2 em { display: block; font-style: normal; font-family: var(--ui); font-size: 18px; letter-spacing: 0; color: var(--sun); margin-top: 6px; }
@@ -176,7 +176,7 @@ body.offline .card.net, body.offline .hero.net { filter: grayscale(.85) brightne
    shadows, halftone dots). "auto" picks paper by day and night after 7 pm. Each series has its own colour (--sc). */
 .card .im, .hero .im { position: absolute; inset: 0; background: var(--card) center/cover; }
 .hero .im { background-position: center 30%; }
-.s-lina { --sc: #2dbe7b; } .s-nala { --sc: #4c8dff; } .s-bible { --sc: #f2a33a; }
+.s-lina { --sc: #2dbe7b; } .s-nala { --sc: #4c8dff; } .s-bible { --sc: #f2a33a; } .s-noel { --sc: #e0473c; }
 
 :root[data-theme=paper] { --bg: #fff5e6; --bg2: #ffffff; --card: #f3e6d2; --line: rgba(45, 33, 80, .12); --ink: #2d2150; --dim: #6f668c; --sun: #ff7a45; --sun2: #ff5c8a; --mint: #2dbe7b; --sky: #4c8dff; --title: 'Fredoka', 'Nunito', system-ui, sans-serif; --ui: 'Nunito', system-ui, sans-serif; }
 [data-theme=paper] body { font-weight: 800; background: radial-gradient(rgba(45, 33, 80, .07) 1.2px, transparent 1.7px) 0 0 / 18px 18px, radial-gradient(circle at 10% 4%, #ffd9b8 0, rgba(255, 217, 184, 0) 36%), radial-gradient(circle at 95% 22%, #d6efff 0, rgba(214, 239, 255, 0) 32%), var(--bg); }
@@ -232,7 +232,7 @@ body.offline .card.net, body.offline .hero.net { filter: grayscale(.85) brightne
 [data-theme=night] #intro h2 { letter-spacing: 0; font-weight: 700; }
 
 :root[data-theme=pop] { --bg: #ffe45c; --bg2: #ffffff; --card: #ffffff; --ink: #1e1446; --dim: #4a4070; --line: #1e1446; --sun: #ff4f79; --sun2: #7b5cfa; --mint: #20c997; --title: 'Bangers', 'Nunito', system-ui, sans-serif; --ui: 'Nunito', system-ui, sans-serif; }
-[data-theme=pop] .s-lina { --sc: #20c997; } [data-theme=pop] .s-nala { --sc: #4d8bff; } [data-theme=pop] .s-bible { --sc: #ff9f1c; }
+[data-theme=pop] .s-lina { --sc: #20c997; } [data-theme=pop] .s-nala { --sc: #4d8bff; } [data-theme=pop] .s-bible { --sc: #ff9f1c; } [data-theme=pop] .s-noel { --sc: #e63946; }
 [data-theme=pop] body { font-weight: 800; background: radial-gradient(rgba(30, 20, 70, .13) 1.3px, transparent 1.8px) 0 0 / 14px 14px, var(--bg); }
 [data-theme=pop] .top { background: var(--bg); border-bottom: 3px solid var(--ink); padding-bottom: 12px; margin-bottom: 14px; }
 [data-theme=pop] .top .logo { box-shadow: 0 0 0 3px var(--ink), 3px 3px 0 3px var(--ink); }
@@ -351,6 +351,8 @@ const T = {
 };
 // the series and their stories (id = folder)
 const SERIES = [
+  { id: 'noel', fr: { name: 'Noël', d: 'La nuit de Noël à vivre en BD : la naissance de Jésus maintenant, les mages et l’étoile le 6 janvier.' }, en: { name: 'Christmas', d: 'The Christmas night as a comic to live: the birth of Jesus now, the wise men and the star on 6 January.' },
+    tales: [{ id: 'noel', img: 'noel/art/n13.jpg', min: 8, ep: 1, fr: { t: 'La plus belle nuit', s: 'la naissance de Jésus' }, en: { t: 'The most beautiful night', s: 'the birth of Jesus' } }] },
   { id: 'lina', fr: { name: 'Lina', d: 'Une petite exploratrice, sa loupe et ses jumelles : chaque histoire est une enquête dans la nature.' }, en: { name: 'Lina', d: 'A little explorer with her magnifying glass and binoculars: every story is an investigation in nature.' },
     tales: [{ id: 'lina', img: 'lina/art/l10.jpg', min: 5, ep: 1, fr: { t: 'Lina', s: 'et les petites traces' }, en: { t: 'Lina', s: 'and the tiny tracks' } },
       { id: 'lina2', img: 'lina2/art/b5b.jpg', min: 6, ep: 2, fr: { t: 'Lina', s: 'et le papillon secret' }, en: { t: 'Lina', s: 'and the secret butterfly' } }] },
