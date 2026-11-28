@@ -25,7 +25,7 @@ inApp = inApp || matchMedia('(display-mode: standalone), (display-mode: fullscre
 let th = 'auto'; try { th = localStorage.getItem('contes-theme') || 'auto'; } catch {}
 const hr = new Date().getHours(), night = th === 'night' || (th === 'auto' && (hr >= 19 || hr < 7));
 const H = document.documentElement;
-H.style.setProperty('--feel', night ? '#ffd166' : '#ff7a45'); H.style.setProperty('--feelink', night ? '#1a1d52' : '#fff');
+H.style.setProperty('--feel', night ? '#ffd166' : '#ed6d4a'); H.style.setProperty('--feelink', night ? '#1a1d52' : '#fff');
 if (inApp) { H.classList.add('inapp'); H.dataset.tone = night ? 'night' : 'day'; }
 
 const css = document.createElement('style');

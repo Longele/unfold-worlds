@@ -3,10 +3,10 @@
 // the lantern, swaddles the baby and lays him in the manger, rocks him (phone or finger), counts the sheep, comforts
 // the shepherds, sings Gloria (microphone or a button), runs with the lamb and checks the angel's sign.
 // Every phone gesture has a mouse or keyboard twin, and the microphone always has a button to fall back on.
-import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202611280300';
+import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202611281400';
 
 import { goFull, keepFull, iosTip } from '../fs.js?v=202611250700';
-import { feel, picked } from '../feel.js?v=202611253';
+import { feel, picked } from '../feel.js?v=202611281400';
 const $ = (id) => document.getElementById(id);
 // the language: from the stories page (?lang=), else the last one chosen, else the phone's
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };

@@ -52,8 +52,8 @@ export const PANELS = [
       then: [B('a10b', [0.5, 0.52], [0.5, 0.22]), B('a10c', [0.5, 0.52], [0.5, 0.22]), L('n10d')] } },
   { id: 'n11', img: 'n11a', amb: 'amb-hills', lines: [L('n11a'), B('c11b', [0.5, 0.48], [0.62, 0.2]), L('n11c')],
     act: { kind: 'shout', hint: 'sing', btn: 'singBtn', reveal: 'n11', song: 'gloria', word: { fr: 'GLORIA !', en: 'GLORIA!' }, then: [L('n11d')] } },
-  { id: 'n12', img: 'n12', amb: 'amb-hills', lines: [B('b12a', [0.42, 0.24], [0.33, 0.41]), L('n12b')],
-    act: { kind: 'path', pts: [[0.6, 0.8], [0.56, 0.74], [0.56, 0.68], [0.62, 0.63], [0.7, 0.59], [0.77, 0.55], [0.81, 0.51], [0.78, 0.47], [0.71, 0.44]], mark: 'lamb', word: { fr: 'BETHLÉEM !', en: 'BETHLEHEM!' }, hint: 'lamb', then: [] } },
+  { id: 'n12', img: 'n12', amb: 'amb-hills', lines: [B('b12a', [0.42, 0.24], [0.38, 0.41]), L('n12b')],
+    act: { kind: 'path', pts: [[0.6, 0.85], [0.7, 0.81], [0.8, 0.75], [0.86, 0.67], [0.88, 0.59], [0.84, 0.53], [0.79, 0.5], [0.75, 0.48]], mark: 'lamb', word: { fr: 'BETHLÉEM !', en: 'BETHLEHEM!' }, hint: 'lamb', then: [] } },
   { id: 'n13', early: 1, img: 'n13', amb: 'amb-stable', loop: 'n13', lines: [L('n12c')],
     act: { kind: 'seq', steps: [
       { kind: 'sounds', hint: { fr: 'Touche la couverture, puis la crèche', en: 'Touch the blanket, then the manger' }, r: 0.07,

@@ -178,15 +178,15 @@ body.offline .card.net, body.offline .hero.net { filter: grayscale(.85) brightne
 .hero .im { background-position: center 30%; }
 .s-lina { --sc: #2dbe7b; } .s-nala { --sc: #4c8dff; } .s-bible { --sc: #f2a33a; } .s-noel { --sc: #e0473c; }
 
-:root[data-theme=paper] { --bg: #fff5e6; --bg2: #ffffff; --card: #f3e6d2; --line: rgba(45, 33, 80, .12); --ink: #2d2150; --dim: #6f668c; --sun: #ff7a45; --sun2: #ff5c8a; --mint: #2dbe7b; --sky: #4c8dff; --title: 'Fredoka', 'Nunito', system-ui, sans-serif; --ui: 'Nunito', system-ui, sans-serif; }
+:root[data-theme=paper] { --bg: #fff5e6; --bg2: #ffffff; --card: #f3e6d2; --line: rgba(45, 33, 80, .12); --ink: #2d2150; --dim: #6f668c; --sun: #ed6d4a; --sun2: #ff5c8a; --mint: #2dbe7b; --sky: #4c8dff; --title: 'Fredoka', 'Nunito', system-ui, sans-serif; --ui: 'Nunito', system-ui, sans-serif; }
 [data-theme=paper] body { font-weight: 800; background: radial-gradient(rgba(45, 33, 80, .07) 1.2px, transparent 1.7px) 0 0 / 18px 18px, radial-gradient(circle at 10% 4%, #ffd9b8 0, rgba(255, 217, 184, 0) 36%), radial-gradient(circle at 95% 22%, #d6efff 0, rgba(214, 239, 255, 0) 32%), var(--bg); }
 [data-theme=paper] .top { background: linear-gradient(180deg, var(--bg) 72%, rgba(255, 245, 230, 0)); }
 [data-theme=paper] .top .hi b, [data-theme=paper] .rail-h h3, [data-theme=paper] .ttl, [data-theme=paper] .album h3 { letter-spacing: 0; font-weight: 700; }
 [data-theme=paper] .top .hi b { font-size: 29px; }
 [data-theme=paper] .seg { background: #fff; box-shadow: 0 3px 10px rgba(45, 33, 80, .08); } [data-theme=paper] .seg button.on { background: var(--ink); color: #fff; }
-[data-theme=paper] .hero { border: 6px solid #fff; border-radius: 30px; box-shadow: 0 18px 40px rgba(255, 122, 69, .22), 0 3px 0 rgba(45, 33, 80, .06); }
+[data-theme=paper] .hero { border: 6px solid #fff; border-radius: 30px; box-shadow: 0 18px 40px rgba(237, 109, 74, .22), 0 3px 0 rgba(45, 33, 80, .06); }
 [data-theme=paper] .hero .kick { background: var(--sun); color: #fff; } [data-theme=paper] .hero h2 { letter-spacing: 0; font-weight: 700; font-size: 36px; } [data-theme=paper] .hero h2 em { color: #ffe08a; font-weight: 800; }
-[data-theme=paper] .hero .play { color: #fff; box-shadow: 0 6px 0 #d9572b, 0 12px 24px rgba(255, 122, 69, .35); }
+[data-theme=paper] .hero .play { color: #fff; box-shadow: 0 6px 0 #c4502f, 0 12px 24px rgba(237, 109, 74, .35); }
 [data-theme=paper] .rail-h h3 { display: flex; align-items: center; gap: 10px; font-size: 27px; } [data-theme=paper] .rail-h h3::before { content: ''; width: 14px; height: 14px; border-radius: 50%; background: var(--sc); box-shadow: 0 0 0 4px color-mix(in srgb, var(--sc) 25%, transparent); }
 [data-theme=paper] .card { aspect-ratio: auto; background: #fff; padding: 7px 7px 2px; border-radius: 24px; box-shadow: 0 12px 26px rgba(45, 33, 80, .14); transform: rotate(-1.2deg); }
 [data-theme=paper] .card:nth-child(even) { transform: rotate(1.3deg); }
@@ -202,7 +202,7 @@ body.offline .card.net, body.offline .hero.net { filter: grayscale(.85) brightne
 [data-theme=paper] .stickers i { border-color: rgba(45, 33, 80, .2); color: rgba(45, 33, 80, .3); background-color: #fff8ee; }
 [data-theme=paper] .tabs { left: 14px; right: 14px; bottom: calc(10px + var(--sb)); padding: 6px; border-radius: 28px; background: rgba(255, 255, 255, .94); border: 1px solid var(--line); box-shadow: 0 14px 34px rgba(45, 33, 80, .18); }
 [data-theme=paper] .tabs button.on { background: var(--sun); color: #fff; }
-[data-theme=paper] .btn { color: #fff; box-shadow: 0 5px 0 #d9572b; } [data-theme=paper] .btn.ghost { background: #fff; color: var(--ink); box-shadow: 0 4px 0 rgba(45, 33, 80, .12); }
+[data-theme=paper] .btn { color: #fff; box-shadow: 0 5px 0 #c4502f; } [data-theme=paper] .btn.ghost { background: #fff; color: var(--ink); box-shadow: 0 4px 0 rgba(45, 33, 80, .12); }
 [data-theme=paper] .offline-note { background: #e6f1ff; border-color: #bcd6ff; }
 [data-theme=paper] .meter .bar, [data-theme=paper] .item .act { background: rgba(45, 33, 80, .07); }
 [data-theme=paper] #intro .slide::after { background: linear-gradient(180deg, rgba(0, 0, 0, .1) 0%, rgba(255, 245, 230, 0) 32%, rgba(255, 245, 230, .9) 60%, var(--bg) 78%); }
@@ -333,7 +333,7 @@ const T = {
     iosT: 'Sur iPhone et iPad', ios1: 'Dans Safari, touchez <b>Partager</b>', ios2: 'Choisissez <b>Sur l’écran d’accueil</b>', ios3: 'L’icône <b>Contes</b> s’ouvre en plein écran',
     install: 'Installer l’appli', pwaS: 'Ajoutez Contes à cet appareil, comme une application.',
     aboutT: 'Pour les 4 à 8 ans', aboutS: 'Des BD racontées à voix haute, que l’enfant fait avancer du bout du doigt. Quelques minutes chacune.', p1: 'Sans publicité', p2: 'Sans compte', p3: 'Sans achat', p4: 'Aucune donnée collectée',
-    themeT: 'Couleurs', themeS: 'Automatique : le livre d’images le jour, la nuit étoilée à partir de 19 h.', thAuto: 'Auto', thDay: 'Jour', thNight: 'Nuit', nameT: 'Prénom de l’enfant', nameS: 'Pour lui dire bonjour. Il reste sur ce téléphone.', nameP: 'Prénom', newb: 'Nouveau', soon: 'Bientôt', soonWhen: 'le 6 janvier', readb: 'Lu', page: 'page', albumT: 'Mes autocollants', albumS: 'Un autocollant pour chaque histoire terminée.', intro: 'Revoir la présentation', priv: 'Confidentialité', home: 'Unfold Worlds', skip: 'Passer', next: 'Suivant', go: 'C’est parti !',
+    themeT: 'Couleurs', themeS: 'Jour au départ. Auto : le livre d’images le jour, la nuit étoilée à partir de 19 h.', thAuto: 'Auto', thDay: 'Jour', thNight: 'Nuit', nameT: 'Prénom de l’enfant', nameS: 'Pour lui dire bonjour. Il reste sur ce téléphone.', nameP: 'Prénom', newb: 'Nouveau', soon: 'Bientôt', readb: 'Lu', page: 'page', albumT: 'Mes autocollants', albumS: 'Un autocollant pour chaque histoire terminée.', intro: 'Revoir la présentation', priv: 'Confidentialité', home: 'Unfold Worlds', skip: 'Passer', next: 'Suivant', go: 'C’est parti !',
     s1t: 'Des histoires <em>à écouter</em>', s1p: 'Une voix raconte, les mots s’allument, et l’enfant suit l’histoire en images.',
     s2t: 'Et à toucher <em>du bout du doigt</em>', s2p: 'Chercher à la loupe, coller une fusée, faire voler une colombe : c’est l’enfant qui fait avancer l’histoire.',
     s3t: 'Partout, <em>même sans internet</em>', s3p: 'Téléchargez les histoires une fois, et lisez-les en voiture, en avion ou au lit.' },
@@ -346,14 +346,14 @@ const T = {
     iosT: 'On iPhone and iPad', ios1: 'In Safari, tap <b>Share</b>', ios2: 'Choose <b>Add to Home Screen</b>', ios3: 'The <b>Contes</b> icon opens in full screen',
     install: 'Install the app', pwaS: 'Add Contes to this device, like an app.',
     aboutT: 'For ages 4 to 8', aboutS: 'Picture-book comics read aloud, that the child moves along with a fingertip. A few minutes each.', p1: 'No ads', p2: 'No account', p3: 'No purchases', p4: 'No data collected',
-    themeT: 'Colours', themeS: 'Automatic: the picture book by day, the starry night from 7 pm.', thAuto: 'Auto', thDay: 'Day', thNight: 'Night', nameT: 'Child’s first name', nameS: 'So we can say hello. It stays on this phone.', nameP: 'First name', newb: 'New', soon: 'Coming soon', soonWhen: 'on 6 January', readb: 'Read', page: 'page', albumT: 'My stickers', albumS: 'One sticker for each story finished.', intro: 'See the welcome again', priv: 'Privacy', home: 'Unfold Worlds', skip: 'Skip', next: 'Next', go: 'Let’s go!',
+    themeT: 'Colours', themeS: 'Day to start with. Auto: the picture book by day, the starry night from 7 pm.', thAuto: 'Auto', thDay: 'Day', thNight: 'Night', nameT: 'Child’s first name', nameS: 'So we can say hello. It stays on this phone.', nameP: 'First name', newb: 'New', soon: 'Coming soon', readb: 'Read', page: 'page', albumT: 'My stickers', albumS: 'One sticker for each story finished.', intro: 'See the welcome again', priv: 'Privacy', home: 'Unfold Worlds', skip: 'Skip', next: 'Next', go: 'Let’s go!',
     s1t: 'Stories <em>to listen to</em>', s1p: 'A voice tells the story, the words light up, and the child follows in pictures.',
     s2t: 'And to touch <em>with a fingertip</em>', s2p: 'Search with a magnifying glass, build a rocket, help a dove fly: the child moves the story along.',
     s3t: 'Anywhere, <em>even offline</em>', s3p: 'Download the stories once, and read them in the car, on a plane or in bed.' },
 };
 // the series and their stories (id = folder)
 const SERIES = [
-  { id: 'noel', fr: { name: 'Noël', d: 'La nuit de Noël à vivre en BD : la naissance de Jésus maintenant, les mages et l’étoile le 6 janvier.' }, en: { name: 'Christmas', d: 'The Christmas night as a comic to live: the birth of Jesus now, the wise men and the star on 6 January.' },
+  { id: 'noel', fr: { name: 'Noël', d: 'La nuit de Noël à vivre en BD : la naissance de Jésus maintenant, les mages et l’étoile bientôt.' }, en: { name: 'Christmas', d: 'The Christmas night as a comic to live: the birth of Jesus now, the wise men and the star coming soon.' },
     tales: [{ id: 'noel', img: 'noel/art/n0.jpg', min: 9, ep: 1, fr: { t: 'La plus belle nuit', s: 'la naissance de Jésus' }, en: { t: 'The most beautiful night', s: 'the birth of Jesus' } },
       { id: 'noel2', soon: 1, img: 'noel/art/n11.jpg', min: 6, ep: 2, fr: { t: 'Les mages', s: 'et l’étoile' }, en: { t: 'The wise men', s: 'and the star' } }] },
   { id: 'lina', fr: { name: 'Lina', d: 'Une petite exploratrice, sa loupe et ses jumelles : chaque histoire est une enquête dans la nature.' }, en: { name: 'Lina', d: 'A little explorer with her magnifying glass and binoculars: every story is an investigation in nature.' },
@@ -370,7 +370,7 @@ const ALL = SERIES.flatMap((s) => s.tales.filter((t) => !t.soon).map((t) => ({ .
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
 const Q = new URLSearchParams(location.search);
 const THEMES = ['auto', 'paper', 'night', 'pop', 'classic'];
-function theme() { let t = Q.get('theme') || (() => { try { return localStorage.getItem('contes-theme'); } catch { return null; } })() || 'auto'; if (t === 'auto') { const h = new Date().getHours(); t = h >= 19 || h < 7 ? 'night' : 'paper'; } document.documentElement.dataset.theme = t; document.querySelector('meta[name=theme-color]').content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#1c0f08'; }
+function theme() { let t = Q.get('theme') || (() => { try { return localStorage.getItem('contes-theme'); } catch { return null; } })() || 'paper'; if (t === 'auto') { const h = new Date().getHours(); t = h >= 19 || h < 7 ? 'night' : 'paper'; } document.documentElement.dataset.theme = t; document.querySelector('meta[name=theme-color]').content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#1c0f08'; }
 theme();
 let lang = Q.get('lang') || store.get('contes-lang') || ((navigator.language || '').startsWith('fr') ? 'fr' : 'en');
 const inApp = true; // this page is the installed app's home (the web library is index.html)
@@ -409,9 +409,9 @@ function home() {
   hero.className = 'hero press' + (state[h.id] === 'ready' ? '' : ' net');
   const hp = going && P[h.id]; hero.innerHTML = `<i class="im" style="background-image:url(${h.img})"></i><div class="tx"><span class="kick">${last ? L.cont : L.feat}${hp ? ` · ${L.page} ${hp.at + 1}/${hp.of}` : ''}</span><h2>${h[lang].t}<em>${h[lang].s}</em></h2>${hp ? `<div class="bar"><i style="width:${Math.round(((hp.at + 1) / hp.of) * 100)}%"></i></div>` : ''}</div><span class="play" aria-label="${L.listen}">${ICON.play}</span>`;
   $('#rails').innerHTML = SERIES.map((s) => `<section class="rail s-${s.id}"><div class="rail-h"><h3>${s[lang].name}</h3><span>${s.tales.length} ${s.tales.length > 1 ? L.stories : L.story}</span></div><p>${s[lang].d}</p>
-    <div class="row">${s.tales.map((t) => t.soon ? `<div class="card soon s-${s.id}"><i class="im" style="background-image:url(${t.img})"></i><span class="chip ep">${L.ep} ${t.ep}</span><span class="chip soonb">${L.soon}</span><div class="tx"><h4>${t[lang].t}<em>${t[lang].s}</em></h4><div class="meta"><span class="chip">${L.soonWhen}</span></div></div></div>` : `<a class="card press s-${s.id}${state[t.id] === 'ready' ? '' : ' net'}" data-id="${t.id}" href="${t.id}/?lang=${lang}"><i class="im" style="background-image:url(${t.img})"></i>
+    <div class="row">${s.tales.map((t) => t.soon ? `<div class="card soon s-${s.id}"><i class="im" style="background-image:url(${t.img})"></i><span class="chip ep">${L.ep} ${t.ep}</span><span class="chip soonb">${L.soon}</span><div class="tx"><h4>${t[lang].t}<em>${t[lang].s}</em></h4></div></div>` : `<a class="card press s-${s.id}${state[t.id] === 'ready' ? '' : ' net'}" data-id="${t.id}" href="${t.id}/?lang=${lang}"><i class="im" style="background-image:url(${t.img})"></i>
       ${t.ep ? `<span class="chip ep">${L.ep} ${t.ep}</span>` : ''}${stIcon(t.id)}
-      <div class="tx"><h4>${t[lang].t}<em>${t[lang].s}</em></h4><div class="meta"><span class="chip">${t.min} ${L.min}</span>${P[t.id]?.at > 0 ? `<span class="chip pg">${P[t.id].at + 1}/${P[t.id].of}</span>` : P[t.id]?.done ? `<span class="chip done">✓ ${L.readb}</span>` : P[t.id] ? '' : `<span class="chip new">${L.newb}</span>`}</div></div>
+      <div class="tx"><h4>${t[lang].t}<em>${t[lang].s}</em></h4><div class="meta">${P[t.id]?.at > 0 ? `<span class="chip pg">${P[t.id].at + 1}/${P[t.id].of}</span>` : P[t.id]?.done ? `<span class="chip done">✓ ${L.readb}</span>` : P[t.id] ? '' : `<span class="chip new">${L.newb}</span>`}</div></div>
       ${P[t.id]?.at > 0 ? `<span class="prog"><i style="width:${Math.round(((P[t.id].at + 1) / P[t.id].of) * 100)}%"></i></span>` : ''}</a>`).join('')}</div></section>`).join('')
     + `<section class="album"><div class="h"><h3>${L.albumT}</h3><span>${ALL.filter((t) => P[t.id]?.done).length} / ${ALL.length}</span></div><p>${L.albumS}</p>
       <div class="stickers">${ALL.map((t) => P[t.id]?.done ? `<i class="got" style="background-image:url(${t.img})" title="${t[lang].t} ${t[lang].s}"></i>` : '<i>?</i>').join('')}</div></section>`;
@@ -424,7 +424,7 @@ function offline() {
   b.innerHTML = left.length ? `${ICON.dl}${L.all} · ${mb(left.reduce((s, t) => s + t.size, 0))}` : `${ICON.ok}${L.allok}`;
   $('#offlist').innerHTML = ALL.map((x) => { const t = byId(x.id); if (!t) return ''; const s = state[x.id];
     const act = s === 'ready' ? `<button class="act del press" data-del="${x.id}" aria-label="${L.del}">${ICON.del}</button>` : typeof s === 'number' ? `<span class="act"><i class="ring" style="--p:${s}"></i></span>` : `<button class="act press" data-get="${x.id}" aria-label="${L.dl}">${ICON.dl}</button>`;
-    return `<div class="item"><i class="th" style="background-image:url(${x.img})"></i><div class="tx"><b>${x[lang].t} ${x[lang].s}</b><small>${s === 'ready' ? L.ready : typeof s === 'number' ? Math.round(s * 100) + ' %' : mb(t.size)} · ${x.min} ${L.min}</small></div>${act}</div>`; }).join('');
+    return `<div class="item"><i class="th" style="background-image:url(${x.img})"></i><div class="tx"><b>${x[lang].t} ${x[lang].s}</b><small>${s === 'ready' ? L.ready : typeof s === 'number' ? Math.round(s * 100) + ' %' : mb(t.size)}</small></div>${act}</div>`; }).join('');
 }
 function paint() { if (F) { home(); offline(); } }
 function render() {
@@ -484,7 +484,7 @@ const intro = (() => {
   return { draw, open: () => { i = 0; draw(); el.classList.add('on'); } };
 })();
 $('#replayintro').onclick = () => intro.open();
-const themeBtns = () => { let t = 'auto'; try { t = localStorage.getItem('contes-theme') || 'auto'; } catch {} for (const b of document.querySelectorAll('[data-th]')) b.classList.toggle('on', b.dataset.th === t); };
+const themeBtns = () => { let t = 'paper'; try { t = localStorage.getItem('contes-theme') || 'paper'; } catch {} for (const b of document.querySelectorAll('[data-th]')) b.classList.toggle('on', b.dataset.th === t); };
 for (const b of document.querySelectorAll('[data-th]')) b.onclick = () => { try { localStorage.setItem('contes-theme', b.dataset.th); } catch {} buzz(); theme(); themeBtns(); };
 themeBtns();
 document.addEventListener('visibilitychange', () => { if (!document.hidden) theme(); }); // coming back at 7 pm: the night has come
