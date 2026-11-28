@@ -266,6 +266,8 @@ body.offline .card.net, body.offline .hero.net { filter: grayscale(.85) brightne
 [data-theme=paper] .card .prog, [data-theme=pop] .card .prog { display: none; }
 [data-theme=night] .chip.pg { color: #1a1d52; } [data-theme=pop] .chip.pg { border-color: var(--ink); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+.card.soon { pointer-events: none; } .card.soon .im { filter: saturate(.45) brightness(.62); }
+.card .soonb { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -110%) rotate(-4deg); z-index: 2; padding: 7px 14px; font-size: 14px; font-weight: 800; background: var(--sun, #ffb347); color: #2a140a; box-shadow: 0 4px 0 rgba(0,0,0,.2); white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -331,7 +333,7 @@ const T = {
     iosT: 'Sur iPhone et iPad', ios1: 'Dans Safari, touchez <b>Partager</b>', ios2: 'Choisissez <b>Sur l’écran d’accueil</b>', ios3: 'L’icône <b>Contes</b> s’ouvre en plein écran',
     install: 'Installer l’appli', pwaS: 'Ajoutez Contes à cet appareil, comme une application.',
     aboutT: 'Pour les 4 à 8 ans', aboutS: 'Des BD racontées à voix haute, que l’enfant fait avancer du bout du doigt. Quelques minutes chacune.', p1: 'Sans publicité', p2: 'Sans compte', p3: 'Sans achat', p4: 'Aucune donnée collectée',
-    themeT: 'Couleurs', themeS: 'Automatique : le livre d’images le jour, la nuit étoilée à partir de 19 h.', thAuto: 'Auto', thDay: 'Jour', thNight: 'Nuit', nameT: 'Prénom de l’enfant', nameS: 'Pour lui dire bonjour. Il reste sur ce téléphone.', nameP: 'Prénom', newb: 'Nouveau', readb: 'Lu', page: 'page', albumT: 'Mes autocollants', albumS: 'Un autocollant pour chaque histoire terminée.', intro: 'Revoir la présentation', priv: 'Confidentialité', home: 'Unfold Worlds', skip: 'Passer', next: 'Suivant', go: 'C’est parti !',
+    themeT: 'Couleurs', themeS: 'Automatique : le livre d’images le jour, la nuit étoilée à partir de 19 h.', thAuto: 'Auto', thDay: 'Jour', thNight: 'Nuit', nameT: 'Prénom de l’enfant', nameS: 'Pour lui dire bonjour. Il reste sur ce téléphone.', nameP: 'Prénom', newb: 'Nouveau', soon: 'Bientôt', soonWhen: 'le 6 janvier', readb: 'Lu', page: 'page', albumT: 'Mes autocollants', albumS: 'Un autocollant pour chaque histoire terminée.', intro: 'Revoir la présentation', priv: 'Confidentialité', home: 'Unfold Worlds', skip: 'Passer', next: 'Suivant', go: 'C’est parti !',
     s1t: 'Des histoires <em>à écouter</em>', s1p: 'Une voix raconte, les mots s’allument, et l’enfant suit l’histoire en images.',
     s2t: 'Et à toucher <em>du bout du doigt</em>', s2p: 'Chercher à la loupe, coller une fusée, faire voler une colombe : c’est l’enfant qui fait avancer l’histoire.',
     s3t: 'Partout, <em>même sans internet</em>', s3p: 'Téléchargez les histoires une fois, et lisez-les en voiture, en avion ou au lit.' },
@@ -344,7 +346,7 @@ const T = {
     iosT: 'On iPhone and iPad', ios1: 'In Safari, tap <b>Share</b>', ios2: 'Choose <b>Add to Home Screen</b>', ios3: 'The <b>Contes</b> icon opens in full screen',
     install: 'Install the app', pwaS: 'Add Contes to this device, like an app.',
     aboutT: 'For ages 4 to 8', aboutS: 'Picture-book comics read aloud, that the child moves along with a fingertip. A few minutes each.', p1: 'No ads', p2: 'No account', p3: 'No purchases', p4: 'No data collected',
-    themeT: 'Colours', themeS: 'Automatic: the picture book by day, the starry night from 7 pm.', thAuto: 'Auto', thDay: 'Day', thNight: 'Night', nameT: 'Child’s first name', nameS: 'So we can say hello. It stays on this phone.', nameP: 'First name', newb: 'New', readb: 'Read', page: 'page', albumT: 'My stickers', albumS: 'One sticker for each story finished.', intro: 'See the welcome again', priv: 'Privacy', home: 'Unfold Worlds', skip: 'Skip', next: 'Next', go: 'Let’s go!',
+    themeT: 'Colours', themeS: 'Automatic: the picture book by day, the starry night from 7 pm.', thAuto: 'Auto', thDay: 'Day', thNight: 'Night', nameT: 'Child’s first name', nameS: 'So we can say hello. It stays on this phone.', nameP: 'First name', newb: 'New', soon: 'Coming soon', soonWhen: 'on 6 January', readb: 'Read', page: 'page', albumT: 'My stickers', albumS: 'One sticker for each story finished.', intro: 'See the welcome again', priv: 'Privacy', home: 'Unfold Worlds', skip: 'Skip', next: 'Next', go: 'Let’s go!',
     s1t: 'Stories <em>to listen to</em>', s1p: 'A voice tells the story, the words light up, and the child follows in pictures.',
     s2t: 'And to touch <em>with a fingertip</em>', s2p: 'Search with a magnifying glass, build a rocket, help a dove fly: the child moves the story along.',
     s3t: 'Anywhere, <em>even offline</em>', s3p: 'Download the stories once, and read them in the car, on a plane or in bed.' },
@@ -352,7 +354,8 @@ const T = {
 // the series and their stories (id = folder)
 const SERIES = [
   { id: 'noel', fr: { name: 'Noël', d: 'La nuit de Noël à vivre en BD : la naissance de Jésus maintenant, les mages et l’étoile le 6 janvier.' }, en: { name: 'Christmas', d: 'The Christmas night as a comic to live: the birth of Jesus now, the wise men and the star on 6 January.' },
-    tales: [{ id: 'noel', img: 'noel/art/n0.jpg', min: 8, ep: 1, fr: { t: 'La plus belle nuit', s: 'la naissance de Jésus' }, en: { t: 'The most beautiful night', s: 'the birth of Jesus' } }] },
+    tales: [{ id: 'noel', img: 'noel/art/n0.jpg', min: 9, ep: 1, fr: { t: 'La plus belle nuit', s: 'la naissance de Jésus' }, en: { t: 'The most beautiful night', s: 'the birth of Jesus' } },
+      { id: 'noel2', soon: 1, img: 'noel/art/n11.jpg', min: 6, ep: 2, fr: { t: 'Les mages', s: 'et l’étoile' }, en: { t: 'The wise men', s: 'and the star' } }] },
   { id: 'lina', fr: { name: 'Lina', d: 'Une petite exploratrice, sa loupe et ses jumelles : chaque histoire est une enquête dans la nature.' }, en: { name: 'Lina', d: 'A little explorer with her magnifying glass and binoculars: every story is an investigation in nature.' },
     tales: [{ id: 'lina', img: 'lina/art/l10.jpg', min: 5, ep: 1, fr: { t: 'Lina', s: 'et les petites traces' }, en: { t: 'Lina', s: 'and the tiny tracks' } },
       { id: 'lina2', img: 'lina2/art/b5b.jpg', min: 6, ep: 2, fr: { t: 'Lina', s: 'et le papillon secret' }, en: { t: 'Lina', s: 'and the secret butterfly' } }] },
@@ -363,7 +366,7 @@ const SERIES = [
     tales: [{ id: 'noe', img: 'noe/art/n5.jpg', min: 4, fr: { t: 'Noé', s: 'et l’arche' }, en: { t: 'Noah', s: 'and the ark' } },
       { id: 'jonas', img: 'jonas/art/j13.jpg', min: 9, fr: { t: 'Jonas', s: 'et le grand poisson' }, en: { t: 'Jonah', s: 'and the great fish' } }] },
 ];
-const ALL = SERIES.flatMap((s) => s.tales.map((t) => ({ ...t, series: s })));
+const ALL = SERIES.flatMap((s) => s.tales.filter((t) => !t.soon).map((t) => ({ ...t, series: s }))); // an episode still to come is shown in its series, but cannot be opened
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
 const Q = new URLSearchParams(location.search);
 const THEMES = ['auto', 'paper', 'night', 'pop', 'classic'];
@@ -406,7 +409,7 @@ function home() {
   hero.className = 'hero press' + (state[h.id] === 'ready' ? '' : ' net');
   const hp = going && P[h.id]; hero.innerHTML = `<i class="im" style="background-image:url(${h.img})"></i><div class="tx"><span class="kick">${last ? L.cont : L.feat}${hp ? ` · ${L.page} ${hp.at + 1}/${hp.of}` : ''}</span><h2>${h[lang].t}<em>${h[lang].s}</em></h2>${hp ? `<div class="bar"><i style="width:${Math.round(((hp.at + 1) / hp.of) * 100)}%"></i></div>` : ''}</div><span class="play" aria-label="${L.listen}">${ICON.play}</span>`;
   $('#rails').innerHTML = SERIES.map((s) => `<section class="rail s-${s.id}"><div class="rail-h"><h3>${s[lang].name}</h3><span>${s.tales.length} ${s.tales.length > 1 ? L.stories : L.story}</span></div><p>${s[lang].d}</p>
-    <div class="row">${s.tales.map((t) => `<a class="card press s-${s.id}${state[t.id] === 'ready' ? '' : ' net'}" data-id="${t.id}" href="${t.id}/?lang=${lang}"><i class="im" style="background-image:url(${t.img})"></i>
+    <div class="row">${s.tales.map((t) => t.soon ? `<div class="card soon s-${s.id}"><i class="im" style="background-image:url(${t.img})"></i><span class="chip ep">${L.ep} ${t.ep}</span><span class="chip soonb">${L.soon}</span><div class="tx"><h4>${t[lang].t}<em>${t[lang].s}</em></h4><div class="meta"><span class="chip">${L.soonWhen}</span></div></div></div>` : `<a class="card press s-${s.id}${state[t.id] === 'ready' ? '' : ' net'}" data-id="${t.id}" href="${t.id}/?lang=${lang}"><i class="im" style="background-image:url(${t.img})"></i>
       ${t.ep ? `<span class="chip ep">${L.ep} ${t.ep}</span>` : ''}${stIcon(t.id)}
       <div class="tx"><h4>${t[lang].t}<em>${t[lang].s}</em></h4><div class="meta"><span class="chip">${t.min} ${L.min}</span>${P[t.id]?.at > 0 ? `<span class="chip pg">${P[t.id].at + 1}/${P[t.id].of}</span>` : P[t.id]?.done ? `<span class="chip done">✓ ${L.readb}</span>` : P[t.id] ? '' : `<span class="chip new">${L.newb}</span>`}</div></div>
       ${P[t.id]?.at > 0 ? `<span class="prog"><i style="width:${Math.round(((P[t.id].at + 1) / P[t.id].of) * 100)}%"></i></span>` : ''}</a>`).join('')}</div></section>`).join('')
