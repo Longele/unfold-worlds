@@ -4,7 +4,7 @@
 // padlock), follows the star, stops it over the house, polishes the gold and warms the incense, traces another road
 // home, lights the family's way to Egypt, keeps the moment in their heart and fills a travel journal with 4 stamps.
 // Every phone gesture has a mouse or keyboard twin, and the microphone always has a button to fall back on.
-import { PANELS, TITLE, WHO, AFTER_BRANCH, STAMPS } from './story.js?v=202611281700';
+import { PANELS, TITLE, WHO, AFTER_BRANCH, STAMPS } from './story.js?v=202611281900';
 
 import { goFull, keepFull, iosTip } from '../fs.js?v=202611250700';
 import { feel, picked } from '../feel.js?v=202611281800';
@@ -14,9 +14,9 @@ const store = { get: (k) => { try { return localStorage.getItem(k); } catch { re
 let lang = new URLSearchParams(location.search).get('lang') || store.get('contes-lang') || ((navigator.language || '').startsWith('fr') ? 'fr' : 'en');
 if (!['fr', 'en'].includes(lang)) lang = 'fr';
 const TT = {
-  fr: { readMe: 'Lis-moi l’histoire', readSelf: 'Je lis tout seul', again: 'Relire l’histoire', more: 'D’autres contes', end: 'Joyeuse Épiphanie !', kick: 'Noël · épisode 2', back: '← Les contes', parents: 'Pour les parents : cette histoire peut utiliser le mouvement du téléphone, pour guider la caravane. Rien n’est enregistré ni envoyé. Le doigt fait la même chose ; sur ordinateur, les flèches et la barre d’espace.', keys: 'Espace ou → : suivant',
+  fr: { readMe: 'Lis-moi l’histoire', readSelf: 'Je lis tout seul', again: 'Relire l’histoire', more: 'D’autres contes', end: 'À bientôt !', kick: 'Noël · épisode 2', back: '← Les contes', parents: 'Pour les parents : cette histoire peut utiliser le mouvement du téléphone, pour guider la caravane. Rien n’est enregistré ni envoyé. Le doigt fait la même chose ; sur ordinateur, les flèches et la barre d’espace.', keys: 'Espace ou → : suivant',
     hello: 'Touche Marie', portal: 'Touche la crèche', light: 'Frotte l’écran avec ton doigt', stamp: 'Pose ton doigt sur le parchemin', route: 'Trace le chemin avec ton doigt', walk: 'Un pied, puis l’autre', knock: 'Frappe à la porte', lamp: 'Promène la lanterne dans le noir', swaddle: 'Enroule la couverture : glisse ton doigt autour du bébé', lay: 'Glisse le bébé dans la crèche', rock: 'Berce doucement : balance le téléphone, ou glisse ton doigt lentement', rockBtn: 'Appuie longtemps ici pour bercer', fast: 'Doucement…', count: 'Touche chaque mouton', sounds: 'Touche', sing: 'Chante « Gloria ! »', singBtn: 'Appuie longtemps ici pour chanter', lamb: 'Guide l’agneau jusqu’à la lumière', heart: 'Garde ton doigt sur le cœur', star0: 'Touche l’étoile', sky: 'Trouve l’étoile qui n’est pas sur la carte', load: 'Glisse les trésors sur les chameaux', steer: 'Garde la caravane sous l’étoile : penche le téléphone ou glisse ton doigt', loupe: 'Promène la loupe de droite à gauche', lock: 'Garde ton doigt sur le cadenas', follow: 'Suis l’étoile : trace la route', stop: 'Touche l’étoile quand elle est au-dessus de la fenêtre qui brille', rubGold: 'Frotte le coffre avec ton doigt', rubIncense: 'Frotte l’encens avec ton doigt', home: 'Trace l’autre chemin, loin du palais', carnet: 'Touche chaque tampon', stampWon: 'Nouveau tampon !', chart: 'La carte des mages', night: 'Nuit', again2: 'Encore…', notThis: 'Sur la carte !' },
-  en: { readMe: 'Read it to me', readSelf: 'I’ll read it myself', again: 'Read it again', more: 'More stories', end: 'Happy Epiphany!', kick: 'Christmas · episode 2', back: '← Stories', parents: 'For parents: this story can use the phone’s movement, to guide the caravan. Nothing is recorded or sent. A finger does the same; on a computer, the arrow keys and the space bar.', keys: 'Space or →: next',
+  en: { readMe: 'Read it to me', readSelf: 'I’ll read it myself', again: 'Read it again', more: 'More stories', end: 'See you soon!', kick: 'Christmas · episode 2', back: '← Stories', parents: 'For parents: this story can use the phone’s movement, to guide the caravan. Nothing is recorded or sent. A finger does the same; on a computer, the arrow keys and the space bar.', keys: 'Space or →: next',
     hello: 'Touch Mary', portal: 'Touch the nativity scene', light: 'Rub the screen with your finger', stamp: 'Put your finger on the scroll', route: 'Trace the road with your finger', walk: 'One foot, then the other', knock: 'Knock on the door', lamp: 'Move the lantern through the dark', swaddle: 'Wrap the blanket: slide your finger around the baby', lay: 'Slide the baby into the manger', rock: 'Rock gently: sway the phone, or slide your finger slowly', rockBtn: 'Press and hold here to rock', fast: 'Gently…', count: 'Touch each sheep', sounds: 'Touch', sing: 'Sing “Gloria!”', singBtn: 'Press and hold here to sing', lamb: 'Guide the lamb to the light', heart: 'Keep your finger on the heart', star0: 'Touch the star', sky: 'Find the star that isn’t on the map', load: 'Slide the treasures onto the camels', steer: 'Keep the caravan under the star: tilt the phone or slide your finger', loupe: 'Move the magnifying glass from right to left', lock: 'Keep your finger on the padlock', follow: 'Follow the star: trace the road', stop: 'Touch the star when it is above the shining window', rubGold: 'Rub the chest with your finger', rubIncense: 'Rub the incense with your finger', home: 'Trace the other road, far from the palace', carnet: 'Touch each stamp', stampWon: 'New stamp!', chart: 'The wise men’s map', night: 'Night', again2: 'Again…', notThis: 'On the map!' },
 };
 let T = TT[lang];
@@ -26,7 +26,7 @@ function applyLang() {
   $('title').textContent = TITLE[lang]; document.querySelector('.kick').textContent = T.kick; document.querySelector('.back').textContent = T.back;
   for (const el of document.querySelectorAll('a[href^="../"]')) el.href = `../?lang=${lang}`;
   for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
-  fetch(`voice/${lang}/timings.json?v=202611281700`).then((r) => r.json()).then((j) => (timings = j));
+  fetch(`voice/${lang}/timings.json?v=202611281900`).then((r) => r.json()).then((j) => (timings = j));
 }
 for (const b of document.querySelectorAll('[data-lang]')) b.onclick = () => { lang = b.dataset.lang; store.set('contes-lang', lang); applyLang(); };
 
@@ -153,7 +153,7 @@ function readPause(el) {
 // each reading has its own number, so a line started over another one (a replay) ends the older one cleanly
 let tok = 0;
 async function speak(ln, el) {
-  const me = ++tok; voice.src = `voice/${lang}/${ln.id}.mp3?v=202611281700`; duck(true);
+  const me = ++tok; voice.src = `voice/${lang}/${ln.id}.mp3?v=202611281900`; duck(true);
   try { await voice.play(); } catch { duck(false); return el; }
   const words = wordsOf(ln.id), spans = el.querySelectorAll('span');
   await new Promise((res) => {

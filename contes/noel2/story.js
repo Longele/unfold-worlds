@@ -19,7 +19,7 @@ export const PANELS = [
   // today, by the tree of episode 1: the star on top opens the way
   { id: 'q0', img: 'q0', amb: 'amb-home', loop: 'q0', early: 1, auto: 1, lines: [L('n0a')],
     act: { kind: 'portal', at: [0.65, 0.16], r: 0.12, zoom: 1, hint: 'star0' } },
-  { id: 'q1', img: 'q1', amb: 'amb-night', lines: [L('n1a'), L('n1b')],
+  { id: 'q1', img: 'q1', amb: 'amb-night', loop: 'q1', early: 1, lines: [L('n1a'), L('n1b')],
     act: { kind: 'skyfind', known: [[0.17, 0.12], [0.3, 0.07], [0.43, 0.13], [0.56, 0.08], [0.7, 0.14], [0.83, 0.09], [0.62, 0.25]], fresh: [0.33, 0.27],
       then: [B('g1c', [0.5, 0.38], [0.18, 0.56]), B('k1d', [0.66, 0.44], [0.8, 0.52]), L('n1e', 0)] } },
   { id: 'q2', img: 'q2', amb: 'amb-village', lines: [L('n2a')],
@@ -37,12 +37,12 @@ export const PANELS = [
       then: [L('n5c'), L('n5d', 2)] } },
   { id: 'q6', img: 'q6', amb: 'amb-room', lines: [B('r6a', [0.6, 0.1], [0.36, 0.3]), L('n6b'), L('n6c')],
     act: { kind: 'heart', at: [0.2, 0.2], icon: '🔒', done: '🔐', hint: 'lock', then: [L('n6d')] } },
-  { id: 'q7', img: 'q7', amb: 'amb-hills', lines: [L('n7a'), L('n7b')],
+  { id: 'q7', img: 'q7', amb: 'amb-hills', loop: 'q7', early: 1, lines: [L('n7a'), L('n7b')],
     act: { kind: 'path', mark: 'star', hint: 'follow', word: { fr: 'BETHLÉEM !', en: 'BETHLEHEM!' },
       pts: [[0.5, 0.97], [0.42, 0.88], [0.34, 0.8], [0.32, 0.73], [0.4, 0.68], [0.55, 0.64], [0.66, 0.6], [0.72, 0.54], [0.68, 0.49], [0.6, 0.46], [0.62, 0.42], [0.6, 0.38]] } },
   { id: 'q8', img: 'q8', amb: 'amb-night', lines: [L('n8a')],
     act: { kind: 'stopstar', y: 0.3, target: [0.7, 0.67], then: [L('n8b')] } },
-  { id: 'q9', img: 'q9', amb: 'amb-stable', lines: [L('n9a')],
+  { id: 'q9', img: 'q9', amb: 'amb-stable', loop: 'q9', early: 1, lines: [L('n9a')],
     act: { kind: 'seq', steps: [
       { say: L('n9b') },
       { kind: 'rub', fx: 'shine', box: [0.17, 0.76, 0.43, 0.91], hint: 'rubGold' },
