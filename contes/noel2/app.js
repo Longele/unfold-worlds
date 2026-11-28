@@ -1,0 +1,970 @@
+// Les mages et l'étoile: Christmas episode 2, on the reader of episode 1. The child finds the new star, loads the
+// treasures on the camels, keeps the caravan under the star (phone tilt, finger or arrows), asks the people of
+// Jerusalem, reads the old scroll from right to left with the magnifying glass, keeps Herod's secret (a finger on the
+// padlock), follows the star, stops it over the house, polishes the gold and warms the incense, traces another road
+// home, lights the family's way to Egypt, keeps the moment in their heart and fills a travel journal with 4 stamps.
+// Every phone gesture has a mouse or keyboard twin, and the microphone always has a button to fall back on.
+import { PANELS, TITLE, WHO, AFTER_BRANCH, STAMPS } from './story.js?v=202611281700';
+
+import { goFull, keepFull, iosTip } from '../fs.js?v=202611250700';
+import { feel, picked } from '../feel.js?v=202611281800';
+const $ = (id) => document.getElementById(id);
+// the language: from the stories page (?lang=), else the last one chosen, else the phone's
+const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
+let lang = new URLSearchParams(location.search).get('lang') || store.get('contes-lang') || ((navigator.language || '').startsWith('fr') ? 'fr' : 'en');
+if (!['fr', 'en'].includes(lang)) lang = 'fr';
+const TT = {
+  fr: { readMe: 'Lis-moi l’histoire', readSelf: 'Je lis tout seul', again: 'Relire l’histoire', more: 'D’autres contes', end: 'Joyeuse Épiphanie !', kick: 'Noël · épisode 2', back: '← Les contes', parents: 'Pour les parents : cette histoire peut utiliser le mouvement du téléphone, pour guider la caravane. Rien n’est enregistré ni envoyé. Le doigt fait la même chose ; sur ordinateur, les flèches et la barre d’espace.', keys: 'Espace ou → : suivant',
+    hello: 'Touche Marie', portal: 'Touche la crèche', light: 'Frotte l’écran avec ton doigt', stamp: 'Pose ton doigt sur le parchemin', route: 'Trace le chemin avec ton doigt', walk: 'Un pied, puis l’autre', knock: 'Frappe à la porte', lamp: 'Promène la lanterne dans le noir', swaddle: 'Enroule la couverture : glisse ton doigt autour du bébé', lay: 'Glisse le bébé dans la crèche', rock: 'Berce doucement : balance le téléphone, ou glisse ton doigt lentement', rockBtn: 'Appuie longtemps ici pour bercer', fast: 'Doucement…', count: 'Touche chaque mouton', sounds: 'Touche', sing: 'Chante « Gloria ! »', singBtn: 'Appuie longtemps ici pour chanter', lamb: 'Guide l’agneau jusqu’à la lumière', heart: 'Garde ton doigt sur le cœur', star0: 'Touche l’étoile', sky: 'Trouve l’étoile qui n’est pas sur la carte', load: 'Glisse les trésors sur les chameaux', steer: 'Garde la caravane sous l’étoile : penche le téléphone ou glisse ton doigt', loupe: 'Promène la loupe de droite à gauche', lock: 'Garde ton doigt sur le cadenas', follow: 'Suis l’étoile : trace la route', stop: 'Touche l’étoile quand elle est au-dessus de la fenêtre qui brille', rubGold: 'Frotte le coffre avec ton doigt', rubIncense: 'Frotte l’encens avec ton doigt', home: 'Trace l’autre chemin, loin du palais', carnet: 'Touche chaque tampon', stampWon: 'Nouveau tampon !', chart: 'La carte des mages', night: 'Nuit', again2: 'Encore…', notThis: 'Sur la carte !' },
+  en: { readMe: 'Read it to me', readSelf: 'I’ll read it myself', again: 'Read it again', more: 'More stories', end: 'Happy Epiphany!', kick: 'Christmas · episode 2', back: '← Stories', parents: 'For parents: this story can use the phone’s movement, to guide the caravan. Nothing is recorded or sent. A finger does the same; on a computer, the arrow keys and the space bar.', keys: 'Space or →: next',
+    hello: 'Touch Mary', portal: 'Touch the nativity scene', light: 'Rub the screen with your finger', stamp: 'Put your finger on the scroll', route: 'Trace the road with your finger', walk: 'One foot, then the other', knock: 'Knock on the door', lamp: 'Move the lantern through the dark', swaddle: 'Wrap the blanket: slide your finger around the baby', lay: 'Slide the baby into the manger', rock: 'Rock gently: sway the phone, or slide your finger slowly', rockBtn: 'Press and hold here to rock', fast: 'Gently…', count: 'Touch each sheep', sounds: 'Touch', sing: 'Sing “Gloria!”', singBtn: 'Press and hold here to sing', lamb: 'Guide the lamb to the light', heart: 'Keep your finger on the heart', star0: 'Touch the star', sky: 'Find the star that isn’t on the map', load: 'Slide the treasures onto the camels', steer: 'Keep the caravan under the star: tilt the phone or slide your finger', loupe: 'Move the magnifying glass from right to left', lock: 'Keep your finger on the padlock', follow: 'Follow the star: trace the road', stop: 'Touch the star when it is above the shining window', rubGold: 'Rub the chest with your finger', rubIncense: 'Rub the incense with your finger', home: 'Trace the other road, far from the palace', carnet: 'Touch each stamp', stampWon: 'New stamp!', chart: 'The wise men’s map', night: 'Night', again2: 'Again…', notThis: 'On the map!' },
+};
+let T = TT[lang];
+function applyLang() {
+  T = TT[lang]; document.documentElement.lang = lang;
+  for (const el of document.querySelectorAll('[data-t]')) el.textContent = T[el.dataset.t];
+  $('title').textContent = TITLE[lang]; document.querySelector('.kick').textContent = T.kick; document.querySelector('.back').textContent = T.back;
+  for (const el of document.querySelectorAll('a[href^="../"]')) el.href = `../?lang=${lang}`;
+  for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
+  fetch(`voice/${lang}/timings.json?v=202611281700`).then((r) => r.json()).then((j) => (timings = j));
+}
+for (const b of document.querySelectorAll('[data-lang]')) b.onclick = () => { lang = b.dataset.lang; store.set('contes-lang', lang); applyLang(); };
+
+let timings = {}, mode = 'voice', idx = -1, branch = null, busy = false, ctx = null, sfxBuf = {}, gen = 0; // gen: which page is showing; animations of an older page stop
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+applyLang();
+
+// ---------------------------------------------------------------- sound: decoded effects, streamed ambience, voices and theme
+const SFX = ['page', 'pop', 'found', 'tap', 'chime', 'lamp', 'step', 'sparkle', 'gust', 'whoosh', 'bloop', 'baa', 'goat', 'door', 'coo', 'beam', 'knock', 'stamp', 'scroll', 'wrap', 'yawn', 'fuss', 'heart', 'bell', 'crackle', 'glow', 'hum'];
+async function initAudio() {
+  ctx = new (window.AudioContext || window.webkitAudioContext)(); await ctx.resume();
+  SFX.forEach(async (n) => { try { const r = await fetch(`sfx/${n}.mp3`); sfxBuf[n] = await ctx.decodeAudioData(await r.arrayBuffer()); } catch {} });
+}
+// the mix: the storyteller always on top. Effects sit about 12 dB under the voice and dip further while
+// someone speaks; the theme and the ambience duck under every line and come back between lines.
+const SFX_GAIN = 0.3; let speaking = false;
+function sfx(n, vol = 1) { feel.sfx(n); const b = sfxBuf[n]; if (!ctx || !b) return; const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; g.gain.value = vol * SFX_GAIN * (speaking ? 0.55 : 1); s.connect(g).connect(ctx.destination); s.start(); return s; }
+const music = new Audio('sfx/theme.mp3'); music.loop = true; music.volume = 0.22;
+const amb = new Audio(); amb.loop = true; amb.volume = 0.35;
+const AMB = { 'amb-home': 0.4, 'amb-village': 0.35, 'amb-room': 0.4, 'amb-city': 0.3, 'amb-desert': 0.35, 'amb-sunset': 0.4, 'amb-stable': 0.45, 'amb-hills': 0.42 }; let ambLevel = 0.35;
+function ambience(n) { const src = `sfx/${n}.mp3`; ambLevel = AMB[n] ?? 0.35; if (!amb.src.endsWith(src)) { amb.src = src; amb.play().catch(() => {}); } fade(amb, ambLevel * (speaking ? 0.45 : 1)); }
+const fades = new Map();
+function fade(el, to, ms = 350) { clearInterval(fades.get(el)); const from = el.volume, t0 = performance.now(); fades.set(el, setInterval(() => { const k = Math.min(1, (performance.now() - t0) / ms); el.volume = Math.max(0, Math.min(1, from + (to - from) * k)); if (k >= 1) clearInterval(fades.get(el)); }, 30)); }
+function duck(on) { speaking = on; fade(music, on ? 0.08 : 0.22); fade(amb, ambLevel * (on ? 0.45 : 1)); }
+const voice = new Audio(); voice.preload = 'auto';
+// a short buzz on phones that can (Android); elsewhere the panel shakes and the sound does the work
+const buzz = (p) => { try { navigator.vibrate?.(p); } catch {} };
+
+// ---------------------------------------------------------------- the microphone: how loud the child is (0 to 1)
+// Asked for only when a panel needs it; refused or missing, the interaction falls back to a button or the finger.
+let micAn = null, micBuf = null, micAsked = false, micSt = null;
+// close the microphone as soon as a game no longer needs it: while it is open, Android plays everything in "call"
+// mode (quiet, mono, noisy), so the rest of the story would sound bad
+function micOff() { if (!micSt) return; try { micSt.getTracks().forEach((t) => t.stop()); } catch {} micSt = null; micAn = null; micAsked = false; }
+async function micOn() {
+  if (micAn || micAsked) return !!micAn; micAsked = true;
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false } });
+    micSt = st; const src = ctx.createMediaStreamSource(st); micAn = ctx.createAnalyser(); micAn.fftSize = 1024; micBuf = new Float32Array(micAn.fftSize); src.connect(micAn);
+    return true;
+  } catch { return false; }
+}
+function micLevel() {
+  if (!micAn) return 0; micAn.getFloatTimeDomainData(micBuf); let s = 0; for (const v of micBuf) s += v * v;
+  return Math.min(1, Math.sqrt(s / micBuf.length) * 6); // a normal voice is around 0.1 to 0.3, a shout above 0.5
+}
+
+// ---------------------------------------------------------------- the keyboard (laptops): an interaction may take the keys
+let keyAct = null; const keys = new Set();
+addEventListener('keydown', (e) => {
+  keys.add(e.key);
+  if (keyAct?.(e, true)) { e.preventDefault(); return; }
+  if ([' ', 'Enter', 'ArrowRight'].includes(e.key) && idx >= 0) { e.preventDefault(); next(); }
+  else if (e.key === 'ArrowLeft' && idx >= 0) { e.preventDefault(); prev(); }
+});
+addEventListener('keyup', (e) => { keys.delete(e.key); keyAct?.(e, false); });
+
+// ---------------------------------------------------------------- the panel
+function wordsOf(id) { return timings[id]?.words || []; }
+function showLine(ln) {
+  const words = wordsOf(ln.id), el = document.createElement('div');
+  if (ln.cap) for (const c of $('layer').querySelectorAll('.cap')) c.remove(); // one narration box at a time
+  else { const old = [...$('layer').querySelectorAll('.bubble')]; if (old.length >= 2) { old[0]._tail?.remove(); old[0].remove(); } } // two bubbles at most, the oldest leaves first
+  el.className = ln.cap ? 'cap' : 'bubble ' + (WHO[timings[ln.id]?.who] || '');
+  // a lone ! ? : ; stays on the line of the word before it (French puts a space before them)
+  el.innerHTML = words.map((w, i) => (i && /^[!?:;»]+$/.test(w.w) ? '&nbsp;' : i ? ' ' : '') + `<span data-i="${i}">${w.w}</span>`).join('');
+  if (!ln.cap) { el.style.left = ln.b[0] * 100 + '%'; el.style.top = ln.b[1] * 100 + '%'; }
+  $('layer').append(el);
+  if (!ln.cap) requestAnimationFrame(() => tail(el, ln.t));
+  sfx('pop', 0.45);
+  return el;
+}
+// the bubble's tail: a curved wedge from the bubble towards the one who speaks
+function tail(el, t) {
+  const P = $('panel').getBoundingClientRect(), r = el.getBoundingClientRect();
+  const cx = r.left + r.width / 2 - P.left, cy = r.top + r.height / 2 - P.top, tx = t[0] * P.width, ty = t[1] * P.height;
+  const dx = tx - cx, dy = ty - cy, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+  const edge = Math.min(r.width / 2 / Math.max(0.01, Math.abs(ux)), r.height / 2 / Math.max(0.01, Math.abs(uy))) - 4;
+  const bx = cx + ux * edge, by = cy + uy * edge, tip = Math.min(len - edge - 12, 70), px = bx + ux * tip, py = by + uy * tip, w = 13;
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('class', 'tail'); s.setAttribute('viewBox', `0 0 ${P.width} ${P.height}`);
+  s.innerHTML = `<path d="M${bx - uy * w},${by + ux * w} Q${(bx + px) / 2 + uy * 4},${(by + py) / 2 - ux * 4} ${px},${py} Q${(bx + px) / 2 - uy * 2},${(by + py) / 2 + ux * 2} ${bx + uy * w},${by - ux * w} Z"/>`;
+  if (el.parentNode !== $('layer')) return; // the bubble left before its tail was drawn
+  $('layer').insertBefore(s, el); el._tail = s;
+}
+// the last line read on this panel, so the child can hear an instruction again
+let last = null;
+async function say(ln) {
+  const el = showLine(ln); last = { ln, el };
+  if (mode !== 'voice') await readPause(el); else await speak(ln, el);
+  if (ln.stamp != null) await stampToast(ln.stamp);
+  return el;
+}
+// a lesson learned: its stamp lands in the travel journal (kept for the last page)
+const won = new Set();
+function stampToast(i) {
+  return new Promise((res) => {
+    won.add(i); const s = STAMPS[i], el = document.createElement('div'); el.className = 'stampwin';
+    el.innerHTML = `<i>${s.icon}</i><b>${T.stampWon}</b><small>${s[lang]}</small>`; document.body.append(el);
+    sfx('stamp'); buzz([45, 60, 70]); requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('on')));
+    setTimeout(() => { el.classList.remove('on'); setTimeout(() => { el.remove(); res(); }, 450); }, 1900);
+  });
+}
+
+// "I read it myself": a line stays until the reader has read it. A touch anywhere (or a click, space, Enter or the
+// right arrow) brings the next one; a small blinking arrow at the end of the line, and the hint under the page, say
+// so. The buttons (back, home, listen again) keep working meanwhile.
+function readPause(el) {
+  return new Promise((res) => {
+    const more = document.createElement('i'); more.className = 'more'; more.textContent = '▸'; el.append(more);
+    const h = document.getElementById('hint'), own = h && !h.textContent;
+    if (own) { h.textContent = matchMedia('(pointer: fine)').matches ? (lang === 'fr' ? 'Clique ou appuie sur Espace pour continuer' : 'Click or press Space to continue') : (lang === 'fr' ? 'Touche l’écran pour continuer' : 'Tap the screen to continue'); h.classList.add('on', 'tap'); }
+    const t0 = performance.now();
+    const go = (e) => {
+      if (performance.now() - t0 < 400) return;
+      if (e.type === 'keydown' && ![' ', 'Enter', 'ArrowRight'].includes(e.key)) return;
+      if (e.type === 'pointerdown' && e.target.closest?.('button, a')) return;
+      e.preventDefault(); e.stopPropagation(); done();
+    };
+    const done = () => { removeEventListener('pointerdown', go, true); removeEventListener('keydown', go, true); clearInterval(iv); more.remove(); if (own && h.classList.contains('tap')) { h.textContent = ''; h.classList.remove('on', 'tap'); } res(); };
+    const iv = setInterval(() => { if (!el.isConnected) done(); }, 200); // the page was left
+    addEventListener('pointerdown', go, true); addEventListener('keydown', go, true);
+  });
+}
+// each reading has its own number, so a line started over another one (a replay) ends the older one cleanly
+let tok = 0;
+async function speak(ln, el) {
+  const me = ++tok; voice.src = `voice/${lang}/${ln.id}.mp3?v=202611281700`; duck(true);
+  try { await voice.play(); } catch { duck(false); return el; }
+  const words = wordsOf(ln.id), spans = el.querySelectorAll('span');
+  await new Promise((res) => {
+    const tick = () => {
+      const t = voice.currentTime;
+      spans.forEach((s, i) => s.classList.toggle('on', words[i] && t >= words[i].s - 0.03 && t < (words[i + 1]?.s ?? 99)));
+      if (me !== tok) { spans.forEach((s) => s.classList.remove('on')); res(); }
+      else if (voice.ended || voice.paused) { spans.forEach((s) => s.classList.remove('on')); duck(false); res(); } else requestAnimationFrame(tick);
+    };
+    tick();
+  });
+  await sleep(250);
+  return el;
+}
+// the speaker button: read the last line again (also in "I read it myself" mode), never over another line
+async function replay() {
+  if (!last || !voice.paused || replaying) return; replaying = true; $('replay').classList.add('busy');
+  const { ln } = last; let el = last.el;
+  if (!el.isConnected) { el = showLine(ln); last.el = el; }
+  await speak(ln, el); replaying = false; $('replay').classList.remove('busy');
+}
+let replaying = false;
+$('replay').onclick = (e) => { e.stopPropagation(); replay(); };
+function clearTexts() { for (const el of $('layer').querySelectorAll('.cap, .bubble, .tail')) { el.classList.add('gone'); setTimeout(() => el.remove(), 450); } } // when a game starts, the texts already read fly away so they never hide it
+function clearLayer() { $('layer').innerHTML = ''; $('spots').innerHTML = ''; }
+
+
+function word(text, at) { const el = document.createElement('div'); el.className = 'pow'; el.textContent = text; el.style.left = at[0] * 100 + '%'; el.style.top = at[1] * 100 + '%'; el.style.setProperty('--r', (Math.random() * 16 - 8).toFixed(1) + 'deg'); $('layer').append(el); setTimeout(() => el.remove(), 1600); }
+// the instruction under the panel; the speaker button nods once so the child knows it can listen again
+function hint(text) { $('hint').textContent = text || ''; $('hint').classList.toggle('on', !!text); if (text) { const r = $('replay'); r.classList.remove('nod'); void r.offsetWidth; r.classList.add('nod'); } }
+function spot(at, r, cls = '') { const el = document.createElement('button'); el.className = 'spot ' + cls; el.style.left = at[0] * 100 + '%'; el.style.top = at[1] * 100 + '%'; el.style.width = el.style.height = (r * 2 * 100) + '%'; $('spots').append(el); return el; }
+const toPanel = (e) => { const r = $('panel').getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]; };
+const near = (p, q, r) => Math.hypot((p[0] - q[0]) * FW, (p[1] - q[1]) * FH) < r * FW;
+// one finger on the panel: down, move and up handlers, removed when the interaction ends
+function drag(on) {
+  const P = $('panel'); let down = false;
+  P.onpointerdown = (e) => { e.preventDefault(); down = true; try { P.setPointerCapture(e.pointerId); } catch {} on.down?.(toPanel(e), e); };
+  P.onpointermove = (e) => { if (down || (on.hover && e.pointerType === 'mouse')) on.move?.(toPanel(e), down); };
+  P.onpointerup = P.onpointercancel = (e) => { if (!down) return; down = false; on.up?.(toPanel(e)); };
+  return () => { P.onpointerdown = P.onpointermove = P.onpointerup = P.onpointercancel = null; };
+}
+// a circle that draws itself around what was found
+function ring(at) { const el = document.createElement('div'); el.className = 'foundring'; el.style.left = at[0] * 100 + '%'; el.style.top = at[1] * 100 + '%'; $('layer').append(el); setTimeout(() => el.remove(), 2600); }
+
+// ---------------------------------------------------------------- effects: sparkles over the panel
+const fx = $('fx'), g = fx.getContext('2d'), lens = $('lens'), L = lens.getContext('2d'); let FW = 0, FH = 0; const sparks = [];
+// the layout size of the panel, not the box of a page still turning in 3D
+// the panel takes the height left on the screen once the hint, the key tip and the buttons are in, never more
+// than its own shape allows in the width; measured, because phones differ in bars, notches and fonts
+function fitPanel() {
+  const pg = $('page'), pn = $('panel'), cs = getComputedStyle(pg), gap = parseFloat(cs.rowGap) || 10;
+  let used = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + 14; // 14: the panel's white edge and shadow
+  for (const el of pg.children) { if (el === pn) continue; const s = getComputedStyle(el); if (s.display === 'none' || s.position === 'absolute') continue; used += el.offsetHeight + gap; }
+  const [w, h] = (pn.style.aspectRatio || '1000 / 1778').split('/').map(Number), maxW = pg.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 22;
+  pn.style.height = Math.max(200, Math.min(pg.clientHeight - used, maxW * h / w)) + 'px';
+}
+function fitFx() { fitPanel(); const d = Math.min(devicePixelRatio || 1, 2); FW = $('panel').clientWidth; FH = $('panel').clientHeight; for (const [c, k] of [[fx, g], [lens, L]]) { c.width = FW * d; c.height = FH * d; k.setTransform(d, 0, 0, d, 0, 0); } }
+function burst(x, y, n = 26, hue = 45) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, v = 1 + Math.random() * 3.5; sparks.push({ x: x * FW, y: y * FH, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 1, life: 1, hue: hue + Math.random() * 30 }); } }
+function drawFx() {
+  requestAnimationFrame(drawFx); g.clearRect(0, 0, FW, FH); g.globalCompositeOperation = 'lighter';
+  for (const s of sparks) { s.x += s.vx; s.y += s.vy; s.vy += 0.05; s.life -= 0.02; g.fillStyle = `hsla(${s.hue},100%,72%,${Math.max(0, s.life)})`; g.beginPath(); g.arc(s.x, s.y, 2.4 * s.life + 0.6, 0, 7); g.fill(); }
+  for (let i = sparks.length - 1; i >= 0; i--) if (sparks[i].life <= 0) sparks.splice(i, 1);
+  g.globalCompositeOperation = 'source-over';
+}
+requestAnimationFrame(drawFx);
+const shake = () => { const a = $('art'); a.classList.remove('shake'); void a.offsetWidth; a.classList.add('shake'); };
+const img = (src) => new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(i); i.src = src; });
+// the meter under the panel (loudness, steering time)
+const meter = (k) => { $('meter').classList.toggle('on', k != null); if (k != null) $('meter').style.setProperty('--m', Math.max(0, Math.min(1, k))); };
+// a button under the panel for what the microphone would do (a child who cannot or will not use it)
+function altButton(label) { const b = document.createElement('button'); b.className = 'alt'; b.textContent = label; $('panel').append(b); return b; }
+
+// ---------------------------------------------------------------- the games
+// ---------------------------------------------------------------- the lamp and the magnifying glass
+// The lamp: the panel goes dark, a warm pool of light follows the finger (mouse, arrow keys); the glass: the panel
+// drawn enlarged inside a brass ring. What the child looks for is found after a moment under the light or the glass.
+function lensTool(kind, a) {
+  return new Promise((res) => {
+    hint(T[kind]); sfx(kind); const g0 = gen;
+    const art = $('art'), nw = art.naturalWidth, nh = art.naturalHeight, zoom = kind === 'loupe' ? 2.6 : 1;
+    let pos = a.start ? [...a.start] : [0.5, 0.62], held = 0, last = performance.now(), done = false, t0 = performance.now();
+    const R = () => FW * (kind === 'loupe' ? 0.2 : 0.25);
+    const draw = () => {
+      if (done || gen !== g0) return; requestAnimationFrame(draw);
+      const now = performance.now(), dt = now - last, x = pos[0] * FW, y = pos[1] * FH; last = now;
+      L.clearRect(0, 0, FW, FH);
+      if (kind === 'lamp') {
+        L.fillStyle = 'rgba(6,4,12,0.95)'; L.fillRect(0, 0, FW, FH);
+        const r = R() * (1 + Math.sin(now / 90) * 0.03), gr = L.createRadialGradient(x, y, r * 0.15, x, y, r);
+        gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.65, 'rgba(0,0,0,0.85)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+        L.globalCompositeOperation = 'destination-out'; L.fillStyle = gr; L.beginPath(); L.arc(x, y, r, 0, 7); L.fill(); L.globalCompositeOperation = 'source-over';
+        L.fillStyle = 'rgba(255,170,60,0.12)'; L.beginPath(); L.arc(x, y, r * 0.8, 0, 7); L.fill();
+        L.fillStyle = '#ffd27a'; L.beginPath(); L.ellipse(x, y - 4, 5, 9, 0, 0, 7); L.fill(); L.fillStyle = '#8a4b1f'; L.beginPath(); L.ellipse(x, y + 9, 13, 6, 0, 0, 7); L.fill();
+      } else {
+        L.save(); L.beginPath(); L.arc(x, y, R(), 0, 7); L.clip();
+        const sx = pos[0] * nw, sy = pos[1] * nh, sw = (FW / zoom) * (nw / FW), sh = (FH / zoom) * (nh / FH);
+        L.drawImage(art, sx - sw * pos[0], sy - sh * pos[1], sw, sh, 0, 0, FW, FH); L.restore();
+        L.lineWidth = 9; L.strokeStyle = '#b5862f'; L.beginPath(); L.arc(x, y, R(), 0, 7); L.stroke();
+        L.lineWidth = 2; L.strokeStyle = 'rgba(255,240,200,0.6)'; L.beginPath(); L.arc(x, y, R() - 5, 3.6, 4.6); L.stroke();
+        if (a.rtl) { const ax = x - R() - 18, wob = Math.sin(now / 200) * 5; L.fillStyle = 'rgba(255,214,110,0.95)'; L.strokeStyle = '#5a3a1c'; L.lineWidth = 3; L.beginPath(); L.moveTo(ax - 26 + wob, y); L.lineTo(ax + wob, y - 16); L.lineTo(ax + wob, y + 16); L.closePath(); L.fill(); L.stroke(); }
+        const ang = 0.75; L.lineCap = 'round'; L.lineWidth = 16; L.strokeStyle = '#5a3a1c'; L.beginPath(); L.moveTo(x + Math.cos(ang) * (R() + 6), y + Math.sin(ang) * (R() + 6)); L.lineTo(x + Math.cos(ang) * (R() + 70), y + Math.sin(ang) * (R() + 70)); L.stroke();
+      }
+      held = near(pos, a.at, Math.max(a.r, 0.08)) ? held + dt : 0; // small fingers: at least 8% of the picture
+      if (now - t0 > 9000 && Math.random() < 0.06) burst(a.at[0], a.at[1], 2, 50); // a little help after a while
+      if (held > 380) {
+        done = true; stop(); keyAct = null; L.clearRect(0, 0, FW, FH); sfx('found'); burst(a.at[0], a.at[1], 46); ring(a.at); hint('');
+        if (a.word) { const w = document.createElement('div'); w.className = 'hebrew'; w.textContent = a.word[lang]; w.style.left = '50%'; w.style.top = (a.at[1] - 0.17) * 100 + '%'; $('layer').append(w); setTimeout(() => w.remove(), 5200); }
+        if (a.after) { swapArt(a.after); if (a.amb) ambience(a.amb); }
+        setTimeout(res, a.word ? 2200 : 600);
+      }
+    };
+    requestAnimationFrame(draw);
+    const stop = drag({ hover: true, down: (p) => (pos = p), move: (p) => (pos = p) });
+    keyAct = (e, down) => { if (!down) return; if (e.key === ' ') { pos = [...a.at]; return true; } const d = { ArrowLeft: [-0.04, 0], ArrowRight: [0.04, 0], ArrowUp: [0, -0.03], ArrowDown: [0, 0.03] }[e.key]; if (!d) return; pos = [Math.max(0, Math.min(1, pos[0] + d[0])), Math.max(0, Math.min(1, pos[1] + d[1]))]; return true; };
+  });
+}
+
+// a silver coin, drawn here (the painted one carried lettering): a disc, its rim, an olive branch
+function coinURL() {
+  const c = document.createElement('canvas'); c.width = c.height = 120; const k = c.getContext('2d');
+  const g = k.createRadialGradient(46, 40, 6, 60, 60, 58); g.addColorStop(0, '#fbfbf6'); g.addColorStop(0.6, '#c9c9c2'); g.addColorStop(1, '#8c8c86');
+  k.fillStyle = g; k.beginPath(); k.arc(60, 60, 56, 0, 7); k.fill(); k.lineWidth = 5; k.strokeStyle = '#7a7a74'; k.stroke();
+  k.lineWidth = 2; k.strokeStyle = 'rgba(90,90,84,0.8)'; k.beginPath(); k.arc(60, 60, 44, 0, 7); k.stroke();
+  k.strokeStyle = '#6f6f69'; k.lineWidth = 3; k.beginPath(); k.moveTo(42, 82); k.quadraticCurveTo(58, 60, 78, 36); k.stroke();
+  k.fillStyle = '#7d7d77'; for (let i = 0; i < 5; i++) { const u = 0.2 + i * 0.15, x = 42 + (78 - 42) * u, y = 82 + (36 - 82) * u; for (const s of [-1, 1]) { k.beginPath(); k.ellipse(x + s * 7, y + 3, 7, 3, s * 0.7, 0, 7); k.fill(); } }
+  return c.toDataURL();
+}
+
+
+// a soft four-pointed star with a golden glow (the new star, the star that guides)
+function starDraw(k, x, y, r, now) {
+  const tw = 1 + Math.sin(now / 260) * 0.08, R = r * tw, gr = k.createRadialGradient(x, y, 0, x, y, R * 2.6);
+  gr.addColorStop(0, 'rgba(255,240,190,0.95)'); gr.addColorStop(0.35, 'rgba(255,205,110,0.45)'); gr.addColorStop(1, 'rgba(255,190,90,0)');
+  k.fillStyle = gr; k.beginPath(); k.arc(x, y, R * 2.6, 0, 7); k.fill();
+  k.fillStyle = '#fffbe8'; k.beginPath();
+  for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 - Math.PI / 2, d = i % 2 ? R * 0.28 : R; k.lineTo(x + Math.cos(a) * d, y + Math.sin(a) * d); }
+  k.closePath(); k.fill();
+}
+
+const acts = {
+  loupe: (a) => lensTool('loupe', a),
+  lamp: (a) => lensTool('lamp', a),
+  // several steps in one panel: interactions and lines in between
+  seq: async (a) => { const g0 = gen; for (const s of a.steps) { if (gen !== g0) return; if (s.say) await say(s.say); else { clearTexts(); await acts[s.kind](s); } } },
+  hello: (a) => new Promise((res) => {
+    hint(T.hello); const s = spot(a.at, a.r, 'soft');
+    const go = () => { s.remove(); keyAct = null; sfx('chime'); word(a.word[lang], [a.at[0], a.at[1] - 0.18]); burst(a.at[0], a.at[1] - 0.12, 30); hint(''); setTimeout(res, 800); };
+    s.onpointerdown = (e) => { e.stopPropagation(); go(); };
+    keyAct = (e, down) => { if (down && e.key === ' ') { go(); return true; } };
+  }),
+  // what will Jonah do? two buttons; either answer leads on, with its own line
+  ask: (a) => new Promise((res) => {
+    hint(T.choose); const bs = [];
+    const pick = async (o) => { for (const b of bs) b.remove(); keyAct = null; sfx('found'); burst(o.at[0], o.at[1], 30); hint(''); await say(o.line); res(); };
+    for (const o of a.opts) { const b = document.createElement('button'); b.className = 'choice'; b.textContent = o[lang]; b.style.left = o.at[0] * 100 + '%'; b.style.top = o.at[1] * 100 + '%'; $('spots').append(b); bs.push(b); b.onpointerdown = (e) => { e.stopPropagation(); pick(o); }; }
+    keyAct = (e, down) => { if (!down) return; if (e.key === '1') { pick(a.opts[0]); return true; } if (e.key === '2' || e.key === ' ') { pick(a.opts[1]); return true; } };
+  }),
+  // Jonah's flight on the map: follow the dotted route with the finger, a little boat sails along it (space: it sails alone)
+  trace: (a) => new Promise((res) => {
+    hint(T.route); const pts = a.pts; let k = 0, active = false, done = false; const g0 = gen;
+    const start = spot(pts[0], 0.06, 'soft');
+    const boat = (x, y, ang) => { L.save(); L.translate(x, y); L.scale(-1, 1); const s = FW * 0.05; L.fillStyle = '#6b3d1c'; L.beginPath(); L.moveTo(-s, 0); L.lineTo(s, 0); L.lineTo(s * 0.7, s * 0.45); L.lineTo(-s * 0.7, s * 0.45); L.closePath(); L.fill(); L.fillStyle = '#fff6dc'; L.beginPath(); L.moveTo(0, -s * 1.3); L.lineTo(s * 0.8, -s * 0.1); L.lineTo(0, -s * 0.1); L.closePath(); L.fill(); L.strokeStyle = '#3b2610'; L.lineWidth = 2; L.beginPath(); L.moveTo(0, 0); L.lineTo(0, -s * 1.3); L.stroke(); L.restore(); };
+    const draw = () => {
+      L.clearRect(0, 0, FW, FH); L.lineCap = 'round';
+      L.setLineDash([6, 10]); L.lineWidth = 3; L.strokeStyle = 'rgba(120,40,20,0.45)'; L.beginPath(); pts.forEach(([x, y], i) => (i ? L.lineTo(x * FW, y * FH) : L.moveTo(x * FW, y * FH))); L.stroke();
+      if (k > 0) { L.setLineDash([10, 9]); L.lineWidth = 6; L.strokeStyle = '#c0392b'; L.beginPath(); for (let i = 0; i <= k; i++) { const [x, y] = pts[i]; i ? L.lineTo(x * FW, y * FH) : L.moveTo(x * FW, y * FH); } L.stroke(); }
+      L.setLineDash([]); boat(pts[k][0] * FW, pts[k][1] * FH);
+    };
+    draw();
+    const finish = () => { if (done) return; done = true; stop(); keyAct = null; sfx('found'); const e = pts[pts.length - 1]; burst(e[0], e[1], 40); word(lang === 'fr' ? 'TARSIS !' : 'TARSHISH!', [0.24, e[1] - 0.08]); hint(''); setTimeout(() => { if (gen === g0) { L.clearRect(0, 0, FW, FH); res(); } }, 1400); };
+    const stop = drag({
+      down: (p) => { active = near(p, pts[Math.max(0, k)], 0.12); if (active && start.isConnected) { start.remove(); sfx('whoosh', 0.6); } },
+      move: (p, down) => { if (!down || !active) return; while (k < pts.length - 1 && near(p, pts[k + 1], 0.1)) { k++; if (k % 3 === 0) { burst(pts[k][0], pts[k][1], 4, 200); sfx('bloop', 0.4); } } draw(); if (k >= pts.length - 1) finish(); },
+    });
+    keyAct = (e, down) => { if (down && e.key === ' ' && !active) { active = true; start.remove(); const step = () => { if (gen !== g0 || done) return; k++; draw(); if (k >= pts.length - 1) finish(); else setTimeout(step, 90); }; step(); return true; } };
+  }),
+  // drag things to a place: coins into the captain's hand (they stack), cargo over the rail (it falls into the
+  // sea), the sackcloth onto the king (the picture changes). The space bar moves the next thing on its own.
+  drop: (a) => new Promise((res) => {
+    hint(T[a.hint]); let n = 0; const g0 = gen; const coin = coinURL();
+    const inZone = (p) => a.to ? near(p, a.to.at, a.to.r) : a.zones.some(([x0, y0, x1, y1]) => p[0] >= x0 && p[0] <= x1 && p[1] >= y0 && p[1] <= y1);
+    const target = a.to ? spot(a.to.at, a.to.r, 'soft') : null;
+    const land = (el, p) => {
+      el.onpointerdown = el.onpointermove = el.onpointerup = el.onpointercancel = null; el.classList.remove('glow', 'held'); el._done = true; n++;
+      if (a.mode === 'stack') { el.style.left = (a.to.at[0] + (n - 2) * 0.012) * 100 + '%'; el.style.top = (a.to.at[1] - n * 0.012) * 100 + '%'; el.style.width = a.items[0].w * 70 + '%'; sfx(a.sfx); burst(a.to.at[0], a.to.at[1], 16, 50); if (a.count) word(String(n), [a.to.at[0] + 0.1, a.to.at[1] - 0.12]); }
+      else if (a.mode === 'sea') {
+        // over the rail it tips and falls into the waves, a splash and rings of foam
+        const side = p[0] < 0.5 ? -1 : 1, x = side < 0 ? 0.08 : 0.93; el.style.transition = 'left .7s ease-in, top .7s ease-in, transform .7s, opacity .7s'; el.style.left = x * 100 + '%'; el.style.top = Math.min(0.95, p[1] + 0.12) * 100 + '%'; el.style.transform = `translate(-50%,-50%) rotate(${side * 120}deg) scale(.6)`; el.style.opacity = '0';
+        setTimeout(() => { if (gen !== g0) return; sfx(a.sfx); buzz(40); burst(x, Math.min(0.95, p[1] + 0.12), 30, 190); word(a.word[lang], [x < 0.5 ? 0.2 : 0.78, p[1]]); el.remove(); }, 650);
+      } else if (a.mode === 'load') { sfx(a.sfx); buzz([45, 60, 70]); el.style.transition = 'opacity .5s, transform .5s'; el.style.opacity = '0'; el.style.transform = 'translate(-50%,-50%) scale(.5)'; burst(p[0], p[1], 30, 45); word(String(n), [p[0], p[1] - 0.1]); if (n === a.items.length) swapArt(a.after); setTimeout(() => el.remove(), 600);
+      } else { sfx(a.sfx); buzz([45, 60, 70]); el.style.opacity = '0'; el.style.transform = 'translate(-50%,-50%) scale(1.6)'; swapArt(a.after); burst(a.to.at[0], a.to.at[1], 40, 35); setTimeout(() => el.remove(), 600); }
+      if (n === a.items.length) { target?.remove(); keyAct = null; hint(''); setTimeout(() => { if (gen === g0) res(); }, a.mode === 'swap' || a.mode === 'load' ? 1400 : 1100); }
+    };
+    const els = a.items.map((it) => {
+      const el = document.createElement('img'); el.src = it.src === 'coin' ? coin : it.src; el.className = 'item glow'; el.style.width = it.w * 100 + '%'; el.style.left = it.at[0] * 100 + '%'; el.style.top = it.at[1] * 100 + '%'; el.draggable = false; $('spots').append(el); el._home = it.at;
+      el.onpointerdown = (e) => {
+        e.preventDefault(); e.stopPropagation(); el.classList.add('held'); try { el.setPointerCapture(e.pointerId); } catch {} sfx('tap', 0.5);
+        el.onpointermove = (ev) => { const p = toPanel(ev); el.style.left = p[0] * 100 + '%'; el.style.top = p[1] * 100 + '%'; };
+        el.onpointerup = el.onpointercancel = (ev) => { el.onpointermove = null; el.classList.remove('held'); const p = toPanel(ev); if (inZone(p)) land(el, p); else { el.style.left = el._home[0] * 100 + '%'; el.style.top = el._home[1] * 100 + '%'; } };
+      };
+      return el;
+    });
+    keyAct = (e, down) => { if (down && e.key === ' ') { const el = els.find((x) => !x._done); if (el) { const p = a.to ? a.to.at : [0.1, el._home[1]]; land(el, p); } return true; } };
+  }),
+  // blow into the sail (microphone), or rub it with the finger: the full sail appears where the wind has been
+  blow: (a) => new Promise(async (res) => {
+    hint(T.blow); const after = await img(`art/${a.after}.jpg`); const mic = await micOn(); const g0 = gen;
+    const M = document.createElement('canvas'); M.width = 60; M.height = Math.round(60 * FH / FW); const m = M.getContext('2d');
+    let done = false, lastS = 0;
+    const paint = () => { L.clearRect(0, 0, FW, FH); L.drawImage(after, 0, 0, FW, FH); L.globalCompositeOperation = 'destination-in'; L.drawImage(M, 0, 0, FW, FH); L.globalCompositeOperation = 'source-over'; };
+    const cover = () => { const d = m.getImageData(0, 0, M.width, M.height).data; let on = 0, all = 0; for (let y = 0; y < M.height; y++) for (let x = 0; x < M.width; x++) { const u = x / M.width, v = y / M.height; if (u < a.box[0] || u > a.box[2] || v < a.box[1] || v > a.box[3]) continue; all++; if (d[(y * M.width + x) * 4 + 3] > 100) on++; } return on / all; };
+    const clear = (p, r) => { m.fillStyle = '#000'; m.beginPath(); m.arc(p[0] * M.width, p[1] * M.height, M.width * r, 0, 7); m.fill(); paint(); if (Math.random() < 0.5) burst(p[0], p[1], 2, 190); const now = performance.now(); if (now - lastS > 500) { lastS = now; sfx('gust', 0.5); } check(); };
+    const check = () => { if (!done && cover() > 0.6) { done = true; stop(); keyAct = null; alt.remove(); sfx('found'); swapArt(a.after); word(lang === 'fr' ? 'EN AVANT !' : 'AWAY WE GO!', [0.5, 0.6]); burst(0.55, 0.4, 40, 190); setTimeout(() => L.clearRect(0, 0, FW, FH), 900); hint(''); setTimeout(res, 1200); } };
+    const stop = drag({ down: (p) => clear(p, 0.1), move: (p, down) => down && clear(p, 0.1) });
+    const alt = altButton(T.blowBtn); alt.onpointerdown = (e) => { e.stopPropagation(); for (let i = 0; i < 8; i++) clear([a.box[0] + Math.random() * (a.box[2] - a.box[0]), a.box[1] + Math.random() * (a.box[3] - a.box[1])], 0.08); };
+    keyAct = (e, down) => { if (down && e.key === ' ') { alt.onpointerdown(new PointerEvent('pointerdown')); return true; } };
+    // a breath fills the sail from its middle outwards
+    const tick = () => { if (done || gen !== g0) return; const lv = mic ? micLevel() : 0; if (lv > 0.12) for (let i = 0; i < 3; i++) clear([a.box[0] + Math.random() * (a.box[2] - a.box[0]), a.box[1] + Math.random() * (a.box[3] - a.box[1])], 0.05 + lv * 0.05); requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  }),
+  // the storm: the waves rock the ship, the child keeps it upright by tilting the phone the other way (or sliding the
+  // finger, or the arrow keys). Rain, spray and lightning all the while; the meter fills while the ship is level.
+  storm: (a) => new Promise((res) => {
+    hint(T.steer); const g0 = gen, art = $('art'); art.classList.add('rock'); art.style.transformOrigin = `${a.pivot[0] * 100}% ${a.pivot[1] * 100}%`;
+    const vign = document.createElement('div'); vign.className = 'vign'; $('panel').insertBefore(vign, $('fx'));
+    let th = 0, om = 0, c = 0, tilt = null, finger = null, ok = 0, last = performance.now(), t0 = last, flashT = 0, nextBolt = 2500, warned = 0, done = false; const drops = [];
+    const onTilt = (e) => { if (e.gamma != null) tilt = Math.max(-1, Math.min(1, e.gamma / 25)); };
+    addEventListener('deviceorientation', onTilt);
+    const stop = drag({ hover: false, down: (p) => (finger = (p[0] - 0.5) * 2.4), move: (p, down) => { if (down) finger = (p[0] - 0.5) * 2.4; }, up: () => (finger = null) });
+    keyAct = (e) => ['ArrowLeft', 'ArrowRight'].includes(e.key);
+    const frame = (now) => {
+      if (gen !== g0) { removeEventListener('deviceorientation', onTilt); return; }
+      const dt = Math.min(0.05, (now - last) / 1000), t = (now - t0) / 1000; last = now;
+      let k = 0; if (keys.has('ArrowLeft')) k -= 1; if (keys.has('ArrowRight')) k += 1;
+      c = Math.max(-1.2, Math.min(1.2, (finger ?? 0) + (tilt ?? 0) + k));
+      const A = 26 + Math.min(t, 10) * 2.4, wave = A * (Math.sin(t * 0.95) + 0.6 * Math.sin(t * 2.3 + 1.3) + 0.3 * Math.sin(t * 4.1));
+      om += (wave + c * 60 - th * 3.2 - om * 1.6) * dt; th = Math.max(-34, Math.min(34, th + om * dt));
+      if (!done) art.style.transform = `scale(1.32) rotate(${th.toFixed(2)}deg) translateY(${(Math.sin(t * 1.7) * 1.5).toFixed(2)}%)`;
+      const level = Math.abs(th) < 11; if (level && !done) ok += dt; vign.classList.toggle('on', Math.abs(th) > 20 && !done);
+      if (Math.abs(th) > 22 && now - warned > 900) { warned = now; sfx('wave', 0.6); buzz(60); burst(th > 0 ? 0.75 : 0.2, 0.62, 18, 195); }
+      meter(ok / a.secs);
+      // rain streaks and lightning
+      for (let i = 0; i < 7; i++) drops.push({ x: Math.random() * FW * 1.3, y: -20, v: 16 + Math.random() * 8 });
+      g.strokeStyle = 'rgba(215,228,240,0.55)'; g.lineWidth = 1.5; g.beginPath();
+      for (const d of drops) { d.x -= d.v * 0.3; d.y += d.v; g.moveTo(d.x, d.y); g.lineTo(d.x + 5, d.y - 17); } g.stroke();
+      for (let i = drops.length - 1; i >= 0; i--) if (drops[i].y > FH + 20) drops.splice(i, 1);
+      if (now - t0 > nextBolt) { nextBolt = now - t0 + 3000 + Math.random() * 3000; flashT = now; sfx('thunder', 0.7); buzz([30, 40, 80]); }
+      if (now - flashT < 260) { g.fillStyle = `rgba(255,255,255,${0.55 * (1 - (now - flashT) / 260)})`; g.fillRect(0, 0, FW, FH); }
+      if (!done && ok >= a.secs) {
+        done = true; stop(); keyAct = null; removeEventListener('deviceorientation', onTilt); meter(null); vign.remove(); hint(''); sfx('found'); word(lang === 'fr' ? 'BRAVO !' : 'WELL DONE!', [0.5, 0.4]);
+        art.style.transition = 'transform 1.2s ease-out'; art.style.transform = 'scale(1.32) rotate(0deg)';
+        setTimeout(() => { if (gen === g0) res(); }, 1300);
+      }
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }),
+  // touch quickly, again and again (wake Jonah up, tickle the fish): a little word at each touch, then the picture changes
+  rapid: (a) => new Promise((res) => {
+    hint(T[a.hint]); const g0 = gen; let n = 0, done = false; const s = spot(a.at, a.r, 'soft');
+    const zz = a.snore ? setInterval(() => { if (gen !== g0 || done) return clearInterval(zz); word('Zzz', [a.snore[0] + Math.random() * 0.05, a.snore[1]]); if (Math.random() < 0.5) sfx('snore', 0.6); }, 1900) : 0;
+    if (a.meter) meter(0);
+    const hit = () => {
+      if (done) return; n++; sfx(a.sfx, 0.8); shake(); buzz(25); burst(a.at[0] + (Math.random() - 0.5) * 0.1, a.at[1] + (Math.random() - 0.5) * 0.08, 10, 40);
+      const w = a.words[lang]; if (n % 2 === 1) word(w[Math.floor(n / 2) % w.length], [a.at[0], a.at[1] - 0.14]);
+      if (a.meter) meter(n / a.n);
+      if (n >= a.n) { done = true; clearInterval(zz); s.remove(); keyAct = null; meter(null); hint(''); if (a.endSfx) sfx(a.endSfx); else sfx('found'); word(a.end[lang], [0.5, 0.45]); burst(a.at[0], a.at[1], 40); buzz([60, 40, 120]); swapArt(a.after); setTimeout(() => { if (gen === g0) res(); }, 1500); }
+    };
+    s.onpointerdown = (e) => { e.stopPropagation(); hit(); };
+    keyAct = (e, down) => { if (down && e.key === ' ') { hit(); return true; } };
+  }),
+  // casting lots: shake the pot (shake the phone, wiggle the finger left and right on it, or the space bar); the
+  // pebbles rattle and the marked one jumps out and rolls to Jonah
+  lots: (a) => new Promise(async (res) => {
+    hint(T.shake); const g0 = gen; const [pot, peb] = await Promise.all([img('art/pot.png'), img('art/pebble.png')]);
+    let energy = 0, wob = 0, lastX = null, dir = 0, lastR = 0, done = false, last = performance.now(), pebT = 0;
+    const onMotion = (e) => { const ac = e.accelerationIncludingGravity || e.acceleration; if (!ac) return; const m = Math.hypot(ac.x || 0, ac.y || 0, ac.z || 0); if (m > 16) kick(0.05); };
+    addEventListener('devicemotion', onMotion);
+    const kick = (k) => { if (done) return; energy = Math.min(1, energy + k); wob = Math.min(1.4, wob + 0.5); const now = performance.now(); if (now - lastR > 260) { lastR = now; sfx('rattle', 0.8); buzz(20); } };
+    const stop = drag({ down: (p) => (lastX = p[0]), move: (p, down) => { if (!down || lastX == null) return; const d = p[0] - lastX; if (Math.abs(d) > 0.02) { const nd = Math.sign(d); if (nd !== dir) { dir = nd; kick(0.09); } lastX = p[0]; } }, up: () => (lastX = null) });
+    keyAct = (e, down) => { if (down && e.key === ' ') { kick(0.12); return true; } };
+    const frame = (now) => {
+      if (gen !== g0) { removeEventListener('devicemotion', onMotion); return; } const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      wob = Math.max(0, wob - dt * 1.5); meter(energy);
+      L.clearRect(0, 0, FW, FH);
+      const w = FW * a.w, h = w * pot.height / pot.width, x = a.at[0] * FW, y = a.at[1] * FH;
+      if (!done && energy >= 1) { done = true; pebT = now; stop(); keyAct = null; removeEventListener('devicemotion', onMotion); meter(null); hint(''); sfx('bloop'); }
+      if (pebT) {
+        // the pebble's jump: up out of the pot, then bouncing and rolling to Jonah
+        const k = Math.min(1, (now - pebT) / 1400), px = x + (a.to[0] * FW - x) * k, py = y - h * 0.45 + (a.to[1] * FH - (y - h * 0.45)) * k - Math.sin(k * Math.PI) * FH * 0.18 - Math.abs(Math.sin(k * Math.PI * 3)) * FH * 0.02 * (1 - k), pw = FW * 0.07;
+        L.save(); L.translate(px, py); L.rotate(k * 12); L.drawImage(peb, -pw / 2, -pw * peb.height / peb.width / 2, pw, pw * peb.height / peb.width); L.restore();
+        if (k >= 1 && pebT > 0) { pebT = -1; sfx('found'); ring(a.to); burst(a.to[0], a.to[1], 40); word(a.word[lang], [a.to[0] - 0.12, a.to[1] - 0.16]); setTimeout(() => { if (gen === g0) res(); }, 1400); }
+      } else if (pebT < 0) { const pw = FW * 0.07; L.drawImage(peb, a.to[0] * FW - pw / 2, a.to[1] * FH - pw * 0.3, pw, pw * peb.height / peb.width); }
+      L.save(); L.translate(x, y + h / 2); L.rotate(Math.sin(now / 45) * 0.22 * wob); L.drawImage(pot, -w / 2, -h, w, h); L.restore();
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }),
+  // rowing: each stroke (a finger slid down, or the space bar) pulls the ship towards the land; at the end a huge wave
+  // pushes it all the way back
+  row: (a) => new Promise((res) => {
+    hint(T.row); const g0 = gen, art = $('art'); art.style.transition = 'transform .6s cubic-bezier(.2,.8,.3,1)'; let n = 0, from = null, done = false; meter(0);
+    const stroke = () => {
+      if (done) return; n++; sfx('oar'); buzz(30); burst(0.25, 0.75, 14, 195); meter(n / a.n);
+      art.style.transform = `scale(1.12) translateX(${(n * 1.3).toFixed(1)}%)`; word(String(n), [0.3, 0.5]);
+      if (n >= a.n) {
+        done = true; stop(); keyAct = null; meter(null); hint('');
+        setTimeout(() => { if (gen !== g0) return; sfx('wave'); buzz([80, 40, 200]); art.style.transition = 'transform 1.1s cubic-bezier(.5,0,.3,1)'; art.style.transform = 'scale(1.12) translateX(-3%) rotate(-3deg)'; shake(); burst(0.8, 0.55, 60, 195); word(lang === 'fr' ? 'TROP FORT !' : 'TOO STRONG!', [0.5, 0.4]); }, 700);
+        setTimeout(() => { if (gen !== g0) return; art.style.transform = 'scale(1.12)'; res(); }, 2600);
+      }
+    };
+    const stop = drag({ down: (p) => (from = p), move: (p, down) => { if (down && from && p[1] - from[1] > 0.1) { from = null; stroke(); } }, up: () => (from = null) });
+    keyAct = (e, down) => { if (down && (e.key === ' ' || e.key === 'ArrowDown')) { stroke(); return true; } };
+  }),
+  // rub the waves flat: the calm sea appears under the finger (space: wide strokes on their own)
+  paint: (a) => new Promise(async (res) => {
+    hint(T[a.hint || 'calm']); const after = await img(`art/${a.after}.jpg`); const g0 = gen;
+    const M = document.createElement('canvas'); M.width = 60; M.height = Math.round(60 * FH / FW); const m = M.getContext('2d'); let last = 0, done = false;
+    const cover = () => { const d = m.getImageData(0, 0, M.width, M.height).data; let on = 0, all = 0; for (let y = 0; y < M.height; y++) for (let x = 0; x < M.width; x++) { const u = x / M.width, v = y / M.height; if (u < a.box[0] || u > a.box[2] || v < a.box[1] || v > a.box[3]) continue; all++; if (d[(y * M.width + x) * 4 + 3] > 100) on++; } return on / all; };
+    const brush = (p) => {
+      m.fillStyle = '#000'; m.beginPath(); m.arc(p[0] * M.width, p[1] * M.height, M.width * 0.11, 0, 7); m.fill();
+      L.clearRect(0, 0, FW, FH); L.drawImage(after, 0, 0, FW, FH); L.globalCompositeOperation = 'destination-in'; L.drawImage(M, 0, 0, FW, FH); L.globalCompositeOperation = 'source-over';
+      if (Math.random() < 0.3) burst(p[0], p[1], 3, a.hue ?? 175); const now = performance.now(); if (now - last > 500) { last = now; sfx(a.sfx || 'gust', 0.3); }
+      if (!done && cover() > 0.6) { done = true; stop(); keyAct = null; sfx(a.endSfx || 'calm'); buzz([45, 60, 70]); if (a.amb) ambience(a.amb); swapArt(a.after); burst(0.35, 0.4, 50, a.hue ?? 175); setTimeout(() => L.clearRect(0, 0, FW, FH), 900); hint(''); setTimeout(() => { if (gen === g0) res(); }, 1400); }
+    };
+    const stop = drag({ down: brush, move: (p, down) => down && brush(p) });
+    keyAct = (e, down) => { if (down && e.key === ' ') { const y = a.box[1] + Math.random() * (a.box[3] - a.box[1]); for (let x = 0; x <= 1; x += 0.08) brush([x, y]); return true; } };
+  }),
+  // the great fish follows the finger (or the arrow keys) through the water, as if in 3D: it turns round in depth when
+  // it changes direction, tilts its nose up and down, grows a little when it comes closer, swishes its tail faster the
+  // faster it swims and leaves a trail of bubbles; touched, it wiggles. Its mouth on Jonah: it lunges, gulp!
+  fish: (a) => new Promise(async (res) => {
+    hint(T.fish); const g0 = gen;
+    const box = document.createElement('div'); box.className = 'fishbox'; $('spots').append(box);
+    const body = document.createElement('img'), tail = document.createElement('img'); body.src = tail.src = 'art/fish.png'; body.className = 'fbody'; tail.className = 'ftail'; box.append(tail, body);
+    let pos = [...a.start], goal = [...a.start], vel = [0, 0], face = 1, turn = 0, pitch = 0, wag = 0, last = performance.now(), done = false, gone = 0, lunge = 0, wiggle = 0, lastB = 0; const bub = [];
+    const stop = drag({ hover: true, down: (p) => { goal = p; if (Math.hypot(p[0] - pos[0], p[1] - pos[1]) < 0.2) { wiggle = 1; sfx('bloop', 0.6); } }, move: (p) => (goal = p) });
+    keyAct = (e, down) => { if (!down) return; if (e.key === ' ') { goal = [a.at[0] - 0.42, a.at[1]]; return true; } const d = { ArrowLeft: [-0.07, 0], ArrowRight: [0.07, 0], ArrowUp: [0, -0.05], ArrowDown: [0, 0.05] }[e.key]; if (!d) return; goal = [Math.max(-0.1, Math.min(1.1, goal[0] + d[0])), Math.max(0.12, Math.min(0.92, goal[1] + d[1]))]; return true; };
+    const frame = (now) => {
+      if (gen !== g0) return; const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      if (gone) goal = [pos[0] + 1, pos[1] - 0.05];
+      // a soft spring towards the finger, so it glides and overshoots a little, like swimming
+      const ax = (goal[0] - pos[0]) * 7 - vel[0] * 3.2, ay = (goal[1] - pos[1]) * 7 - vel[1] * 3.2;
+      vel[0] += ax * dt; vel[1] += ay * dt; pos[0] += vel[0] * dt; pos[1] += vel[1] * dt;
+      const sp = Math.hypot(vel[0], vel[1]);
+      if (Math.abs(vel[0]) > 0.05) face = vel[0] > 0 ? 1 : -1;
+      turn += ((face > 0 ? 0 : 180) - turn) * Math.min(1, dt * 7); // the turn in depth, through the side view
+      pitch += (Math.max(-28, Math.min(28, Math.atan2(vel[1], Math.abs(vel[0]) + 0.05) * 57)) - pitch) * Math.min(1, dt * 5);
+      wag += dt * (5 + sp * 22); wiggle = Math.max(0, wiggle - dt * 1.8); lunge = Math.max(0, lunge - dt * 2.5);
+      const depth = 0.9 + pos[1] * 0.25, stretch = 1 + Math.min(0.08, sp * 0.12) + lunge * 0.18, bob = Math.sin(now / 420) * 0.01;
+      const rz = pitch * (face > 0 ? 1 : -1) + Math.sin(now / 160) * wiggle * 9;
+      box.style.left = pos[0] * 100 + '%'; box.style.top = (pos[1] + bob) * 100 + '%';
+      box.style.transform = `translate(-50%,-50%) perspective(900px) rotateY(${turn.toFixed(1)}deg) rotateZ(${(face > 0 ? rz : -rz).toFixed(1)}deg) scale(${(depth * stretch).toFixed(3)}, ${(depth * (1 - lunge * 0.06)).toFixed(3)})`;
+      tail.style.transform = `perspective(500px) rotateY(${(Math.sin(wag) * (18 + sp * 30)).toFixed(1)}deg)`;
+      // bubbles from the gills, rising and wobbling
+      const mouthOff = 0.42 * depth, ang = pitch * Math.PI / 180, mouth = [pos[0] + face * mouthOff * Math.cos(ang), pos[1] + mouthOff * Math.sin(ang) * 0.56];
+      if (now - lastB > (sp > 0.2 ? 90 : 260)) { lastB = now; bub.push({ x: pos[0] + face * 0.18, y: pos[1] - 0.02, r: 2 + Math.random() * 5, t: now, s: Math.random() * 6 }); }
+      L.clearRect(0, 0, FW, FH); L.lineWidth = 1.5;
+      for (const b of bub) { const k = (now - b.t) / 1800; b.y -= dt * 0.08; const x = (b.x + Math.sin(now / 300 + b.s) * 0.01) * FW; L.strokeStyle = `rgba(235,250,255,${0.8 * (1 - k)})`; L.fillStyle = `rgba(255,255,255,${0.15 * (1 - k)})`; L.beginPath(); L.arc(x, b.y * FH, b.r, 0, 7); L.fill(); L.stroke(); L.fillStyle = `rgba(255,255,255,${0.7 * (1 - k)})`; L.beginPath(); L.arc(x - b.r * 0.35, b.y * FH - b.r * 0.35, b.r * 0.3, 0, 7); L.fill(); }
+      for (let i = bub.length - 1; i >= 0; i--) if (now - bub[i].t > 1800) bub.splice(i, 1);
+      if (!done && (near(mouth, a.at, 0.15) || near([pos[0] + face * 0.3 * depth, pos[1]], a.at, 0.12))) { // the mouth, or the big head, on Jonah
+        done = true; stop(); keyAct = null; hint(''); lunge = 1; sfx('gulp'); buzz([60, 30, 120]); swapArt(a.after); burst(a.at[0], a.at[1], 50, 190); word(lang === 'fr' ? 'GLOUPS !' : 'GULP!', [a.at[0], a.at[1] - 0.18]);
+        setTimeout(() => { wiggle = 1; sfx('bubbles'); for (let i = 0; i < 14; i++) bub.push({ x: a.at[0] + (Math.random() - 0.5) * 0.1, y: a.at[1], r: 3 + Math.random() * 7, t: performance.now(), s: Math.random() * 6 }); }, 700);
+        setTimeout(() => { gone = performance.now(); }, 1400); setTimeout(() => { if (gen === g0) { box.remove(); L.clearRect(0, 0, FW, FH); res(); } }, 3200);
+      }
+      if (gone) box.style.opacity = String(Math.max(0, 1 - (now - gone) / 1400));
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }),
+  // three days and three nights: touch each moon, it counts
+  moons: (a) => new Promise((res) => {
+    hint(T.moons); let n = 0; const g0 = gen;
+    const ss = a.spots.map((at) => { const s = spot(at, 0.08, 'soft moon'); s.textContent = '☾'; s.onpointerdown = (e) => { e.stopPropagation(); hit(s, at); }; return s; });
+    const hit = (s, at) => { if (s.done) return; s.done = true; s.classList.add('done'); n++; sfx('chime'); burst(at[0], at[1], 24, 50); word(String(n), [at[0], at[1] + 0.1]); if (n === ss.length) { keyAct = null; hint(''); setTimeout(() => { if (gen === g0) { for (const x of ss) x.remove(); res(); } }, 1100); } };
+    keyAct = (e, down) => { if (down && e.key === ' ') { const i = ss.findIndex((s) => !s.done); if (i >= 0) hit(ss[i], a.spots[i]); return true; } };
+  }),
+  // walking across Nineveh: left foot, right foot (the buttons, or the left and right arrows); the city comes closer
+  // with each step and a day goes by every third of the way
+  walk: (a) => new Promise((res) => {
+    hint(T.walk); const g0 = gen, art = $('art'); art.style.transformOrigin = `${a.zoom[0] * 100}% ${a.zoom[1] * 100}%`; art.style.transition = 'transform .4s ease-out';
+    let n = 0, want = 0, done = false; meter(0);
+    const label = document.createElement('div'); label.className = 'phase count'; label.style.left = '50%'; label.style.top = '28%'; $('layer').append(label);
+    const foot = (side, x) => { const b = document.createElement('button'); b.className = 'foot2'; b.style.left = x * 100 + '%'; b.innerHTML = `<svg viewBox="0 0 24 24" style="transform:scaleX(${side ? -1 : 1})"><path d="M8 2c2 0 3 2 3 5s-1 6-1 8-1 3-3 3-3-2-3-5 1-11 4-11zm-1 17c2 0 3 1 3 2s-1 2-3 2-3-1-3-2 1-2 3-2z"/></svg>`; $('spots').append(b); b.onpointerdown = (e) => { e.stopPropagation(); step(side); }; return b; };
+    const fs = [foot(0, 0.32), foot(1, 0.68)];
+    const show = () => fs.forEach((b, i) => b.classList.toggle('next', i === want));
+    const step = (side) => {
+      if (done) return; if (side !== want) { sfx('tap', 0.4); return; }
+      n++; want = 1 - want; show(); sfx('step', 0.8); buzz(15); burst(side ? 0.6 : 0.4, 0.86, 8, 35); meter(n / a.steps);
+      art.style.transform = `scale(${(1 + 0.55 * n / a.steps).toFixed(3)})`;
+      const per = a.steps / 3; if (a.days && n % per === 0) { const d = n / per; label.textContent = (lang === 'fr' ? 'Jour ' : 'Day ') + d; sfx('chime', 0.7); burst(0.5, 0.28, 30, 45); }
+      if (n >= a.steps) { done = true; keyAct = null; for (const b of fs) b.remove(); meter(null); hint(''); sfx('found'); word(a.word[lang], [0.5, 0.5]); setTimeout(() => { if (gen === g0) { label.remove(); res(); } }, 1500); }
+    };
+    show();
+    keyAct = (e, down) => { if (!down) return; if (e.key === 'ArrowLeft') { step(0); return true; } if (e.key === 'ArrowRight') { step(1); return true; } if (e.key === ' ') { step(want); return true; } };
+  }),
+  // shout with Jonah: the louder, the faster the meter fills (a long press or the space bar does it too); the crowd turns
+  shout: (a) => new Promise(async (res) => {
+    hint(T[a.hint || 'shout']); meter(0); const rev = a.reveal ? await img(`art/${a.reveal}.jpg`) : null; if (rev) { rev.className = 'art over'; rev.style.opacity = '0'; rev.style.transition = 'none'; $('panel').insertBefore(rev, $('fx')); }
+    const mic = await micOn(); let k = 0, held = false, done = false, last = performance.now(); const g0 = gen;
+    const alt = altButton(T[a.btn || 'shoutBtn']); alt.onpointerdown = (e) => { e.stopPropagation(); held = true; }; alt.onpointerup = alt.onpointerleave = alt.onpointercancel = () => (held = false);
+    keyAct = (e, down) => { if (e.key === ' ') { held = down; return true; } };
+    const tick = () => {
+      if (done || gen !== g0) return; const now = performance.now(), dt = Math.min(0.1, (now - last) / 1000); last = now;
+      const lv = mic ? micLevel() : 0;
+      k += (lv > 0.18 ? lv * 0.9 : 0) * dt + (held ? 0.45 * dt : 0) - 0.04 * dt; k = Math.max(0, k); meter(k); if (rev) rev.style.opacity = String(Math.min(1, k * 1.1));
+      if (lv > 0.18 || held) { if (Math.random() < 0.35) burst(0.1 + Math.random() * 0.8, 0.1 + Math.random() * 0.5, 4, 45); if (Math.random() < 0.04) sfx('sparkle', 0.4); if (Math.random() < 0.03) buzz(20); }
+      if (k >= 1) { done = true; keyAct = null; alt.remove(); meter(null); hint(''); micOff(); buzz([80, 40, 160]); word(a.word[lang], [0.5, 0.3]); burst(0.5, 0.3, 70, 45); if (rev) rev.style.opacity = '1'; else swapArt(a.after); if (a.song) { duck(true); const so = new Audio(`sfx/${a.song}.mp3`); so.volume = 0.9; so.play().catch(() => {}); so.onended = () => { duck(false); if (gen === g0) res(); }; setTimeout(() => { if (gen === g0) res(); }, 17000); } else setTimeout(() => { if (gen === g0) res(); }, 1800); return; }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }),
+  sounds: (a) => new Promise((res) => {
+    hint(a.hint?.[lang] || T.sounds); let n = 0; const g0 = gen; const ss = [];
+    const hit = (s, p) => { sfx(p.sfx); if (p.word) word(p.word[lang], [p.at[0], p.at[1] - 0.1]); if (p.line && !s.done) say(p.line); burst(p.at[0], p.at[1], 14, 100); if (!s.done) { s.done = true; s.classList.add('done'); if (++n === a.spots.length) { keyAct = null; hint(''); setTimeout(() => { if (gen === g0) res(); }, p.line ? 2600 : 1000); } } };
+    for (const p of a.spots) { const s = spot(p.at, a.r || 0.09, 'soft'); ss.push(s); s.onpointerdown = (e) => { e.stopPropagation(); hit(s, p); }; }
+    keyAct = (e, down) => { if (down && e.key === ' ') { const i = ss.findIndex((s) => !s.done); if (i >= 0) hit(ss[i], a.spots[i]); return true; } };
+  }),
+  // the plant grows: slide up (or hold the up arrow, or the space bar) and the leafy plant rises from the ground over the hut
+  grow: (a) => new Promise(async (res) => {
+    hint(T.grow); const after = await img(`art/${a.after}.jpg`); const g0 = gen; let k = 0, lastY = null, done = false, snd = 0;
+    const draw = () => {
+      L.clearRect(0, 0, FW, FH); const top = FH * (a.stem[1] - (a.stem[1] - a.top) * k) ;
+      L.save(); L.beginPath(); L.rect(0, top, FW, FH - top); L.clip(); L.drawImage(after, 0, 0, FW, FH); L.restore();
+      // the growing edge glows a little
+      const gr = L.createLinearGradient(0, top - 14, 0, top + 14); gr.addColorStop(0, 'rgba(180,255,150,0)'); gr.addColorStop(0.5, 'rgba(180,255,150,0.35)'); gr.addColorStop(1, 'rgba(180,255,150,0)'); L.fillStyle = gr; L.fillRect(0, top - 14, FW, 28);
+    };
+    const grow = (d) => {
+      if (done || d <= 0) return; k = Math.min(1, k + d); draw(); meter(k); const now = performance.now();
+      if (now - snd > 600) { snd = now; sfx('grow', 0.6); burst(a.stem[0] + (Math.random() - 0.3) * 0.3, a.stem[1] - (a.stem[1] - a.top) * k, 8, 110); }
+      if (k >= 1) { done = true; stop(); keyAct = null; meter(null); hint(''); sfx('found'); swapArt(a.after); burst(0.4, 0.35, 50, 110); word(lang === 'fr' ? 'DE L’OMBRE !' : 'SHADE!', [0.62, 0.45]); setTimeout(() => L.clearRect(0, 0, FW, FH), 900); setTimeout(() => { if (gen === g0) res(); }, 1500); }
+    };
+    meter(0); draw();
+    const stop = drag({ down: (p) => (lastY = p[1]), move: (p, down) => { if (!down || lastY == null) return; grow((lastY - p[1]) * 1.5); lastY = p[1]; }, up: () => (lastY = null) });
+    keyAct = (e, down) => { if (down && ['ArrowUp', ' '].includes(e.key)) { grow(0.08); return true; } };
+  }),
+  // the lights of Nineveh: keep a finger down (or the space bar) and the city lights up, house after house, while the
+  // count climbs to 120 000 people (each light is a hundred of them)
+  lights: (a) => new Promise((res) => {
+    hint(T.lights); const g0 = gen; let held = false, k = 0, last = performance.now(), done = false, snd = 0;
+    const N = Math.round(a.total / 100), pts = [];
+    while (pts.length < N) { const x = a.box[0] + Math.random() * (a.box[2] - a.box[0]), y = a.box[1] + Math.pow(Math.random(), 0.8) * (a.box[3] - a.box[1]); if (x > a.not[0] && y > a.not[1]) continue; pts.push({ x, y, r: 0.8 + Math.random() * 1.6, p: Math.random() * 6.28, h: 30 + Math.random() * 25 }); }
+    const label = document.createElement('div'); label.className = 'phase count'; label.style.left = '50%'; label.style.top = '30%'; $('layer').append(label);
+    const fmt = (v) => v.toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-GB');
+    const stop = drag({ down: () => (held = true), up: () => (held = false) });
+    keyAct = (e, down) => { if (e.key === ' ') { held = down; return true; } };
+    meter(0);
+    const frame = (now) => {
+      if (gen !== g0) return; const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      if (held && !done) { k = Math.min(1, k + dt / 6); if (now - snd > 700) { snd = now; sfx('sparkle', 0.5); } }
+      const n = Math.floor(k * N); label.textContent = fmt(Math.round(k * a.total / 100) * 100); meter(k);
+      L.clearRect(0, 0, FW, FH); L.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < n; i++) { const q = pts[i], tw = 0.7 + Math.sin(now / 500 + q.p) * 0.3; L.fillStyle = `hsla(${q.h},100%,70%,${0.75 * tw})`; L.beginPath(); L.arc(q.x * FW, q.y * FH, q.r, 0, 7); L.fill(); if (i % 9 === 0) { L.fillStyle = `hsla(${q.h},100%,60%,${0.12 * tw})`; L.beginPath(); L.arc(q.x * FW, q.y * FH, q.r * 6, 0, 7); L.fill(); } }
+      L.globalCompositeOperation = 'source-over';
+      if (!done && k >= 1) { done = true; stop(); keyAct = null; meter(null); hint(''); sfx('cheer', 0.7); burst(0.5, 0.55, 60, 45); word(fmt(a.total) + ' !', [0.5, 0.45]); setTimeout(() => { if (gen === g0) res(); }, 1800); }
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }),
+  // goodbye: the great fish leaps out of the sea where the child touches
+  leap: (a) => new Promise(async (res) => {
+    hint(T.leap); const g0 = gen; const fish = await img('art/fish.png'); const s = spot(a.at, a.r, 'soft'); let t0 = 0;
+    const go = () => { if (t0) return; t0 = performance.now(); s.remove(); keyAct = null; hint(''); sfx('leap'); requestAnimationFrame(frame); };
+    const frame = (now) => {
+      if (gen !== g0) return; const k = Math.min(1, (now - t0) / 1800); L.clearRect(0, 0, FW, FH);
+      const x = (a.at[0] - 0.15 + k * 0.3) * FW, y = a.at[1] * FH - Math.sin(k * Math.PI) * FH * 0.22, w = FW * 0.75, h = w * fish.height / fish.width;
+      L.save(); L.translate(x, y); L.rotate(-0.9 + k * 1.8); L.drawImage(fish, -w / 2, -h / 2, w, h); L.restore();
+      if (k > 0.05 && k < 0.15) burst(a.at[0] - 0.12, a.at[1], 6, 195);
+      if (k >= 1) { L.clearRect(0, 0, FW, FH); sfx('splash'); burst(a.at[0] + 0.15, a.at[1], 50, 195); word(a.word[lang], [0.45, 0.4]); setTimeout(() => { if (gen === g0) res(); }, 1400); return; }
+      requestAnimationFrame(frame);
+    };
+    s.onpointerdown = (e) => { e.stopPropagation(); go(); };
+    keyAct = (e, down) => { if (down && e.key === ' ') { go(); return true; } };
+  }),
+  // a new picture, with a soft sound (the baby is born)
+  swap: (a) => new Promise((res) => { if (a.sfx) sfx(a.sfx, 0.7); swapArt(a.img); burst(0.5, 0.6, 30, 45); setTimeout(res, 900); }),
+  // the emperor's list: a parchment unrolls, the child presses a finger on it and leaves a fingerprint
+  stamp: (a) => new Promise((res) => {
+    hint(T.stamp); const g0 = gen; sfx('scroll');
+    const pa = document.createElement('div'); pa.className = 'parch';
+    pa.innerHTML = `<b>${lang === 'fr' ? 'Liste de l’empereur' : 'The emperor’s list'}</b><i></i><i></i><i></i><i></i><i></i><span class="thumb"></span>`;
+    $('spots').append(pa); const th = pa.querySelector('.thumb'); let t = 0, done = false;
+    const go = () => {
+      if (done) return; done = true; keyAct = null; sfx('stamp'); buzz([45, 60, 70]);
+      th.innerHTML = '<svg viewBox="0 0 60 76">' + Array.from({ length: 8 }, (_, i) => `<ellipse cx="30" cy="40" rx="${6 + i * 3.4}" ry="${8 + i * 4}" fill="none" stroke="#7b2d12" stroke-width="2.2" stroke-dasharray="${9 + i} ${3 + (i % 3)}" opacity="${0.9 - i * 0.05}"/>`).join('') + '</svg>';
+      th.classList.add('on'); hint(''); burst(0.5, 0.64, 40, 40); word('✓', [0.68, 0.56]);
+      setTimeout(() => { if (gen !== g0) return; pa.classList.add('gone'); setTimeout(() => { pa.remove(); res(); }, 600); }, 1600);
+    };
+    th.onpointerdown = (e) => { e.stopPropagation(); th.classList.add('press'); t = setTimeout(go, 450); };
+    th.onpointerup = th.onpointerleave = () => { clearTimeout(t); th.classList.remove('press'); };
+    keyAct = (e, down) => { if (down && e.key === ' ') { go(); return true; } };
+  }),
+  // a road to follow with the finger: the walkers (or the lamb) go along it
+  path: (a) => new Promise(async (res) => {
+    hint(T[a.hint]); const g0 = gen; let k = 0, active = false, done = false;
+    // smooth the given points into many little steps
+    const P = a.pts, pts = [];
+    for (let i = 0; i < P.length - 1; i++) { const p0 = P[Math.max(0, i - 1)], p1 = P[i], p2 = P[i + 1], p3 = P[Math.min(P.length - 1, i + 2)]; for (let s = 0; s < 4; s++) { const t = s / 4, t2 = t * t, t3 = t2 * t; pts.push([0, 1].map((c) => 0.5 * (2 * p1[c] + (-p0[c] + p2[c]) * t + (2 * p0[c] - 5 * p1[c] + 4 * p2[c] - p3[c]) * t2 + (-p0[c] + 3 * p1[c] - 3 * p2[c] + p3[c]) * t3))); } }
+    pts.push(P[P.length - 1]);
+    const lamb = a.mark === 'lamb' ? await img('art/lamb.png') : a.mark === 'caravan' ? await img('art/caravan.png') : null; const small = a.mark === 'caravan';
+    const start = spot(pts[0], 0.06, 'soft');
+    const mark = (x, y, dir) => {
+      if (a.mark === 'star') { starDraw(L, x, y - 10, FW * 0.05, performance.now()); return; }
+      if (lamb) { const w = FW * (small ? 0.1 : 0.16), h = w * lamb.height / lamb.width, b = Math.abs(Math.sin(performance.now() / 90)) * 4; L.save(); L.translate(x, y - b); if (dir < 0) L.scale(-1, 1); L.drawImage(lamb, -w / 2, -h * 0.85, w, h); L.restore(); return; }
+      // two tiny walkers, in indigo and brown, like the painting
+      for (const [dx, c] of [[-5, '#2f3f86'], [5, '#6b4a2b']]) { L.fillStyle = c; L.beginPath(); L.ellipse(x + dx, y - 6, 4, 9, 0, 0, 7); L.fill(); L.fillStyle = '#c9925f'; L.beginPath(); L.arc(x + dx, y - 17, 3.3, 0, 7); L.fill(); }
+    };
+    const draw = () => {
+      L.clearRect(0, 0, FW, FH); L.lineCap = 'round';
+      L.setLineDash([6, 10]); L.lineWidth = 3; L.strokeStyle = 'rgba(255,250,235,0.85)'; L.beginPath(); pts.forEach(([x, y], i) => (i ? L.lineTo(x * FW, y * FH) : L.moveTo(x * FW, y * FH))); L.stroke();
+      if (k > 0) { L.setLineDash([]); L.lineWidth = 6; L.strokeStyle = 'rgba(255,205,90,0.9)'; L.beginPath(); for (let i = 0; i <= k; i++) { const [x, y] = pts[i]; i ? L.lineTo(x * FW, y * FH) : L.moveTo(x * FW, y * FH); } L.stroke(); }
+      L.setLineDash([]); const q = pts[Math.min(k + 1, pts.length - 1)]; mark(pts[k][0] * FW, pts[k][1] * FH, q[0] - pts[k][0] || 1);
+    };
+    const anim = () => { if (gen !== g0 || done) return; if (lamb || a.mark === 'star') draw(); requestAnimationFrame(anim); };
+    draw(); requestAnimationFrame(anim);
+    const finish = () => { if (done) return; done = true; stop(); keyAct = null; sfx('found'); buzz([45, 60, 70]); const e = pts[pts.length - 1]; burst(e[0], e[1], 50, 45); word(a.word[lang], [0.5, Math.max(0.3, e[1] - 0.1)]); hint(''); draw(); setTimeout(() => { if (gen === g0) { L.clearRect(0, 0, FW, FH); res(); } }, 1500); };
+    const stop = drag({
+      down: (p) => { active = near(p, pts[Math.max(0, k)], 0.13); if (active && start.isConnected) { start.remove(); sfx('whoosh', 0.5); } },
+      move: (p, down) => { if (!down || !active) return; while (k < pts.length - 1 && near(p, pts[k + 1], 0.11)) { k++; if (k % 4 === 0) { burst(pts[k][0], pts[k][1], 4, 45); sfx(a.mark === 'star' ? 'sparkle' : 'step', 0.4); buzz(12); } } draw(); if (k >= pts.length - 1) finish(); },
+    });
+    keyAct = (e, down) => { if (down && e.key === ' ' && !active) { active = true; start.remove(); const step = () => { if (gen !== g0 || done) return; k++; draw(); if (k >= pts.length - 1) finish(); else setTimeout(step, 80); }; step(); return true; } };
+  }),
+  // swaddling: three turns of the finger around the baby, each one wraps a band of cloth; then the swaddled picture
+  swaddle: (a) => new Promise((res) => {
+    hint(T.swaddle); const g0 = gen; let turns = 0, ang = null, acc = 0, done = false; const bands = []; let cur = null;
+    const draw = () => {
+      L.clearRect(0, 0, FW, FH); L.save(); L.beginPath(); L.arc(a.at[0] * FW, a.at[1] * FH, a.r * FW * 1.15, 0, 7); L.clip();
+      L.lineCap = 'round'; L.lineJoin = 'round';
+      for (const b of [...bands, cur].filter(Boolean)) { L.strokeStyle = 'rgba(246,236,214,0.9)'; L.lineWidth = FW * 0.05; L.beginPath(); b.forEach(([x, y], i) => (i ? L.lineTo(x * FW, y * FH) : L.moveTo(x * FW, y * FH))); L.stroke(); L.strokeStyle = 'rgba(190,170,140,0.5)'; L.lineWidth = 1.5; L.stroke(); }
+      L.restore();
+      // the arrow that shows the way round
+      if (!done) { const r = a.r * FW * 0.9, cx = a.at[0] * FW, cy = a.at[1] * FH, t = performance.now() / 600; L.strokeStyle = 'rgba(255,220,120,0.9)'; L.lineWidth = 3; L.setLineDash([5, 7]); L.beginPath(); L.arc(cx, cy, r, t, t + 4.6); L.stroke(); L.setLineDash([]); const e = t + 4.6; L.fillStyle = 'rgba(255,220,120,0.95)'; L.beginPath(); L.arc(cx + Math.cos(e) * r, cy + Math.sin(e) * r, 6, 0, 7); L.fill(); }
+    };
+    const loop = () => { if (gen !== g0 || done) return; draw(); requestAnimationFrame(loop); }; requestAnimationFrame(loop);
+    const turn = () => {
+      turns++; acc = 0; sfx('wrap'); buzz(30); if (cur) { bands.push(cur); cur = null; } word(String(turns), [a.at[0] + 0.16, a.at[1] - 0.12]); burst(a.at[0], a.at[1], 14, 40);
+      if (turns >= 3) { done = true; stop(); keyAct = null; hint(''); L.clearRect(0, 0, FW, FH); sfx('found'); buzz([45, 60, 70]); swapArt(a.after); word(lang === 'fr' ? 'BIEN AU CHAUD !' : 'NICE AND WARM!', [0.5, 0.42]); burst(a.at[0], a.at[1], 40, 45); setTimeout(() => { if (gen === g0) res(); }, 1400); }
+    };
+    const stop = drag({
+      down: (p) => { ang = Math.atan2(p[1] - a.at[1], (p[0] - a.at[0]) * FW / FH); cur = [p]; },
+      move: (p, down) => { if (!down || ang == null) return; cur.push(p); const na = Math.atan2(p[1] - a.at[1], (p[0] - a.at[0]) * FW / FH); let d = na - ang; if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI; ang = na; if (Math.hypot(p[0] - a.at[0], p[1] - a.at[1]) < 0.3) acc += Math.abs(d); if (acc > 4.2) turn(); },
+      up: () => { ang = null; if (cur && cur.length > 4) { bands.push(cur); acc = Math.max(0, acc); if (acc > 2.2) turn(); } cur = null; },
+    });
+    keyAct = (e, down) => { if (down && e.key === ' ') { turn(); return true; } };
+  }),
+  // rocking the baby: the phone swayed gently (or a finger slid slowly, or a long press, or the arrow keys); too fast
+  // and he fusses, gently and the meter fills; then he yawns and falls asleep
+  rock: (a) => new Promise((res) => {
+    hint(T.rock); const g0 = gen, art = $('art'); art.style.transformOrigin = '50% 20%'; art.style.transition = 'transform .25s ease-out';
+    let ok = 0, last = performance.now(), act = 0, fast = 0, phase = 0, lastX = null, lastT = 0, held = false, lastFuss = 0, lastBeat = 0, done = false;
+    const onMotion = (e) => { const r = e.rotationRate; if (!r) return; const m = Math.hypot(r.alpha || 0, r.beta || 0, r.gamma || 0); act = Math.max(act, Math.min(1.5, m / 120)); };
+    addEventListener('devicemotion', onMotion);
+    const stop = drag({ down: (p) => { lastX = p[0]; lastT = performance.now(); }, move: (p, down) => { if (!down || lastX == null) return; const now = performance.now(), v = Math.abs(p[0] - lastX) / Math.max(0.016, (now - lastT) / 1000); lastX = p[0]; lastT = now; act = Math.max(act, Math.min(1.5, v / 1.4)); }, up: () => (lastX = null) });
+    const alt = altButton(T.rockBtn); alt.onpointerdown = (e) => { e.stopPropagation(); held = true; }; alt.onpointerup = alt.onpointerleave = alt.onpointercancel = () => (held = false);
+    keyAct = (e, down) => { if (['ArrowLeft', 'ArrowRight'].includes(e.key) && down) { act = Math.max(act, 0.5); return true; } if (e.key === ' ') { held = down; return true; } };
+    meter(0);
+    const frame = (now) => {
+      if (gen !== g0) { removeEventListener('devicemotion', onMotion); return; }
+      const dt = Math.min(0.05, (now - last) / 1000); last = now; if (held) act = Math.max(act, 0.5);
+      phase += dt * (1.6 + act * 3); const sw = Math.sin(phase) * Math.min(4, 1 + act * 4);
+      if (!done) art.style.transform = `scale(1.04) rotate(${sw.toFixed(2)}deg)`;
+      if (act > 1.05) { fast += dt; if (now - lastFuss > 1400) { lastFuss = now; sfx('fuss', 0.8); word(T.fast, [0.5, 0.42]); shake(); } ok = Math.max(0, ok - dt * 0.6); }
+      else if (act > 0.12) { ok += dt; if (now - lastBeat > 900) { lastBeat = now; buzz([20, 120, 20]); if (Math.random() < 0.4) burst(0.45, 0.4, 5, 45); } }
+      act *= Math.pow(0.15, dt); meter(ok / a.secs);
+      if (!done && ok >= a.secs) {
+        done = true; stop(); keyAct = null; alt.remove(); removeEventListener('devicemotion', onMotion); meter(null); hint(''); sfx('yawn'); buzz([45, 60, 70]);
+        art.style.transition = 'transform 1.2s ease-out'; art.style.transform = 'scale(1.04) rotate(0deg)'; swapArt(a.after); word(lang === 'fr' ? 'Chut… 💤' : 'Shh… 💤', [0.5, 0.4]);
+        setTimeout(() => { if (gen === g0) res(); }, 1800); return;
+      }
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }),
+  // counting the sheep as they come in: touch each one, a bell and its number
+  count: (a) => new Promise((res) => {
+    hint(T.count); let n = 0; const g0 = gen;
+    const ss = a.spots.map((at) => { const s = spot(at, a.r, 'soft'); s.onpointerdown = (e) => { e.stopPropagation(); hit(s, at); }; return s; });
+    const hit = (s, at) => { if (s.done) return; s.done = true; s.classList.add('done'); n++; sfx(a.sfx); if (n % 2) sfx('baa', 0.35); buzz(20); burst(at[0], at[1], 18, 50); word(String(n), [at[0], at[1] - 0.09]); if (n === ss.length) { keyAct = null; hint(''); setTimeout(() => { if (gen === g0) { for (const x of ss) x.remove(); sfx('found'); buzz([45, 60, 70]); res(); } }, 1000); } };
+    keyAct = (e, down) => { if (down && e.key === ' ') { const i = ss.findIndex((s) => !s.done); if (i >= 0) hit(ss[i], a.spots[i]); return true; } };
+  }),
+  // keep the moment in your heart: a finger held on the heart while it counts 1, 2, 3
+  heart: (a) => new Promise((res) => {
+    hint(T[a.hint || 'heart']); const g0 = gen; const h = document.createElement('button'); h.className = 'heartbtn' + (a.icon ? ' lockbtn' : ''); h.textContent = a.icon || '❤'; h.style.left = a.at[0] * 100 + '%'; h.style.top = a.at[1] * 100 + '%'; $('spots').append(h);
+    let n = 0, iv = 0, done = false;
+    const beat = () => { n++; sfx('heart'); buzz([30, 90, 30]); word(String(n), [a.at[0] + 0.16, a.at[1]]); h.classList.remove('beat'); void h.offsetWidth; h.classList.add('beat'); if (n >= 3) end(); };
+    const end = () => { done = true; clearInterval(iv); keyAct = null; hint(''); sfx('found'); if (a.done) h.textContent = a.done; burst(a.at[0], a.at[1], 60, a.icon ? 45 : 345); setTimeout(() => { if (gen === g0) { h.remove(); res(); } }, 1400); };
+    const on = () => { if (done || iv) return; h.classList.add('held'); beat(); iv = setInterval(() => (done ? clearInterval(iv) : beat()), 1000); };
+    const off = () => { if (done) return; clearInterval(iv); iv = 0; n = 0; h.classList.remove('held'); };
+    h.onpointerdown = (e) => { e.stopPropagation(); on(); }; h.onpointerup = h.onpointerleave = h.onpointercancel = off;
+    keyAct = (e, down) => { if (e.key === ' ') { down ? on() : off(); return true; } };
+  }),
+
+
+  // the new star: the wise men's map shows the stars they know; one star in the sky is not on it. A wrong one says
+  // "on the map!" kindly; the new one grows and shines.
+  skyfind: (a) => new Promise((res) => {
+    hint(T.sky); const g0 = gen; let done = false;
+    const all = [...a.known, a.fresh].map((at, i) => ({ at, fresh: i === a.known.length }));
+    // the map: a parchment card with the known stars, at the same places, in small
+    const card = document.createElement('div'); card.className = 'starchart'; card.innerHTML = `<b>${T.chart}</b><svg viewBox="0 0 100 46">${a.known.map(([x, y]) => `<circle cx="${(x * 100).toFixed(1)}" cy="${(y / 0.32 * 40 + 3).toFixed(1)}" r="2.6"/>`).join('')}<path d="${a.known.slice(0, 6).map(([x, y], i) => (i ? 'L' : 'M') + (x * 100).toFixed(1) + ' ' + (y / 0.32 * 40 + 3).toFixed(1)).join(' ')}"/></svg>`;
+    $('spots').append(card);
+    const draw = () => { if (gen !== g0) return; L.clearRect(0, 0, FW, FH); const now = performance.now(); for (const s of all) if (!done || s.fresh) starDraw(L, s.at[0] * FW, s.at[1] * FH, FW * (s.fresh && done ? 0.07 : 0.026), now + s.at[0] * 900); if (!done || gen === g0) requestAnimationFrame(draw); };
+    requestAnimationFrame(draw);
+    const pick = (s) => {
+      if (done) return;
+      if (!s.fresh) { sfx('tap', 0.5); word(T.notThis, [s.at[0], s.at[1] + 0.07]); buzz(20); card.classList.remove('nod'); void card.offsetWidth; card.classList.add('nod'); return; }
+      done = true; keyAct = null; for (const b of btns) b.remove(); card.classList.add('gone'); hint(''); sfx('found'); sfx('glow'); buzz([45, 60, 70]); burst(s.at[0], s.at[1], 70, 45); ring(s.at);
+      setTimeout(() => { if (gen === g0) { card.remove(); res(); } }, 1600);
+    };
+    const btns = all.map((st) => { const b = spot(st.at, 0.065, 'soft starspot'); b.onpointerdown = (e) => { e.stopPropagation(); pick(st); }; return b; });
+    keyAct = (e, down) => { if (down && e.key === ' ') { pick(all[all.length - 1]); return true; } };
+  }),
+  // keep the caravan under the star: the star drifts across the sky; tilt the phone (or slide a finger, or the arrow
+  // keys) to keep the camels right under it. The nights go by while they are.
+  steer: (a) => new Promise(async (res) => {
+    hint(T.steer); const g0 = gen; const car = await img('art/caravan.png');
+    let cx = 0.5, tilt = null, finger = null, ok = 0, last = performance.now(), t0 = last, done = false, nights = 0, lastStep = 0, auto = false;
+    const onTilt = (e) => { if (e.gamma != null) tilt = Math.max(-1, Math.min(1, e.gamma / 22)); };
+    addEventListener('deviceorientation', onTilt);
+    const stop = drag({ down: (p) => (finger = p[0]), move: (p, down) => { if (down) finger = p[0]; }, up: () => (finger = null) });
+    keyAct = (e, down) => { if (e.key === ' ') { if (down) auto = !auto; return true; } return ['ArrowLeft', 'ArrowRight'].includes(e.key); }; // space: the caravan follows the star by itself
+    const label = document.createElement('div'); label.className = 'phase count'; label.style.left = '50%'; label.style.top = '34%'; $('layer').append(label);
+    meter(0);
+    const frame = (now) => {
+      if (gen !== g0) { removeEventListener('deviceorientation', onTilt); return; }
+      const dt = Math.min(0.05, (now - last) / 1000), t = (now - t0) / 1000; last = now;
+      const sx = 0.5 + Math.sin(t * 0.55) * 0.3 + Math.sin(t * 1.3) * 0.06;
+      let k = 0; if (keys.has('ArrowLeft')) k -= 1; if (keys.has('ArrowRight')) k += 1;
+      const goal = auto ? sx : finger != null ? finger : cx + ((tilt ?? 0) * 0.9 + k * 0.8) * dt;
+      cx += (Math.max(0.1, Math.min(0.9, goal)) - cx) * Math.min(1, dt * (finger != null || auto ? 6 : 60));
+      const under = Math.abs(cx - sx) < 0.11;
+      if (under && !done) { ok += dt; if (now - lastStep > 700) { lastStep = now; sfx('step', 0.35); } }
+      meter(ok / a.secs);
+      const n = Math.min(3, Math.floor(ok / (a.secs / 3))); if (n > nights) { nights = n; label.textContent = `${T.night} ${n}`; sfx('chime', 0.7); burst(0.5, 0.3, 24, 45); buzz(20); }
+      L.clearRect(0, 0, FW, FH);
+      // a beam from the star when the caravan is right under it
+      if (under) { const gr = L.createLinearGradient(0, a.star * FH, 0, a.y * FH); gr.addColorStop(0, 'rgba(255,230,160,0.35)'); gr.addColorStop(1, 'rgba(255,230,160,0)'); L.fillStyle = gr; L.beginPath(); L.moveTo(sx * FW - 6, a.star * FH); L.lineTo(cx * FW - FW * 0.14, a.y * FH); L.lineTo(cx * FW + FW * 0.14, a.y * FH); L.lineTo(sx * FW + 6, a.star * FH); L.fill(); }
+      starDraw(L, sx * FW, a.star * FH, FW * 0.05, now);
+      const w = FW * 0.34, h = w * car.height / car.width, bob = Math.sin(now / 180) * 2;
+      L.save(); L.globalAlpha = 0.96; L.filter = 'brightness(0.78) saturate(0.85)'; L.drawImage(car, cx * FW - w / 2, a.y * FH - h / 2 + bob, w, h); L.restore();
+      if (!done && ok >= a.secs) {
+        done = true; stop(); keyAct = null; removeEventListener('deviceorientation', onTilt); meter(null); hint(''); sfx('found'); buzz([45, 60, 70]); word(lang === 'fr' ? 'BRAVO !' : 'WELL DONE!', [0.5, 0.45]);
+        setTimeout(() => { if (gen === g0) { label.remove(); L.clearRect(0, 0, FW, FH); res(); } }, 1600);
+      }
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }),
+  // stop the star over the house: it glides back and forth over the roofs; a touch stops it. Too early or too late,
+  // it goes on, a little slower each time, until it is right over the shining window.
+  stopstar: (a) => new Promise((res) => {
+    hint(T.stop); const g0 = gen; let x = 0.12, v = 0.32, done = false, last = performance.now(), sy = a.y, landT = 0;
+    const tap = () => {
+      if (done) return;
+      if (Math.abs(x - a.target[0]) < 0.07) { done = true; landT = performance.now(); stop(); keyAct = null; hint(''); sfx('glow'); sfx('found'); buzz([45, 60, 70]); }
+      else { v *= 0.8; sfx('tap', 0.5); word(T.again2, [x, sy + 0.08]); buzz(20); }
+    };
+    const stop = drag({ down: () => tap() });
+    keyAct = (e, down) => { if (down && e.key === ' ') { if (!done) { x = a.target[0]; tap(); } return true; } };
+    const frame = (now) => {
+      if (gen !== g0) return; const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      if (!done) { x += v * dt; if (x > 0.88 || x < 0.12) { v = -v; x = Math.max(0.12, Math.min(0.88, x)); } }
+      L.clearRect(0, 0, FW, FH);
+      let r = FW * 0.05;
+      if (done) {
+        const k = Math.min(1, (now - landT) / 1500); x += (a.target[0] - x) * 0.1; sy = a.y + (a.target[1] - 0.17 - a.y) * k; r = FW * (0.05 + k * 0.03);
+        const gr = L.createLinearGradient(0, sy * FH, 0, a.target[1] * FH); gr.addColorStop(0, `rgba(255,232,170,${0.5 * k})`); gr.addColorStop(1, 'rgba(255,232,170,0)');
+        L.fillStyle = gr; L.beginPath(); L.moveTo(x * FW - 5, sy * FH); L.lineTo(a.target[0] * FW - FW * 0.09, a.target[1] * FH); L.lineTo(a.target[0] * FW + FW * 0.09, a.target[1] * FH); L.lineTo(x * FW + 5, sy * FH); L.fill();
+        if (k >= 1 && landT > 0) { landT = -1; burst(a.target[0], a.target[1], 50, 45); word(lang === 'fr' ? 'ICI !' : 'HERE!', [a.target[0], a.target[1] - 0.25]); setTimeout(() => { if (gen === g0) res(); }, 1400); }
+      }
+      starDraw(L, x * FW, sy * FH, r, now);
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }),
+  // rub a gift: the gold starts to shine (golden sparkles and a glow), the incense warms and its scented smoke curls up
+  rub: (a) => new Promise((res) => {
+    hint(T[a.hint]); const g0 = gen; let dist = 0, lastP = null, done = false, ended = false; const puffs = [];
+    const box = a.box, cx = (box[0] + box[2]) / 2, cy = (box[1] + box[3]) / 2;
+    const zone = spot([cx, cy], (box[2] - box[0]) / 2, 'soft');
+    zone.style.pointerEvents = 'none';
+    const inside = (p) => p[0] > box[0] - 0.04 && p[0] < box[2] + 0.04 && p[1] > box[1] - 0.04 && p[1] < box[3] + 0.04;
+    const rub = (p) => {
+      if (done || !inside(p)) { lastP = null; return; } if (lastP) dist += Math.hypot(p[0] - lastP[0], (p[1] - lastP[1]) * FH / FW); lastP = p;
+      if (a.fx === 'shine') { if (Math.random() < 0.5) burst(p[0], p[1], 3, 45); } else if (Math.random() < 0.35) puffs.push({ x: cx + (Math.random() - 0.5) * 0.06, y: box[1], t: performance.now(), s: Math.random() * 6 });
+      if (Math.random() < 0.08) sfx(a.fx === 'shine' ? 'sparkle' : 'whoosh', 0.35);
+      meter(dist / 1.6); if (dist >= 1.6) finish();
+    };
+    const finish = () => { if (done) return; done = true; stop(); keyAct = null; zone.remove(); meter(null); hint(''); sfx('found'); buzz([45, 60, 70]); burst(cx, cy, 50, a.fx === 'shine' ? 45 : 30); setTimeout(() => { ended = true; L.clearRect(0, 0, FW, FH); if (gen === g0) res(); }, 1300); };
+    const stop = drag({ down: rub, move: (p, down) => down && rub(p), up: () => (lastP = null) });
+    keyAct = (e, down) => { if (down && e.key === ' ') { dist += 0.4; for (let i = 0; i < 6; i++) puffs.push({ x: cx, y: box[1], t: performance.now(), s: Math.random() * 6 }); burst(cx, cy, 8, 45); meter(dist / 1.6); if (dist >= 1.6) finish(); return true; } };
+    meter(0);
+    const frame = (now) => {
+      if (gen !== g0 || ended) return; L.clearRect(0, 0, FW, FH); const k = Math.min(1, dist / 1.6);
+      if (a.fx === 'shine') { const gr = L.createRadialGradient(cx * FW, cy * FH, 0, cx * FW, cy * FH, FW * 0.2); gr.addColorStop(0, `rgba(255,220,120,${0.5 * k})`); gr.addColorStop(1, 'rgba(255,220,120,0)'); L.fillStyle = gr; L.fillRect(0, 0, FW, FH); }
+      else { for (const q of puffs) { const age = (now - q.t) / 3000; if (age > 1) continue; const x = (q.x + Math.sin(now / 500 + q.s) * 0.03 * age) * FW, y = (q.y - age * 0.22) * FH; L.fillStyle = `rgba(245,240,255,${0.35 * (1 - age)})`; L.beginPath(); L.arc(x, y, 8 + age * 26, 0, 7); L.fill(); } }
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }),
+  // the travel journal: the four stamps of the lessons, each touched says its lesson again
+  carnet: (a) => new Promise((res) => {
+    hint(T.carnet); const g0 = gen; let n = 0;
+    const box = document.createElement('div'); box.className = 'carnet';
+    box.innerHTML = `<h3>${lang === 'fr' ? 'Mon carnet de voyage' : 'My travel journal'}</h3><div class="stamps">${STAMPS.map((s, i) => `<button class="stampt" data-i="${i}"><i>${s.icon}</i><span>${s[lang]}</span></button>`).join('')}</div>`;
+    $('spots').append(box);
+    const bs = [...box.querySelectorAll('.stampt')];
+    const hit = async (b) => { if (b.classList.contains('on')) return; b.classList.add('on'); sfx('stamp'); buzz(30); burst(0.5, 0.5, 20, 45); await say({ id: STAMPS[+b.dataset.i].line, cap: 1 }); if (gen !== g0) return; if (++n === bs.length) { keyAct = null; hint(''); sfx('found'); setTimeout(() => { if (gen === g0) res(); }, 700); } };
+    for (const b of bs) b.onpointerdown = (e) => { e.stopPropagation(); hit(b); };
+    keyAct = (e, down) => { if (down && e.key === ' ') { const b = bs.find((x) => !x.classList.contains('on')); if (b) hit(b); return true; } };
+  }),
+  // into the story: the child touches the little nativity under the tree; the camera dives into it, a golden light
+  // fills the page, and the next page (Nazareth) turns in
+  portal: (a) => new Promise((res) => {
+    hint(T[a.hint || 'portal']); const g0 = gen; const s = spot(a.at, a.r, 'soft'); let done = false;
+    const go = async () => {
+      if (done) return; done = true; s.remove(); keyAct = null; hint(''); sfx('hum'); sfx('sparkle', 0.6); buzz([45, 60, 70]); burst(a.at[0], a.at[1], 50, 45);
+      for (const v of document.querySelectorAll('#panel .loopv')) v.remove();
+      if (a.zoom) { const art = $('art'); art.style.transformOrigin = `${a.at[0] * 100}% ${a.at[1] * 100}%`; art.style.transition = 'transform 1.5s cubic-bezier(.6,0,.4,1)'; art.style.transform = 'scale(5)'; await sleep(1300); }
+      else await film(a.film); if (gen !== g0) return;
+      const gold = document.createElement('div'); gold.className = 'goldout'; $('panel').append(gold); sfx('glow'); burst(0.5, 0.5, 80, 45);
+      setTimeout(() => { if (gen === g0) res(); }, 1100);
+    };
+    s.onpointerdown = (e) => { e.stopPropagation(); go(); };
+    keyAct = (e, down) => { if (down && e.key === ' ') { go(); return true; } };
+  }),
+};
+
+function swapArt(name) { if (!name) return; const im = new Image(); im.src = `art/${name}.jpg`; im.className = 'art over'; $('panel').insertBefore(im, $('fx')); requestAnimationFrame(() => im.classList.add('in')); }
+// a short film played once over the panel (the lift-off); the panel waits for its end
+function loopVid(name) {
+  const v = document.createElement('video'); v.className = 'art vid loopv'; v.muted = true; v.playsInline = true; v.loop = true; v.preload = 'auto'; v.src = `art/${name}.mp4`;
+  v.oncanplay = () => { v.classList.add('in'); v.play().catch(() => {}); }; $('panel').insertBefore(v, $('fx'));
+}
+function film(name) {
+  return new Promise((res) => {
+    const v = document.createElement('video'); v.className = 'art vid'; v.muted = true; v.playsInline = true; v.src = `art/${name}.mp4`;
+    v.oncanplay = () => { v.classList.add('in'); v.play().catch(res); }; v.onended = res; v.onerror = res; $('panel').insertBefore(v, $('fx'));
+    setTimeout(res, 9000);
+  });
+}
+
+// ---------------------------------------------------------------- reading
+const hist = []; // the pages already read, for the back arrow
+async function show(i, back = false) {
+  micOff();
+  if (busy) return; busy = true; if (!back && idx >= 0 && idx !== i) hist.push(idx); hint(''); $('next').classList.remove('on'); keyAct = null; meter(null);
+  for (const b of document.querySelectorAll('.alt')) b.remove();
+  const p = PANELS[i]; idx = i; feel.page(i, PANELS.length); const my = ++gen; const gone = () => gen !== my; $('prev').classList.toggle('on', hist.length > 0);
+  sfx('page', 0.7);
+  const page = $('page'); page.classList.remove('turn-in'); page.classList.add('turn-out'); await sleep(320);
+  clearLayer(); last = null; sparks.length = 0; $('panel').onpointerdown = $('panel').onpointermove = $('panel').onpointerup = $('panel').onpointercancel = null; L.clearRect(0, 0, FW, FH);
+  for (const el of document.querySelectorAll('#panel .art')) el.remove();
+  const im = new Image(); im.className = 'art'; im.id = 'art'; im.src = `art/${p.img}.jpg`; await im.decode().catch(() => {});
+  $('panel').style.aspectRatio = `${im.naturalWidth} / ${im.naturalHeight}`; $('panel').insertBefore(im, $('fx'));
+  for (const gd of document.querySelectorAll('#panel .goldout')) { gd.classList.add('fade'); setTimeout(() => gd.remove(), 1400); } // the golden light of the way in dissolves into the new page
+  $('ambient').style.backgroundImage = `url(art/${p.img}.jpg)`; // the same picture, blurred, around the panel on wide screens
+  page.classList.remove('turn-out'); page.classList.add('turn-in'); fitFx();
+  $('dots').innerHTML = PANELS.filter((x) => !x.branch || x.id === branch).map((x) => `<i class="${x.id === p.id ? 'on' : ''}"></i>`).join('');
+  ambience(p.amb); if (p.loop && p.early) loopVid(p.loop);
+  for (const l of p.labels || []) { const el = document.createElement('div'); el.className = 'maplabel'; el.textContent = l[lang]; el.style.left = l.at[0] * 100 + '%'; el.style.top = l.at[1] * 100 + '%'; $('layer').append(el); }
+  await sleep(450); if (gone()) return;
+  if (p.film) { await film(p.film); for (const v of document.querySelectorAll('#panel .vid:not(.loopv)')) { v.classList.remove('in'); setTimeout(() => v.remove(), 900); } if (gone()) return; } // a short film first (back from the nativity)
+  if (p.sfx) { sfx(p.sfx); await sleep(1200); if (gone()) return; } // the panel's own sound first, then the story
+  const early = p.act?.pre ? acts[p.act.kind](p.act) : null; // some scenes start moving while the narrator speaks
+  for (const ln of p.lines) { await say(ln); if (gone()) return; }
+  if (p.act) { clearTexts(); await (early || acts[p.act.kind](p.act)); if (gone()) return; for (const ln of p.act.then || []) { if (ln.sfx) { sfx(ln.sfx); await sleep(900); } await say(ln); if (gone()) return; } }
+  if (p.loop && !p.early) loopVid(p.loop);
+  busy = false; if (p.auto) return next();
+  $('next').classList.add('on');
+  if (i === PANELS.length - 1) setTimeout(end, 1800);
+}
+function next() {
+  if (busy || idx < 0) return;
+  const p = PANELS[idx];
+  if (idx === PANELS.length - 1) return end();
+  let n = idx + 1;
+  if (p.act?.kind === 'choice') n = PANELS.findIndex((x) => x.id === branch);
+  else if (p.branch) n = PANELS.findIndex((x) => x.id === AFTER_BRANCH);
+  show(n);
+}
+function end() { $('endcard').classList.add('on'); feel.end(lang); music.volume = 0.35; }
+// no long-press menu or text selection anywhere in the book (Android Chrome opens one on a held image)
+addEventListener('contextmenu', (e) => e.preventDefault());
+document.addEventListener('touchmove', (e) => { if (e.target.closest('#panel')) e.preventDefault(); }, { passive: false });
+$('page').addEventListener('pointerdown', (e) => { if (e.target.closest('button') || busy) return; next(); });
+$('next').onclick = next;
+// back one page, even in the middle of a line or a game: the voice stops and the page before comes back
+function prev() {
+  if (!hist.length) return; voice.pause(); tok++; duck(false); hint(''); $('layer').classList.remove('dim');
+  if (typeof keyAct !== 'undefined') keyAct = null;
+  if (typeof meter === 'function') meter(null);
+  for (const b of document.querySelectorAll('.alt')) b.remove();
+  busy = false; const i = hist.pop(); if (typeof branch !== 'undefined' && PANELS[i].act?.kind === 'choice') branch = null; show(i, true);
+}
+$('prev').onclick = (e) => { e.stopPropagation(); prev(); };
+async function start(m) {
+  mode = m; await initAudio(); music.play().catch(() => {});
+  document.body.classList.add('reading'); $('cover').classList.add('gone');
+  // phones that ask before sharing their tilt (iPhone): ask now, inside the tap that starts the story
+  try { await DeviceOrientationEvent?.requestPermission?.(); } catch {}
+  try { await DeviceMotionEvent?.requestPermission?.(); } catch {}
+  goFull(); // the real full screen on Android; on the iPhone the page already fills the screen
+  const r = feel.resume(PANELS); branch = PANELS[r]?.branch ? PANELS[r].id : null; show(r);
+}
+keepFull(); iosTip(lang);
+$('readMe').onclick = () => start('voice');
+$('readSelf').onclick = () => start('self');
+$('again').onclick = () => { $('endcard').classList.remove('on'); branch = null; show(0); };
+addEventListener('resize', () => { if (idx >= 0) fitFx(); });
+visualViewport?.addEventListener('resize', () => { if (idx >= 0) fitFx(); }); // the phone's address bar coming and going
+document.addEventListener('visibilitychange', () => { if (document.hidden) { music.pause(); amb.pause(); voice.pause(); } else if (idx >= 0) { music.play().catch(() => {}); amb.play().catch(() => {}); } });
+// test hook: open any panel, even while the current one waits for the child
+window.__noel2 = { get idx() { return idx; }, get busy() { return busy; }, next, show, goto: (i) => { busy = false; keyAct = null; show(i); }, get branch() { return branch; } };

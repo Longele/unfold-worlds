@@ -9,7 +9,7 @@
 // Everything stays on the device (localStorage); nothing is sent.
 const ID = location.pathname.split('/').filter(Boolean).pop();
 const KEY = 'contes-prog';
-const NEXT = { lina: 'lina2', nala: 'nala2' };
+const NEXT = { lina: 'lina2', nala: 'nala2', noel: 'noel2' };
 const T = { fr: { next: 'Épisode suivant', sticker: 'Nouvel autocollant !', go: 'Suivant' }, en: { next: 'Next episode', sticker: 'New sticker!', go: 'Next' } };
 
 const buzz = (p) => { try { navigator.vibrate?.(p); } catch {} };
@@ -73,6 +73,8 @@ html.inapp .foot #next.on { opacity: 1; background: var(--feel) !important; colo
 html.inapp .foot #next:active, html.inapp .foot #prev:active, html.inapp .feeltop .home:active, html.inapp .feeltop #replay:active { transform: scale(.94); }
 html.inapp .hint { position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 100px); z-index: 19; transform: translateX(-50%); width: max-content; max-width: 92vw; height: auto !important; min-height: 0 !important; padding: 9px 16px; border-radius: 999px; background: var(--glass); color: var(--gink) !important; text-shadow: none !important; font: 700 17px 'Fredoka', 'Comic Neue', system-ui, sans-serif !important; box-shadow: 0 8px 20px rgba(0, 0, 0, .22); white-space: normal; text-align: center; }
 html.inapp .hint:not(.on) { visibility: hidden; }
+html.inapp .hint.on { animation: feelhint 2s ease-in-out infinite !important; }
+@keyframes feelhint { 0%, 100% { transform: translateX(-50%); } 50% { transform: translate(-50%, -3px); } }
 html.inapp .endcard::before { background: color-mix(in srgb, var(--rbg) 88%, transparent) !important; }
 html.inapp .endcard { color: var(--gink); }
 html.inapp .endcard .btn { border-radius: 20px !important; border: 0 !important; box-shadow: 0 5px 0 rgba(0,0,0,.18) !important; font-family: 'Fredoka', 'Comic Neue', system-ui, sans-serif; }
