@@ -25,7 +25,7 @@ function applyLang() {
   $('title').textContent = TITLE[lang]; document.querySelector('.kick').textContent = T.kick; document.querySelector('.back').textContent = T.back;
   for (const el of document.querySelectorAll('a[href^="../"]')) el.href = `../?lang=${lang}`;
   for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === lang);
-  fetch(`voice/${lang}/timings.json?v=202611281000`).then((r) => r.json()).then((j) => (timings = j));
+  fetch(`voice/${lang}/timings.json?v=202611281200`).then((r) => r.json()).then((j) => (timings = j));
 }
 for (const b of document.querySelectorAll('[data-lang]')) b.onclick = () => { lang = b.dataset.lang; store.set('contes-lang', lang); applyLang(); };
 
@@ -56,12 +56,15 @@ const buzz = (p) => { try { navigator.vibrate?.(p); } catch {} };
 
 // ---------------------------------------------------------------- the microphone: how loud the child is (0 to 1)
 // Asked for only when a panel needs it; refused or missing, the interaction falls back to a button or the finger.
-let micAn = null, micBuf = null, micAsked = false;
+let micAn = null, micBuf = null, micAsked = false, micSt = null;
+// close the microphone as soon as a game no longer needs it: while it is open, Android plays everything in "call"
+// mode (quiet, mono, noisy), so the rest of the story would sound bad
+function micOff() { if (!micSt) return; try { micSt.getTracks().forEach((t) => t.stop()); } catch {} micSt = null; micAn = null; micAsked = false; }
 async function micOn() {
   if (micAn || micAsked) return !!micAn; micAsked = true;
   try {
     const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false } });
-    const src = ctx.createMediaStreamSource(st); micAn = ctx.createAnalyser(); micAn.fftSize = 1024; micBuf = new Float32Array(micAn.fftSize); src.connect(micAn);
+    micSt = st; const src = ctx.createMediaStreamSource(st); micAn = ctx.createAnalyser(); micAn.fftSize = 1024; micBuf = new Float32Array(micAn.fftSize); src.connect(micAn);
     return true;
   } catch { return false; }
 }
@@ -532,7 +535,7 @@ const acts = {
       const lv = mic ? micLevel() : 0;
       k += (lv > 0.18 ? lv * 0.9 : 0) * dt + (held ? 0.45 * dt : 0) - 0.04 * dt; k = Math.max(0, k); meter(k); if (rev) rev.style.opacity = String(Math.min(1, k * 1.1));
       if (lv > 0.18 || held) { if (Math.random() < 0.35) burst(0.1 + Math.random() * 0.8, 0.1 + Math.random() * 0.5, 4, 45); if (Math.random() < 0.04) sfx('sparkle', 0.4); if (Math.random() < 0.03) buzz(20); }
-      if (k >= 1) { done = true; keyAct = null; alt.remove(); meter(null); hint(''); buzz([80, 40, 160]); word(a.word[lang], [0.5, 0.3]); burst(0.5, 0.3, 70, 45); if (rev) rev.style.opacity = '1'; else swapArt(a.after); if (a.song) { duck(true); const so = new Audio(`sfx/${a.song}.mp3`); so.volume = 0.9; so.play().catch(() => {}); so.onended = () => { duck(false); if (gen === g0) res(); }; setTimeout(() => { if (gen === g0) res(); }, 17000); } else setTimeout(() => { if (gen === g0) res(); }, 1800); return; }
+      if (k >= 1) { done = true; keyAct = null; alt.remove(); meter(null); hint(''); micOff(); buzz([80, 40, 160]); word(a.word[lang], [0.5, 0.3]); burst(0.5, 0.3, 70, 45); if (rev) rev.style.opacity = '1'; else swapArt(a.after); if (a.song) { duck(true); const so = new Audio(`sfx/${a.song}.mp3`); so.volume = 0.9; so.play().catch(() => {}); so.onended = () => { duck(false); if (gen === g0) res(); }; setTimeout(() => { if (gen === g0) res(); }, 17000); } else setTimeout(() => { if (gen === g0) res(); }, 1800); return; }
       requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
@@ -749,6 +752,7 @@ function film(name) {
 // ---------------------------------------------------------------- reading
 const hist = []; // the pages already read, for the back arrow
 async function show(i, back = false) {
+  micOff();
   if (busy) return; busy = true; if (!back && idx >= 0 && idx !== i) hist.push(idx); hint(''); $('next').classList.remove('on'); keyAct = null; meter(null);
   for (const b of document.querySelectorAll('.alt')) b.remove();
   const p = PANELS[i]; idx = i; feel.page(i, PANELS.length); const my = ++gen; const gone = () => gen !== my; $('prev').classList.toggle('on', hist.length > 0);

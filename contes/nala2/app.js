@@ -61,12 +61,15 @@ const buzz = (p) => { try { navigator.vibrate?.(p); } catch {} };
 
 // ---------------------------------------------------------------- the microphone: how loud the child is (0 to 1)
 // Asked for only when a panel needs it; refused or missing, the interaction falls back to a button or the finger.
-let micAn = null, micBuf = null, micAsked = false;
+let micAn = null, micBuf = null, micAsked = false, micSt = null;
+// close the microphone as soon as a game no longer needs it: while it is open, Android plays everything in "call"
+// mode (quiet, mono, noisy), so the rest of the story would sound bad
+function micOff() { if (!micSt) return; try { micSt.getTracks().forEach((t) => t.stop()); } catch {} micSt = null; micAn = null; micAsked = false; }
 async function micOn() {
   if (micAn || micAsked) return !!micAn; micAsked = true;
   try {
     const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false } });
-    const src = ctx.createMediaStreamSource(st); micAn = ctx.createAnalyser(); micAn.fftSize = 1024; micBuf = new Float32Array(micAn.fftSize); src.connect(micAn);
+    micSt = st; const src = ctx.createMediaStreamSource(st); micAn = ctx.createAnalyser(); micAn.fftSize = 1024; micBuf = new Float32Array(micAn.fftSize); src.connect(micAn);
     return true;
   } catch { return false; }
 }
@@ -645,6 +648,7 @@ function film(name) {
 // ---------------------------------------------------------------- reading
 const hist = []; // the pages already read, for the back arrow
 async function show(i, back = false) {
+  micOff();
   if (busy) return; busy = true; if (!back && idx >= 0 && idx !== i) hist.push(idx); hint(''); $('next').classList.remove('on'); keyAct = null; meter(null);
   for (const b of document.querySelectorAll('.alt')) b.remove();
   const p = PANELS[i]; idx = i; feel.page(i, PANELS.length); const my = ++gen; const gone = () => gen !== my; $('prev').classList.toggle('on', hist.length > 0);
