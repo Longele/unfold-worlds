@@ -6,7 +6,7 @@
 import { PANELS, TITLE, WHO, AFTER_BRANCH } from './story.js?v=202610270300';
 
 import { goFull, keepFull, iosTip } from '../fs.js?v=202611250700';
-import { feel, picked } from '../feel.js?v=202611253';
+import { feel, picked } from '../feel.js?v=202611281600';
 const $ = (id) => document.getElementById(id);
 // the language: from the stories page (?lang=), else the last one chosen, else the phone's
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
@@ -485,7 +485,7 @@ async function start(m) {
   // phones that ask before sharing their tilt (iPhone): ask now, inside the tap that starts the story
   try { await DeviceOrientationEvent?.requestPermission?.(); } catch {}
   goFull(); // the real full screen on Android; on the iPhone the page already fills the screen
-  branch = null; show(0);
+  const r = feel.resume(PANELS); branch = PANELS[r]?.branch ? PANELS[r].id : null; show(r);
 }
 keepFull(); iosTip(lang);
 $('readMe').onclick = () => start('voice');

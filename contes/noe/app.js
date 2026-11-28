@@ -6,7 +6,7 @@
 import { PANELS, TITLE, WHO } from './story.js?v=202610270300';
 
 import { goFull, keepFull, iosTip } from '../fs.js?v=202611250700';
-import { feel, picked } from '../feel.js?v=202611253';
+import { feel, picked } from '../feel.js?v=202611281600';
 const $ = (id) => document.getElementById(id);
 // the language: from the stories page (?lang=), else the last one chosen, else the phone's
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
@@ -420,7 +420,7 @@ async function start(m) {
   mode = m; await initAudio(); music.play().catch(() => {});
   document.body.classList.add('reading'); $('cover').classList.add('gone');
   goFull(); // the real full screen on Android; on the iPhone the page already fills the screen
-  show(0);
+  show(feel.resume(PANELS));
 }
 keepFull(); iosTip(lang);
 $('readMe').onclick = () => start('voice');

@@ -95,7 +95,25 @@ setInterval(() => { // stuck for a while: the spots still to touch pulse
   lastNudge = now; for (const s of todo) { s.classList.remove('nudge'); void s.offsetWidth; s.classList.add('nudge'); }
 }, 1000);
 
+// a story left in the middle opens where the child stopped: the cover says so, with a way to start again
+let restart = false;
+const saved = () => { const p = read()[ID]; return p && p.at > 0 && p.of > 1 && p.at < p.of ? p : null; };
+const RT = { fr: { at: (a, n) => `On reprend à la page ${a} sur ${n}`, again: 'Recommencer au début', fresh: 'On recommence au début' }, en: { at: (a, n) => `We'll pick up at page ${a} of ${n}`, again: 'Start from the beginning', fresh: 'Starting from the beginning' } };
+{ const banner = () => {
+    const p = saved(), me = document.getElementById('readMe'); if (!p || !me || document.querySelector('.feelresume')) return;
+    const box = document.createElement('div'); box.className = 'feelresume';
+    const draw = () => { const L = RT[H.lang === 'en' ? 'en' : 'fr']; box.innerHTML = restart ? `<b>↺ ${L.fresh}</b>` : `<b>📖 ${L.at(p.at + 1, p.of)}</b><button type="button">↺ ${L.again}</button>`; const b = box.querySelector('button'); if (b) b.onclick = (e) => { e.stopPropagation(); restart = true; buzz(30); draw(); }; };
+    draw(); me.before(box); new MutationObserver(draw).observe(H, { attributes: true, attributeFilter: ['lang'] });
+  };
+  document.readyState === 'loading' ? addEventListener('DOMContentLoaded', banner) : banner(); }
+css.textContent += `
+.feelresume { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 2px auto 10px; padding: 10px 16px; max-width: 340px; border-radius: 18px; background: rgba(255, 255, 255, .92); color: #2d2150; font: 700 16px 'Fredoka', 'Comic Neue', system-ui, sans-serif; box-shadow: 0 6px 18px rgba(0, 0, 0, .25); text-align: center; }
+.feelresume button { border: 0; background: none; color: #c4502f; font: 700 15px 'Nunito', 'Comic Neue', system-ui, sans-serif; text-decoration: underline; cursor: pointer; padding: 4px 8px; }
+`;
+
 export const feel = {
+  // the page to open on: where the child stopped, unless they asked to start again
+  resume(panels) { const p = saved(); return !restart && p && p.at < panels.length ? p.at : 0; },
   sfx(n) { if (!QUIET.test(n)) buzz(HAPPY.test(n) ? [45, 60, 70] : 30); },
   page(i, n) { const all = read(), p = all[ID] || {}; p.at = i; p.of = n; p.t = Date.now(); all[ID] = p; write(all); },
   end(lang) {
